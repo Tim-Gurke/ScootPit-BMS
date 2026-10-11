@@ -1,0 +1,2 @@
+New in 1.5.8:
+• Readings automatically use a high-contrast text color. In the light theme, white values become dark and readable; dark custom tiles keep light text.

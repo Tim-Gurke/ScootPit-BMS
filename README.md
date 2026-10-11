@@ -10,7 +10,7 @@ ScootPit BMS wurde mit dem **Joyor T6E Pro und dem JBD SP14S004** entwickelt. Di
 
 **ScootPit – für alle, die ihren Roller überwachen wollen, ohne selbst überwacht zu werden.**
 
-**Version 1.5.7 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS-Public/releases/latest)**
+**Version 1.5.8 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS-Public/releases/latest)**
 
 Das Highlight ist die Automatik: **Bereitschaft einschalten, zum Scooter gehen und losfahren.** ScootPit erkennt ein gespeichertes Bluetooth-BMS in Reichweite, wählt das zugehörige Scooter-Profil und verbindet sich bei ausreichend stabilem Empfang automatisch. Die Fahrtaufzeichnung startet, sobald die eingestellten Bedingungen für die Stromentnahme erfüllt sind. Die Annäherung allein startet noch keine Fahrt.
 
@@ -74,6 +74,10 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 ## Neu in 1.5.6
 
 Langsame GPS-Bewegung ohne BMS-Motorlast wird als möglicher Fußweg behandelt und nicht zur Fahrstrecke addiert. Nach der einstellbaren Verzögerung pausiert die Fahrt. Fortsetzen setzt zuverlässige GPS-Fahrgeschwindigkeit und anhaltende Motorlast voraus. Beim ersten Öffnen des Querformats werden Skalenbereiche, Farben, Farbübergänge und Skalenrichtung aus dem Hochformat übernommen; Kachelanordnung und -positionen bleiben erhalten.
+
+## Neu in 1.5.8
+
+Messwerte passen ihre Schriftfarbe jetzt automatisch an den Kontrast des Kachelhintergrunds an. Im hellen Design werden zuvor weiße Werte dadurch dunkel und lesbar; auf dunklen eigenen Kacheln bleibt heller Text erhalten. Raster, Kachelanordnung und das dunkle Design ändern sich nicht.
 
 ## Neu in 1.5.7
 

@@ -241,7 +241,7 @@ public class MainActivity extends Activity {
                 JSONObject renderCell=cell;
                 if(key.equals("consumption_500m"))try{String current=cell.optString("caption","");if(current.isEmpty()||current.matches("Verbrauch · letzte \\d+ m")||current.equals(CockpitLayout.title(key)))cell.put("caption","Verbrauch · letzte "+prefs.getInt("consumption_window_m",500)+" m");}catch(Exception ignored){}
                 if((key.equals("temp1")||key.equals("temp2"))&&!cell.has("caption"))try{renderCell=new JSONObject(cell.toString()).put("caption",prefs.getString(key+"_label",CockpitLayout.title(key)));}catch(Exception ignored){}
-                MetricTile value=new MetricTile(this,renderCell,text,color(cell.optString("instrument_color"),accent()),color(cell.optString("scale_color",CockpitTheme.scale(prefs)),0xff35434d),bg.getColor().getDefaultColor());box.setPadding(0,0,0,0);box.addView(value,new LinearLayout.LayoutParams(-1,-1));tileKeys.add(key);tileValues.add(value);tileNotes.add(new TextView(this));
+                MetricTile value=new MetricTile(this,renderCell,CockpitTheme.readableTileText(prefs,text,bg.getColor().getDefaultColor()),color(cell.optString("instrument_color"),accent()),color(cell.optString("scale_color",CockpitTheme.scale(prefs)),0xff35434d),bg.getColor().getDefaultColor());box.setPadding(0,0,0,0);box.addView(value,new LinearLayout.LayoutParams(-1,-1));tileKeys.add(key);tileValues.add(value);tileNotes.add(new TextView(this));
 
             }
             if(key.equals("tour")&&!editingBoard){box.setOnClickListener(v->resetTour());box.setContentDescription("Tourenzähler zurücksetzen");}

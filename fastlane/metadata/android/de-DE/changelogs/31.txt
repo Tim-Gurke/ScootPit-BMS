@@ -1,0 +1,2 @@
+Neu in 1.5.8:
+• Messwerte wählen automatisch eine kontrastreiche Schriftfarbe. Im hellen Design werden weiße Werte dunkel und lesbar; dunkle eigene Kacheln behalten hellen Text.

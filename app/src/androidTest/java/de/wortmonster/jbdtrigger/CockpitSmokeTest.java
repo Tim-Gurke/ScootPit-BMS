@@ -22,6 +22,12 @@ public class CockpitSmokeTest extends Instrumentation {
         try {
             SharedPreferences prefs=getTargetContext().getSharedPreferences("settings",0);
             prefs.edit().clear().putString("total_km","123.45").commit();
+            prefs.edit().putString("app_background","#F7FAFD").putBoolean("background_gradient_enabled",true)
+                    .putString("background_gradient_start","#FFFFFF").putString("background_gradient_end","#DCECF5").commit();
+            if(CockpitTheme.readableTileText(prefs,0xffffffff,0x00000000)!=android.graphics.Color.BLACK)
+                throw new AssertionError("White active values on a light transparent tile must become black");
+            if(CockpitTheme.readableTileText(prefs,0xffffffff,0xff0c1720)!=android.graphics.Color.WHITE)
+                throw new AssertionError("White values on a dark custom tile must remain white");
             Activity activity=startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             waitForIdleSync();
             checked(()->systemInsetsCheck(activity));
@@ -552,7 +558,7 @@ public class CockpitSmokeTest extends Instrumentation {
                 if(found.points.size()!=2||found.moving!=2000||Math.abs(found.averagePower-96)>.01)throw new AssertionError("Journal statistics");
                 summary.gpxFile.delete();summary.csvFile.delete();summary.metadataFile.delete();
                 String version=activity.getPackageManager().getPackageInfo(activity.getPackageName(),0).versionName;
-                if(!"1.5.7".equals(version))throw new AssertionError("Official version");
+                if(!"1.5.8".equals(version))throw new AssertionError("Official version");
                 int portraitMap=JournalUi.routeMapHeight(2400,3),landscapeMap=JournalUi.routeMapHeight(1080,3);
                 if(portraitMap<=0||landscapeMap<=0||portraitMap>1080||landscapeMap>1080)throw new AssertionError("Route map must have a visible bounded height in both orientations");
             }catch(Exception e){throw new RuntimeException(e);}
