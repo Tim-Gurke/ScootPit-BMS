@@ -71,10 +71,6 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 <em>Im Fahrtenbuch kannst du einen Zeitraum wählen und den gesamten Scooter-Fahrtenordner oder einzelne CSV-/GPX-Fahrten importieren.</em>
 
 
-## Neu in 1.5.6
-
-Langsame GPS-Bewegung ohne BMS-Motorlast wird als möglicher Fußweg behandelt und nicht zur Fahrstrecke addiert. Nach der einstellbaren Verzögerung pausiert die Fahrt. Fortsetzen setzt zuverlässige GPS-Fahrgeschwindigkeit und anhaltende Motorlast voraus. Beim ersten Öffnen des Querformats werden Skalenbereiche, Farben, Farbübergänge und Skalenrichtung aus dem Hochformat übernommen; Kachelanordnung und -positionen bleiben erhalten.
-
 ## Neu in 1.5.8
 
 Messwerte passen ihre Schriftfarbe jetzt automatisch an den Kontrast des Kachelhintergrunds an. Im hellen Design werden zuvor weiße Werte dadurch dunkel und lesbar; auf dunklen eigenen Kacheln bleibt heller Text erhalten. Raster, Kachelanordnung und das dunkle Design ändern sich nicht.
@@ -82,6 +78,10 @@ Messwerte passen ihre Schriftfarbe jetzt automatisch an den Kontrast des Kachelh
 ## Neu in 1.5.7
 
 Die Kartenansicht einer Fahrt erhält jetzt eine feste, an die Bildschirmhöhe angepasste Größe. Dadurch werden die Route und die OpenStreetMap-Kacheln im Fahrtenbuchdialog zuverlässig angezeigt.
+
+## Neu in 1.5.6
+
+Langsame GPS-Bewegung ohne BMS-Motorlast wird als möglicher Fußweg behandelt und nicht zur Fahrstrecke addiert. Nach der einstellbaren Verzögerung pausiert die Fahrt. Fortsetzen setzt zuverlässige GPS-Fahrgeschwindigkeit und anhaltende Motorlast voraus. Beim ersten Öffnen des Querformats werden Skalenbereiche, Farben, Farbübergänge und Skalenrichtung aus dem Hochformat übernommen; Kachelanordnung und -positionen bleiben erhalten.
 
 ## Neu in 1.5.5
 
