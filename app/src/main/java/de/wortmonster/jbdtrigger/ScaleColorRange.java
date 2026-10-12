@@ -20,7 +20,7 @@ final class ScaleColorRange {
                 : blend(middleColor, highColor, (transition - .5) * 2);
     }
 
-    private static int blend(int from, int to, double amount) {
+    static int blend(int from, int to, double amount) {
         int a = channel(from, to, 24, amount);
         int r = channel(from, to, 16, amount);
         int g = channel(from, to, 8, amount);
