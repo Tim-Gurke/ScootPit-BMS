@@ -1,0 +1,3 @@
+Neu in 1.6.0:
+• Mehrfarbige Skalen zeigen den vollständigen Farbverlauf. Der aktive Bereich ist kräftig, der inaktive Bereich blass.
+• Ein Mikro-Pfeil zeigt den aktuellen Messwert auf der Skala.

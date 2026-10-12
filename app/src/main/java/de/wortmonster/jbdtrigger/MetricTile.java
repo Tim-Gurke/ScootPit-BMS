@@ -98,7 +98,9 @@ final class MetricTile extends TextView {
         if(style==2&&bottom-top>=dp(85)&&width>=dp(100)){
             float sweep=Math.max(90,Math.min(270,config.optInt("gauge_sweep",180)));
             float radius=Math.min(width/2-dp(10),(bottom-top)/2-dp(6));paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(6));paint.setStrokeCap(Paint.Cap.ROUND);paint.setColor(inactive?Color.argb(Color.alpha(scale),41,41,41):scale);
-            RectF arc=new RectF(cx-radius,middle-radius,cx+radius,middle+radius);float start=270-sweep/2;double p=progress(value);boolean reversed=config.optBoolean("scale_reverse",false);double position=ScaleDirection.position(p,reversed);c.save();c.rotate(config.optInt("gauge_rotation",0),cx,middle);c.drawArc(arc,start,sweep,false,paint);paint.setColor(scaleColor(p,accent));c.drawArc(arc,reversed?start+(float)(sweep*position):start,(float)(sweep*p),false,paint);c.restore();
+            RectF arc=new RectF(cx-radius,middle-radius,cx+radius,middle+radius);float start=270-sweep/2;double p=progress(value);boolean reversed=config.optBoolean("scale_reverse",false);double position=ScaleDirection.position(p,reversed);c.save();c.rotate(config.optInt("gauge_rotation",0),cx,middle);
+            if(hasColorGradient()&&!inactive){drawGradientArc(c,arc,start,sweep,dp(6),0,1,true,reversed);drawGradientArc(c,arc,start,sweep,dp(6),reversed?1-p:0,reversed?1:p,false,reversed);drawMicroArrow(c,cx,middle,radius,start+(float)(sweep*position),gradientColor(p,accent));}
+            else{c.drawArc(arc,start,sweep,false,paint);paint.setColor(scaleColor(p,accent));float activeStart=reversed?start+(float)(sweep*position):start;c.drawArc(arc,activeStart,(float)(sweep*p),false,paint);}c.restore();
             valueWidth=radius*1.55f;valueSize=Math.min(valueSize,radius*.60f);
         }else if(style!=0){bar(c,dp(8),bottom-dp(5),getWidth()-dp(16),progress(value));bottom-=dp(12);middle=(top+bottom)/2;}
         float available=Math.max(dp(12),bottom-top);valueSize=Math.min(valueSize,available*.65f);
@@ -134,9 +136,15 @@ final class MetricTile extends TextView {
         double progress=progress(value);boolean reversed=config.optBoolean("scale_reverse",false);double position=ScaleDirection.position(progress,reversed);int track=inactive?Color.argb(Color.alpha(scale),55,55,55):scale;
         RectF bounds=new RectF(cx-radius,cy-radius,cx+radius,cy+radius);
         c.save();c.rotate(rotation,cx,cy);
-        paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.BUTT);paint.setStrokeWidth(dp(3));paint.setColor(track);c.drawArc(bounds,start,sweep,false,paint);
-        int progressColor=scaleColor(progress,accent);
-        paint.setColor(progressColor);paint.setStrokeWidth(dp(4));if(progress>0)c.drawArc(bounds,reversed?start+(float)(sweep*position):start,(float)(sweep*progress),false,paint);
+        boolean gradient=hasColorGradient()&&!inactive;
+        if(gradient){
+            drawGradientArc(c,bounds,start,sweep,dp(3),0,1,true,reversed);
+            drawGradientArc(c,bounds,start,sweep,dp(4),reversed?1-progress:0,reversed?1:progress,false,reversed);
+        }else{
+            paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.BUTT);paint.setStrokeWidth(dp(3));paint.setColor(track);c.drawArc(bounds,start,sweep,false,paint);
+            int progressColor=scaleColor(progress,accent);
+            paint.setColor(progressColor);paint.setStrokeWidth(dp(4));if(progress>0)c.drawArc(bounds,reversed?start+(float)(sweep*position):start,(float)(sweep*progress),false,paint);
+        }
         double rawMajorStep=max/4d;
         double magnitude=Math.pow(10,Math.floor(Math.log10(rawMajorStep)));
         double normalized=rawMajorStep/magnitude;
@@ -147,14 +155,18 @@ final class MetricTile extends TextView {
         for(int i=0;i<=tickCount;i++){
             double number=Math.min(max,i*minorStep),fraction=number/max;double angle=Math.toRadians(start+sweep*ScaleDirection.position(fraction,reversed));boolean major=Math.abs(number/majorStep-Math.rint(number/majorStep))<.001;
             float outer=radius-dp(7),inner=outer-dp(major?10:5);
-            paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(major?1.3f:.8f));paint.setColor(fraction<=progress&&progress>0?progressColor:track);
+            paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(major?1.3f:.8f));
+            boolean reached=reversed?fraction>=progress:fraction<=progress;
+            int tickColor=gradient?(reached?gradientColor(fraction,accent):inactiveGradientColor(fraction)):reached&&progress>0?scaleColor(progress,accent):track;
+            paint.setColor(tickColor);
             c.drawLine(cx+(float)Math.cos(angle)*inner,cy+(float)Math.sin(angle)*inner,cx+(float)Math.cos(angle)*outer,cy+(float)Math.sin(angle)*outer,paint);
             if(major){String label=String.format(Locale.GERMANY,"%.0f",number);
                 float labelRadius=radius-dp(30);double labelAngle=angle+Math.toRadians(rotation);
                 scaleLabels.add(label);scaleLabelPoints.add(new float[]{cx+(float)Math.cos(labelAngle)*labelRadius,cy+(float)Math.sin(labelAngle)*labelRadius+sp(4)});
             }
         }
-        if(progress>0){double angle=Math.toRadians(start+sweep*position);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(3));paint.setColor(progressColor);c.drawLine(cx+(float)Math.cos(angle)*(radius+dp(2)),cy+(float)Math.sin(angle)*(radius+dp(2)),cx+(float)Math.cos(angle)*(radius-dp(17)),cy+(float)Math.sin(angle)*(radius-dp(17)),paint);}
+        if(gradient)drawMicroArrow(c,cx,cy,radius,start+sweep*position,gradientColor(progress,accent));
+        else if(progress>0){double angle=Math.toRadians(start+sweep*position);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(3));paint.setColor(scaleColor(progress,accent));c.drawLine(cx+(float)Math.cos(angle)*(radius+dp(2)),cy+(float)Math.sin(angle)*(radius+dp(2)),cx+(float)Math.cos(angle)*(radius-dp(17)),cy+(float)Math.sin(angle)*(radius-dp(17)),paint);}
         c.restore();
         for(int i=0;i<scaleLabels.size();i++){float[] point=scaleLabelPoints.get(i);text(c,scaleLabels.get(i),point[0],point[1],dp(36),sp(11),false,foreground);}
         float numberSize=Math.min(sp(Math.max(12,Math.min(80,config.optInt("font",72)))),radius*.76f);
@@ -169,9 +181,49 @@ final class MetricTile extends TextView {
     private int scaleColor(double progress,int fallback){
         int mode=config.optInt("scale_gradient_mode",0);
         if(inactive||mode<1||mode>2)return fallback;
+        return gradientColor(progress,fallback);
+    }
+    private boolean hasColorGradient(){int mode=config.optInt("scale_gradient_mode",0);return mode==1||mode==2;}
+    private int gradientColor(double progress,int fallback){
+        int mode=config.optInt("scale_gradient_mode",0);if(mode<1||mode>2)return fallback;
         try{return ScaleColorRange.color(progress,Color.parseColor(config.optString("scale_gradient_low","#FF3B30")),Color.parseColor(config.optString("scale_gradient_mid","#FF9800")),Color.parseColor(config.optString("scale_gradient_high","#34C759")),config.optInt("scale_gradient_low_full",20),config.optInt("scale_gradient_high_full",80),mode==2);}
         catch(Exception ignored){return fallback;}
     }
-    private void bar(Canvas c,float x,float y,float w,double progress){paint.setStyle(Paint.Style.FILL);paint.setColor(inactive?Color.argb(Color.alpha(scale),41,41,41):scale);c.drawRoundRect(x,y,x+w,y+dp(4),dp(2),dp(2),paint);paint.setColor(inactive?Color.argb(Color.alpha(accent),96,96,96):scaleColor(progress,accent));float left=x+(config.optBoolean("scale_reverse",false)?(float)(w*(1-progress)):0);c.drawRoundRect(left,y,left+(float)(w*progress),y+dp(4),dp(2),dp(2),paint);}
+    private int inactiveGradientColor(double progress){return ScaleColorRange.blend(gradientColor(progress,scale),background,.78);}
+    private void drawGradientArc(Canvas c,RectF bounds,float start,float sweep,float strokeWidth,double fromFraction,double toFraction,boolean pale,boolean reversed){
+        double from=Math.max(0,Math.min(1,fromFraction)),to=Math.max(from,Math.min(1,toFraction));if(to<=from)return;int segments=Math.max(30,(int)Math.ceil(sweep/2.5f));
+        paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.BUTT);paint.setStrokeWidth(strokeWidth);
+        for(int i=(int)Math.floor(segments*from);i<segments&&i<Math.ceil(segments*to);i++){
+            double a=Math.max(from,(double)i/segments),b=Math.min(to,(double)(i+1)/segments);if(b<=a)continue;double position=(a+b)/2,valueFraction=reversed?1-position:position;
+            paint.setColor(pale?inactiveGradientColor(valueFraction):gradientColor(valueFraction,accent));
+            c.drawArc(bounds,start+(float)(sweep*a),(float)(sweep*(b-a))+.35f,false,paint);
+        }
+    }
+    private void drawMicroArrow(Canvas c,float cx,float cy,float radius,float angleDegrees,int segmentColor){
+        double angle=Math.toRadians(angleDegrees);float orbit=radius+dp(5),x=cx+(float)Math.cos(angle)*orbit,y=cy+(float)Math.sin(angle)*orbit,size=dp(7);
+        int fill=luminance(segmentColor)>145?Color.BLACK:Color.WHITE,outline=fill==Color.BLACK?Color.WHITE:Color.BLACK;
+        Path arrow=new Path();arrow.moveTo(0,size*.55f);arrow.lineTo(-size*.52f,-size*.42f);arrow.lineTo(size*.52f,-size*.42f);arrow.close();
+        c.save();c.translate(x,y);c.rotate(angleDegrees+90);paint.setStyle(Paint.Style.FILL);paint.setColor(fill);c.drawPath(arrow,paint);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(1));paint.setColor(outline);c.drawPath(arrow,paint);c.restore();
+    }
+    private float luminance(int color){return Color.red(color)*.2126f+Color.green(color)*.7152f+Color.blue(color)*.0722f;}
+    private void bar(Canvas c,float x,float y,float w,double progress){
+        float thickness=dp(4),center=y+thickness/2;
+        if(hasColorGradient()&&!inactive){
+            boolean reversed=config.optBoolean("scale_reverse",false);double p=Math.max(0,Math.min(1,progress));double position=ScaleDirection.position(p,reversed);
+            drawGradientBar(c,x,center,w,0,1,true,reversed);drawGradientBar(c,x,center,w,reversed?1-p:0,reversed?1:p,false,reversed);
+            float mx=x+(float)(w*position);float size=dp(4);Path marker=new Path();marker.moveTo(mx,center-dp(5));marker.lineTo(mx-size,center-dp(9));marker.lineTo(mx+size,center-dp(9));marker.close();paint.setStyle(Paint.Style.FILL);paint.setColor(luminance(gradientColor(p,accent))>145?Color.BLACK:Color.WHITE);c.drawPath(marker,paint);
+            return;
+        }
+        paint.setStyle(Paint.Style.FILL);paint.setColor(inactive?Color.argb(Color.alpha(scale),41,41,41):scale);c.drawRoundRect(x,y,x+w,y+thickness,dp(2),dp(2),paint);paint.setColor(inactive?Color.argb(Color.alpha(accent),96,96,96):scaleColor(progress,accent));float left=x+(config.optBoolean("scale_reverse",false)?(float)(w*(1-progress)):0);c.drawRoundRect(left,y,left+(float)(w*progress),y+thickness,dp(2),dp(2),paint);
+    }
+    private void drawGradientBar(Canvas c,float x,float center,float width,double fromFraction,double toFraction,boolean pale,boolean reversed){
+        double from=Math.max(0,Math.min(1,fromFraction)),to=Math.max(from,Math.min(1,toFraction));if(to<=from)return;int segments=Math.max(24,(int)Math.ceil(width/dp(3)));
+        paint.setStyle(Paint.Style.STROKE);paint.setStrokeCap(Paint.Cap.BUTT);paint.setStrokeWidth(dp(4));
+        for(int i=(int)Math.floor(segments*from);i<segments&&i<Math.ceil(segments*to);i++){
+            double a=Math.max(from,(double)i/segments),b=Math.min(to,(double)(i+1)/segments);if(b<=a)continue;double position=(a+b)/2,valueFraction=reversed?1-position:position;
+            paint.setColor(pale?inactiveGradientColor(valueFraction):gradientColor(valueFraction,accent));
+            c.drawLine(x+(float)(width*a),center,x+(float)(width*b)+dp(.4f),center,paint);
+        }
+    }
 }
 

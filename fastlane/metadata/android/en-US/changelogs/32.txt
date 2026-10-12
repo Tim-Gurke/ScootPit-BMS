@@ -1,0 +1,3 @@
+New in 1.6.0:
+• Multicolor scales show the full configured gradient. The active section is vivid and the inactive section is pale.
+• A small arrow marks the current value on the scale.
