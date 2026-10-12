@@ -1,0 +1,4 @@
+New in 1.6.1:
+• Choose Wh/km or estimated battery use as a percentage per 10 km.
+• The gauge marker sits inside the scale and switches between black and white for contrast.
+• New measurement tiles default to 20 sp; cockpit settings are imported from the provided file.

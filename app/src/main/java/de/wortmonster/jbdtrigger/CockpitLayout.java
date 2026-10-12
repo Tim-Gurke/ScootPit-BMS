@@ -10,7 +10,7 @@ final class CockpitLayout {
     static final String[] TITLES = {"Geschwindigkeit","Akku","Restreichweite ≈","Fahrtstrecke","Gesamtkilometer","Leistung","Spannung","Strom","Verbrauchte Energie","Verbrauch","Verbrauch · letzte 500 m","Gesamtzeit","Fahrzeit","Standzeit","Durchschnitt","Maximum","Höhe","Höhenmeter","Temp1","Temp2","Außentemperatur","Maximale Fahrtleistung","BMS-Lastausgang","Bereitschaft starten","Bereitschaft beenden","Fahrt beenden","Statusdetails / Log","Bild","Freitext","Tageskilometer","Tourenzähler"};
     static JSONObject tile(String key) {
         JSONObject t = new JSONObject();
-        try { t.put("key",key).put("font",28).put("weight",1).put("background","#1C2228").put("text","#FFFFFF");
+        try { t.put("key",key).put("font",20).put("weight",1).put("background","#1C2228").put("text","#FFFFFF");
             if(key.equals("speed"))t.put("scale_max",DEFAULT_SPEED_SCALE_MAX);
             else if(key.equals("power")||key.equals("max_power"))t.put("scale_max",1400); }
         catch(Exception ignored) {}

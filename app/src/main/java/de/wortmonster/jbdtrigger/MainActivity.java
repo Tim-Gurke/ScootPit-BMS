@@ -82,6 +82,7 @@ public class MainActivity extends Activity {
         prefs=getSharedPreferences("settings",MODE_PRIVATE);
         installDefaultCockpit();
         ScooterProfiles.install(prefs);
+        migrateImportedCockpitSettings();
         boardTiles=loadBoard();displayedProfile=prefs.getString(ScooterProfiles.ACTIVE,"");
         if(state!=null){
             pendingImageTile=state.getString("pending_image_tile","");pendingImageLayout=state.getString("pending_image_layout","");editorFromSettings=state.getBoolean("editor_from_settings",false);
@@ -121,6 +122,24 @@ public class MainActivity extends Activity {
             java.util.Iterator<String> settingKeys=settings.keys();while(settingKeys.hasNext()){String key=settingKeys.next();Object value=settings.get(key);if(value instanceof Boolean)edit.putBoolean(key,(Boolean)value);else if(value instanceof String)edit.putString(key,(String)value);}
             if(!edit.commit())throw new java.io.IOException("Standard-Cockpit konnte nicht gespeichert werden");
         }catch(Exception e){android.util.Log.e("ScootPit","Standard-Cockpit konnte nicht geladen werden",e);}
+    }
+    private void migrateImportedCockpitSettings(){
+        if("1.6.1".equals(prefs.getString("cockpit_imported_settings_version","")))return;
+        try{
+            JSONArray portrait=CockpitBoard.standardDefaults(this,"cockpit_board"),landscape=CockpitBoard.standardDefaults(this,"cockpit_board_landscape");
+            JSONArray profiles=ScooterProfiles.export(prefs);String active=prefs.getString(ScooterProfiles.ACTIVE,"");JSONObject activeSettings=null;
+            for(int i=0;i<profiles.length();i++){
+                JSONObject profile=profiles.getJSONObject(i),settings=profile.optJSONObject("settings");if(settings==null)continue;
+                for(String key:new String[]{"cockpit_board","cockpit_board_landscape"})try{
+                    if(!settings.has(key))continue;JSONArray existing=new JSONArray(settings.getString(key)),imported=key.equals("cockpit_board")?portrait:landscape;
+                    if(CockpitBoard.updateImportedDefaults(existing,key,imported))settings.put(key,existing.toString());
+                }catch(Exception ignored){}
+                if(profile.optString("id").equals(active))activeSettings=settings;
+            }
+            SharedPreferences.Editor update=prefs.edit().putString(ScooterProfiles.LIST,profiles.toString()).putString("cockpit_imported_settings_version","1.6.1");
+            if(activeSettings!=null)for(String key:new String[]{"cockpit_board","cockpit_board_landscape"})if(activeSettings.has(key))update.putString(key,activeSettings.getString(key));
+            if(!update.commit())throw new java.io.IOException("Cockpit-Einstellungen konnten nicht aktualisiert werden");
+        }catch(Exception e){android.util.Log.e("ScootPit","Cockpit-Einstellungsupdate konnte nicht übernommen werden",e);}
     }
     private int color(String value,int fallback){try{return Color.parseColor(value);}catch(Exception e){return fallback;}}
     private int accent(){return color(prefs.getString("accent_color","#FF9800"),0xffff9800);}
@@ -259,13 +278,18 @@ public class MainActivity extends Activity {
         android.widget.SeekBar windowSlider=new android.widget.SeekBar(this);windowSlider.setMax(90);windowSlider.setProgress(Math.max(0,Math.min(90,(prefs.getInt("consumption_window_m",500)-100)/10)));
         windowSlider.setContentDescription("Verbrauchsfenster 100 bis 1000 Meter");windowSlider.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(android.widget.SeekBar b,int n,boolean user){windowLabel.setText("Verbrauchsfenster: "+(100+n*10)+" m");}public void onStartTrackingTouch(android.widget.SeekBar b){}public void onStopTrackingTouch(android.widget.SeekBar b){}});
         if(tileKey.equals("consumption_500m")){l.addView(windowLabel);l.addView(windowSlider);l.addView(label("Messbereich der Verbrauchsanzeige · 100–1000 m",11,muted()));}else{windowLabel.setVisibility(View.GONE);windowSlider.setVisibility(View.GONE);}
+        Spinner consumptionUnit=null;
+        if(tileKey.equals("consumption")||tileKey.equals("consumption_500m")){
+            consumptionUnit=new Spinner(this);consumptionUnit.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"Wh/km","% auf 10 km"}));consumptionUnit.setSelection(Math.max(0,Math.min(1,cell.optInt("consumption_display_unit",0))));
+            l.addView(label("Verbrauchseinheit",12,muted()));l.addView(consumptionUnit);
+        }
         EditText freeText=null;Button chooseImage=null;Spinner imageMode=null;
         if(tileKey.equals("free_text")){freeText=textField(l,"Freitext (max. 4000 Zeichen)",cell.optString("free_text",""));freeText.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);freeText.setMinLines(3);freeText.setMaxLines(12);freeText.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(4000)});}
         if(tileKey.equals("image")){
             chooseImage=button(cell.optString("image_data").isEmpty()?"Bild auswählen":"Bild ersetzen");l.addView(chooseImage);
             imageMode=new Spinner(this);imageMode.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"Ganzes Bild einpassen","Kachel füllen (Zuschneiden)"}));imageMode.setSelection(cell.optInt("image_mode",0));l.addView(imageMode);
         }
-        final EditText customText=freeText;final Spinner photoMode=imageMode;
+        final EditText customText=freeText;final Spinner photoMode=imageMode;final Spinner consumptionUnitSelector=consumptionUnit;
         Spinner arrangement=new Spinner(this);arrangement.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"Automatisch","Einzeilig","Untereinander"}));arrangement.setSelection(Math.max(0,Math.min(2,cell.optInt("arrangement",0))));l.addView(arrangement);
         Spinner display=new Spinner(this);display.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"Zahl","Balken","Rundinstrument"}));display.setSelection(Math.max(0,Math.min(2,cell.optInt("display",cell.optString("key").equals("speed")?2:cell.optString("key").equals("soc")?1:0))));l.addView(display);
         EditText sweepDegrees=field(l,"Kreisausschnitt in Grad (90–270)",""+Math.max(90,Math.min(270,cell.optInt("gauge_sweep",180))));
@@ -291,7 +315,7 @@ public class MainActivity extends Activity {
         CheckBox showNote=new CheckBox(this);showNote.setText("Zusatztext anzeigen");showNote.setTextColor(foreground());showNote.setChecked(cell.optBoolean("show_note",true));l.addView(showNote);
         EditText lines=field(l,"Überschrift / Button: maximal 1–3 Zeilen",""+cell.optInt("lines",2));
         EditText scale=field(l,"Skalenmaximum (Balken / Rundinstrument)",""+cell.optDouble("scale_max",cell.optString("key").equals("speed")?CockpitLayout.DEFAULT_SPEED_SCALE_MAX:cell.optString("key").contains("power")?1400:100));
-        EditText font=field(l,"Schriftgröße (12–80)",""+cell.optInt("font",28));
+        EditText font=field(l,"Schriftgröße (12–80)",""+cell.optInt("font",20));
         boolean hasUnit=!personal&&!tileKey.startsWith("ready_")&&!tileKey.equals("trip_end")&&!tileKey.equals("log")&&!tileKey.equals("bms_output");
         EditText unitFont=hasUnit?field(l,"Einheit: Schriftgröße (8–80, leer = wie Wert)",cell.has("unit_font")?""+cell.optInt("unit_font"):""):new EditText(this);
         Spinner unitPosition=new Spinner(this);unitPosition.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"Neben dem Wert","Hochgestellt","Über dem Wert","Unter dem Wert / im Tacho"}));unitPosition.setSelection(Math.max(0,Math.min(3,cell.optInt("unit_position",0))));
@@ -338,7 +362,7 @@ public class MainActivity extends Activity {
         apply.setOnClickListener(v->{boolean customUnit=hasUnit&&!unitFont.getText().toString().trim().isEmpty();Double uu=customUnit?valid(unitFont,8,80):null;Double ff=valid(font,12,80),xx=valid(x,0,23),yy=valid(y,0,600),ww=valid(w,1,24),hh=valid(h,2,24),angle=valid(sweepDegrees,90,270);Double ll=valid(lines,1,3),ss=valid(scale,.1,10000000);int gradientChoice=gradientMode.getSelectedItemPosition(),lowPct=lowFull.getProgress(),highPct=highFull.getProgress(),windowMeters=100+windowSlider.getProgress()*10;if(angle!=null&&angle!=Math.rint(angle)){sweepDegrees.setError("Bitte eine ganze Gradzahl eingeben");angle=null;}if((customUnit&&uu==null)||ff==null||xx==null||yy==null||ww==null||hh==null||angle==null||ll==null||ss==null||!validColor(bg)||!validColor(fg)||!validColor(instrument)||!validColor(track)||!validColor(icon)||!validColor(borderColor)||(gradientChoice>0&&(!validColor(gradientEnd)||!validColor(gradientMiddle)||!validColor(gradientStart))))return;if(gradientChoice>0&&lowPct>=highPct){lowFullLabel.setError("Muss unter der hohen Schwelle liegen");highFullLabel.setError("Muss über der niedrigen Schwelle liegen");return;}
             JSONArray before;try{before=new JSONArray(boardTiles.toString());boolean oldOverlap=cell.optBoolean("allow_overlap",false);cell.put("allow_overlap",allowOverlap.isChecked()).put("x",xx.intValue()).put("y",yy.intValue()).put("w",ww.intValue()).put("h",hh.intValue());try{board.push(cell);CockpitBoard.validate(boardTiles);}catch(Exception e){for(int i=0;i<boardTiles.length();i++){JSONObject target=boardTiles.getJSONObject(i),original=before.getJSONObject(i);target.put("x",original.getInt("x")).put("y",original.getInt("y")).put("w",original.getInt("w")).put("h",original.getInt("h"));}cell.put("allow_overlap",oldOverlap);Toast.makeText(this,e.getMessage(),Toast.LENGTH_LONG).show();return;}
                 String nextCaption=caption.getText().toString();if(tileKey.equals("consumption_500m")&&(nextCaption.isEmpty()||nextCaption.matches("Verbrauch · letzte \\d+ m")||nextCaption.equals(CockpitLayout.title(tileKey))))nextCaption="Verbrauch · letzte "+windowMeters+" m";
-                cell.put("arrangement",arrangement.getSelectedItemPosition()).put("display",display.getSelectedItemPosition()).put("gauge_sweep",angle.intValue()).put("heading_mode",heading.getSelectedItemPosition()).put("show_title",heading.getSelectedItemPosition()==1||heading.getSelectedItemPosition()==2).put("show_note",showNote.isChecked()).put("lines",ll.intValue()).put("scale_max",ss).put("caption",nextCaption).put("font",ff.intValue()).put("background",alphaColor(bg.getText().toString(),bgAlpha.getProgress())).put("text",alphaColor(fg.getText().toString(),fgAlpha.getProgress())).put("custom_colors",true).put("instrument_color",instrument.getText().toString()).put("scale_color",track.getText().toString()).put("icon_color",icon.getText().toString()).put("border_color",borderColor.getText().toString()).put("border_enabled",borderEnabled.isChecked()).put("corner_radius",radius.getProgress()).put("content_inset",inset.getProgress()).put("scale_gradient_mode",gradientChoice).put("scale_reverse",reverseScale.isChecked());if(gradientChoice>0)cell.put("scale_gradient_high",gradientEnd.getText().toString()).put("scale_gradient_mid",gradientMiddle.getText().toString()).put("scale_gradient_low",gradientStart.getText().toString()).put("scale_gradient_low_full",lowPct).put("scale_gradient_high_full",highPct);if(tileKey.equals("consumption_500m"))prefs.edit().putInt("consumption_window_m",windowMeters).apply();if(display.getSelectedItemPosition()==2){cell.put("gauge_sweep",angle.intValue()).put("gauge_rotation",rotation.getProgress()).put("gauge_value_visible",showGaugeValue.isChecked()).put("gauge_value_position",gaugeValuePosition.getSelectedItemPosition());}if(hasUnit){cell.put("unit_position",unitPosition.getSelectedItemPosition());if(customUnit)cell.put("unit_font",uu.intValue());else cell.remove("unit_font");}if(customText!=null)cell.put("free_text",customText.getText().toString());if(photoMode!=null)cell.put("image_mode",photoMode.getSelectedItemPosition());moveTileToLayer(index,layer.getSelectedItemPosition());dialog.dismiss();rebuild();
+                cell.put("arrangement",arrangement.getSelectedItemPosition()).put("display",display.getSelectedItemPosition()).put("gauge_sweep",angle.intValue()).put("heading_mode",heading.getSelectedItemPosition()).put("show_title",heading.getSelectedItemPosition()==1||heading.getSelectedItemPosition()==2).put("show_note",showNote.isChecked()).put("lines",ll.intValue()).put("scale_max",ss).put("caption",nextCaption).put("font",ff.intValue()).put("background",alphaColor(bg.getText().toString(),bgAlpha.getProgress())).put("text",alphaColor(fg.getText().toString(),fgAlpha.getProgress())).put("custom_colors",true).put("instrument_color",instrument.getText().toString()).put("scale_color",track.getText().toString()).put("icon_color",icon.getText().toString()).put("border_color",borderColor.getText().toString()).put("border_enabled",borderEnabled.isChecked()).put("corner_radius",radius.getProgress()).put("content_inset",inset.getProgress()).put("scale_gradient_mode",gradientChoice).put("scale_reverse",reverseScale.isChecked());if(gradientChoice>0)cell.put("scale_gradient_high",gradientEnd.getText().toString()).put("scale_gradient_mid",gradientMiddle.getText().toString()).put("scale_gradient_low",gradientStart.getText().toString()).put("scale_gradient_low_full",lowPct).put("scale_gradient_high_full",highPct);if(tileKey.equals("consumption_500m"))prefs.edit().putInt("consumption_window_m",windowMeters).apply();if(consumptionUnitSelector!=null)cell.put("consumption_display_unit",consumptionUnitSelector.getSelectedItemPosition());if(display.getSelectedItemPosition()==2){cell.put("gauge_sweep",angle.intValue()).put("gauge_rotation",rotation.getProgress()).put("gauge_value_visible",showGaugeValue.isChecked()).put("gauge_value_position",gaugeValuePosition.getSelectedItemPosition());}if(hasUnit){cell.put("unit_position",unitPosition.getSelectedItemPosition());if(customUnit)cell.put("unit_font",uu.intValue());else cell.remove("unit_font");}if(customText!=null)cell.put("free_text",customText.getText().toString());if(photoMode!=null)cell.put("image_mode",photoMode.getSelectedItemPosition());moveTileToLayer(index,layer.getSelectedItemPosition());dialog.dismiss();rebuild();
             }catch(Exception e){Toast.makeText(this,"Kachel konnte nicht geändert werden",Toast.LENGTH_SHORT).show();}});dialog.show();
         dialog.getWindow().setLayout(-1,Math.round(getResources().getDisplayMetrics().heightPixels*.9f));
         if(chooseImage!=null)chooseImage.setOnClickListener(v->{apply.performClick();if(dialog.isShowing())return;try{
@@ -381,7 +405,7 @@ public class MainActivity extends Activity {
         boolean bmsFresh=BmsMonitorService.running && packet>0 && intent.getBooleanExtra("bms_connected",false) && now-packet<=8000;
         boolean gpsFresh=BmsMonitorService.running && trip && gps>0 && now-gps<=8000;
         for(int i=0;i<tileKeys.size();i++){
-            String key=tileKeys.get(i),value="–",note="";
+            String key=tileKeys.get(i),value="–",note="";MetricTile metric=(MetricTile)tileValues.get(i);double progressOverride=Double.NaN;
             if(key.startsWith("bms_")){
                 try{JSONObject values=new JSONObject(intent.getStringExtra("bms_values")==null?"{}":intent.getStringExtra("bms_values"));JSONObject times=new JSONObject(intent.getStringExtra("bms_times")==null?"{}":intent.getStringExtra("bms_times"));
                     long at=times.optLong(key,0);value=values.optString(key,"–");boolean inactive=!bmsFresh||at==0||now-at>BmsExtras.expiry(key);
@@ -402,8 +426,8 @@ public class MainActivity extends Activity {
                 case "voltage":value=packet==0?"–":f(intent.getDoubleExtra("voltage",0),"%.2f V");break;
                 case "current":value=packet==0?"–":f(intent.getDoubleExtra("current",0),"%.2f A");break;
                 case "energy":value=f(intent.getDoubleExtra("energy_wh",0),"%.1f Wh");break;
-                case "consumption":value=f(intent.getDoubleExtra("wh_km",Double.NaN),"%.1f Wh/km");break;
-                case "consumption_500m":value=f(intent.getDoubleExtra("wh_500m",Double.NaN),"%.1f Wh/km");note="letzte "+consumptionWindow+" m";break;
+                case "consumption":{double whKm=intent.getDoubleExtra("wh_km",Double.NaN);if(metric.config.optInt("consumption_display_unit",0)==1){value=f(intent.getDoubleExtra("wh_km_percent_10km",Double.NaN),"%.1f %% / 10 km");progressOverride=ConsumptionUnit.normalizedProgress(whKm,metric.config.optDouble("scale_max",100));}else value=f(whKm,"%.1f Wh/km");break;}
+                case "consumption_500m":{double whKm=intent.getDoubleExtra("wh_500m",Double.NaN);if(metric.config.optInt("consumption_display_unit",0)==1){value=f(intent.getDoubleExtra("wh_500m_percent_10km",Double.NaN),"%.1f %% / 10 km");progressOverride=ConsumptionUnit.normalizedProgress(whKm,metric.config.optDouble("scale_max",100));}else value=f(whKm,"%.1f Wh/km");note="letzte "+consumptionWindow+" m";break;}
                 case "trip_time":value=formatDuration(intent.getLongExtra("trip_time_ms",intent.getLongExtra("moving_ms",0)+intent.getLongExtra("standing_ms",0)));note="Fahrzeit + Standzeit";break;
                 case "moving":value=formatDuration(intent.getLongExtra("moving_ms",0));break;
                 case "standing":value=formatDuration(intent.getLongExtra("standing_ms",0));break;
@@ -424,7 +448,7 @@ public class MainActivity extends Activity {
             }else if(key.equals("speed")||key.equals("altitude"))inactive|=!gpsFresh;
             else if(key.equals("outside")){long at=intent.getLongExtra("weather_at",0);inactive|=!prefs.getBoolean("weather_enabled",true)||at==0||now-at>1800000;}
             else if(!Arrays.asList("total","daily","tour").contains(key))inactive|=!BmsMonitorService.running||!trip;
-            ((MetricTile)tileValues.get(i)).reading(value,note,inactive);tileNotes.get(i).setText(note);
+            metric.reading(value,note,inactive,progressOverride);tileNotes.get(i).setText(note);
         }
     }
     private void renderDischarge(Intent intent){

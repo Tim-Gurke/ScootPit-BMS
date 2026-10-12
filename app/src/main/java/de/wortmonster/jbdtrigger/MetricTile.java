@@ -14,9 +14,14 @@ final class MetricTile extends TextView {
     private String note="";
     private final int foreground,accent,scale,background;
     private boolean inactive=true;
+    private double progressOverride=Double.NaN;
     MetricTile(Context context,JSONObject config,int foreground,int accent,int scale,int background){super(context);this.config=config;this.key=config.optString("key");this.foreground=foreground;this.accent=accent;this.scale=scale;this.background=background;setText("–");setPadding(0,0,0,0);}
     void reading(String value,String note,boolean inactive){
+        reading(value,note,inactive,Double.NaN);
+    }
+    void reading(String value,String note,boolean inactive,double progressOverride){
         setText(value);this.note=note;this.inactive=inactive;
+        this.progressOverride=progressOverride;
         setContentDescription(CockpitSymbols.caption(config)+": "+value+(note.isEmpty()?"":" · "+note)+(inactive?" · nicht aktuell":""));
         if(getParent() instanceof android.view.View){android.graphics.drawable.Drawable bg=((android.view.View)getParent()).getBackground();if(bg instanceof android.graphics.drawable.GradientDrawable){
             float luminance=Color.red(background)*.2126f+Color.green(background)*.7152f+Color.blue(background)*.0722f;int shade=luminance>150?Math.round(luminance*.96f):Math.min(48,Math.round(luminance*.55f));
@@ -43,7 +48,7 @@ final class MetricTile extends TextView {
         if((!config.has("unit_font")&&position==0)||parts.length!=2||!parts[0].matches("[-+]?\\d[\\d.,]*")){
             text(canvas,prefix+value,centerX,centerY+size*.34f,maxWidth,size,true,color);return;
         }
-        float unitSize=config.has("unit_font")?Math.min(maxUnitSize,sp(Math.max(8,Math.min(80,config.optInt("unit_font",28))))):size;
+        float unitSize=config.has("unit_font")?Math.min(maxUnitSize,sp(Math.max(8,Math.min(80,config.optInt("unit_font",20))))):size;
         paint.setStyle(Paint.Style.FILL);paint.setColor(color);paint.setTypeface(Typeface.DEFAULT_BOLD);
         String number=prefix+parts[0];paint.setTextSize(size);float numberWidth=paint.measureText(number);
         paint.setTextSize(unitSize);float unitWidth=paint.measureText(parts[1]),gap=dp(3);
@@ -74,7 +79,7 @@ final class MetricTile extends TextView {
             gauge(c,value.replace(" km/h",""),cx,width,height,foreground,accent,key.equals("speed")?"km/h":"");return;
         }
         boolean single=layout==1||(layout==0&&height<dp(95));
-        float valueSize=sp(Math.max(12,Math.min(80,config.optInt("font",28))));
+        float valueSize=sp(Math.max(12,Math.min(80,config.optInt("font",20))));
         boolean showIcon=CockpitSymbols.icon(config);int symbol=parseColor(config.optString("icon_color"),CockpitSymbols.defaultColor(key,Color.red(this.foreground)<180));
         if(single){
             float iconSpace=showIcon?dp(30):0;if(showIcon)CockpitSymbols.draw(c,key,dp(8),height/2-dp(12),dp(24),symbol);
@@ -99,8 +104,9 @@ final class MetricTile extends TextView {
             float sweep=Math.max(90,Math.min(270,config.optInt("gauge_sweep",180)));
             float radius=Math.min(width/2-dp(10),(bottom-top)/2-dp(6));paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(6));paint.setStrokeCap(Paint.Cap.ROUND);paint.setColor(inactive?Color.argb(Color.alpha(scale),41,41,41):scale);
             RectF arc=new RectF(cx-radius,middle-radius,cx+radius,middle+radius);float start=270-sweep/2;double p=progress(value);boolean reversed=config.optBoolean("scale_reverse",false);double position=ScaleDirection.position(p,reversed);c.save();c.rotate(config.optInt("gauge_rotation",0),cx,middle);
-            if(hasColorGradient()&&!inactive){drawGradientArc(c,arc,start,sweep,dp(6),0,1,true,reversed);drawGradientArc(c,arc,start,sweep,dp(6),reversed?1-p:0,reversed?1:p,false,reversed);drawMicroArrow(c,cx,middle,radius,start+(float)(sweep*position),gradientColor(p,accent));}
-            else{c.drawArc(arc,start,sweep,false,paint);paint.setColor(scaleColor(p,accent));float activeStart=reversed?start+(float)(sweep*position):start;c.drawArc(arc,activeStart,(float)(sweep*p),false,paint);}c.restore();
+            if(hasColorGradient()&&!inactive){drawGradientArc(c,arc,start,sweep,dp(6),0,1,true,reversed);drawGradientArc(c,arc,start,sweep,dp(6),reversed?1-p:0,reversed?1:p,false,reversed);}
+            else{c.drawArc(arc,start,sweep,false,paint);paint.setColor(scaleColor(p,accent));float activeStart=reversed?start+(float)(sweep*position):start;c.drawArc(arc,activeStart,(float)(sweep*p),false,paint);}
+            if(!inactive)drawMicroArrow(c,cx,middle,radius,start+(float)(sweep*position),scaleColor(p,accent));c.restore();
             valueWidth=radius*1.55f;valueSize=Math.min(valueSize,radius*.60f);
         }else if(style!=0){bar(c,dp(8),bottom-dp(5),getWidth()-dp(16),progress(value));bottom-=dp(12);middle=(top+bottom)/2;}
         float available=Math.max(dp(12),bottom-top);valueSize=Math.min(valueSize,available*.65f);
@@ -165,8 +171,7 @@ final class MetricTile extends TextView {
                 scaleLabels.add(label);scaleLabelPoints.add(new float[]{cx+(float)Math.cos(labelAngle)*labelRadius,cy+(float)Math.sin(labelAngle)*labelRadius+sp(4)});
             }
         }
-        if(gradient)drawMicroArrow(c,cx,cy,radius,(float)(start+sweep*position),gradientColor(progress,accent));
-        else if(progress>0){double angle=Math.toRadians(start+sweep*position);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(3));paint.setColor(scaleColor(progress,accent));c.drawLine(cx+(float)Math.cos(angle)*(radius+dp(2)),cy+(float)Math.sin(angle)*(radius+dp(2)),cx+(float)Math.cos(angle)*(radius-dp(17)),cy+(float)Math.sin(angle)*(radius-dp(17)),paint);}
+        if(!inactive)drawMicroArrow(c,cx,cy,radius,(float)(start+sweep*position),scaleColor(progress,accent));
         c.restore();
         for(int i=0;i<scaleLabels.size();i++){float[] point=scaleLabelPoints.get(i);text(c,scaleLabels.get(i),point[0],point[1],dp(36),sp(11),false,foreground);}
         float numberSize=Math.min(sp(Math.max(12,Math.min(80,config.optInt("font",72)))),radius*.76f);
@@ -175,6 +180,7 @@ final class MetricTile extends TextView {
     }
     private int parseColor(String value,int fallback){try{return Color.parseColor(value);}catch(Exception e){return fallback;}}
     private double progress(String value){
+        if(Double.isFinite(progressOverride))return Math.max(0,Math.min(1,progressOverride));
         try{double n=Double.parseDouble(value.replace(',','.').split(" ")[0]);double defaultMax=key.equals("speed")?CockpitLayout.DEFAULT_SPEED_SCALE_MAX:key.equals("soc")?100:key.contains("power")?1400:key.equals("voltage")?60:key.equals("current")?30:key.startsWith("temp")?80:100;
             double max=config.optDouble("scale_max",defaultMax);return Double.isFinite(n)&&Double.isFinite(max)?Math.max(0,Math.min(1,n/Math.max(.1,max))):0;}catch(Exception e){return 0;}
     }
@@ -200,12 +206,14 @@ final class MetricTile extends TextView {
         }
     }
     private void drawMicroArrow(Canvas c,float cx,float cy,float radius,float angleDegrees,int segmentColor){
-        double angle=Math.toRadians(angleDegrees);float orbit=radius+dp(5),x=cx+(float)Math.cos(angle)*orbit,y=cy+(float)Math.sin(angle)*orbit,size=dp(7);
-        int fill=luminance(segmentColor)>145?Color.BLACK:Color.WHITE,outline=fill==Color.BLACK?Color.WHITE:Color.BLACK;
+        double angle=Math.toRadians(angleDegrees);float orbit=radius-dp(2),x=cx+(float)Math.cos(angle)*orbit,y=cy+(float)Math.sin(angle)*orbit,size=dp(7);
+        int fill=relativeLuminance(segmentColor)>.179?Color.BLACK:Color.WHITE,outline=fill==Color.BLACK?Color.WHITE:Color.BLACK;
         Path arrow=new Path();arrow.moveTo(0,size*.55f);arrow.lineTo(-size*.52f,-size*.42f);arrow.lineTo(size*.52f,-size*.42f);arrow.close();
         c.save();c.translate(x,y);c.rotate(angleDegrees+90);paint.setStyle(Paint.Style.FILL);paint.setColor(fill);c.drawPath(arrow,paint);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(1));paint.setColor(outline);c.drawPath(arrow,paint);c.restore();
     }
     private float luminance(int color){return Color.red(color)*.2126f+Color.green(color)*.7152f+Color.blue(color)*.0722f;}
+    private double relativeLuminance(int color){return .2126*linear(Color.red(color)/255d)+.7152*linear(Color.green(color)/255d)+.0722*linear(Color.blue(color)/255d);}
+    private double linear(double value){return value<=.04045?value/12.92:Math.pow((value+.055)/1.055,2.4);}
     private void bar(Canvas c,float x,float y,float w,double progress){
         float thickness=dp(4),center=y+thickness/2;
         if(hasColorGradient()&&!inactive){

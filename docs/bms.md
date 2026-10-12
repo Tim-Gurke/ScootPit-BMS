@@ -12,6 +12,7 @@ ScootPit BMS wurde für den **Joyor T6e Pro mit JBD/Jiabaida-Bluetooth-BMS (SP14
 | IO HAWK Legacy 2.0 | Das [Herstellerhandbuch, S. 19](https://www.iohawk.de/wp-content/uploads/2023/04/Handbuch_Legacy2.0.pdf) nennt Xiaoxiang BMS per Bluetooth und eine Hardware-PIN für die Sperrfunktion. Die genaue Platinenbezeichnung ist dort nicht belegt. | Kandidat für einen Kompatibilitätstest, noch nicht mit ScootPit BMS geprüft; PIN-/Sperrverfahren können abweichen. |
 | RoadRunner RX7 | Das [vom Hersteller verlinkte Handbuch, S. 11–12](https://cdn.shopify.com/s/files/1/0276/7126/5364/files/RoadRunner_Scooters_RX7_owners_manual_digital_8.3.26.pdf?v=1785753584) beschreibt XiaoXiang Electric Smart BMS samt Registrierung/QR-Zuordnung. Das belegt weder SP14S004 noch dessen identischen Zugang. | Kandidat, noch nicht geprüft; Zugang und BLE-Protokoll vor Nutzung verifizieren. |
 | Andere Roller mit nachgerüstetem JBD/Xiaoxiang-BMS | Der [BMS-Hersteller](https://jbdbms.com/products/sp14s004-2093589136) führt SP14S004 für 7–14S-Akkus mit integriertem Bluetooth und E-Scooter-Anwendung auf. | Technisch möglicher Einsatz, keine Freigabe einer ganzen Rollermodellreihe. |
+| Weitere JBD-Varianten, z. B. SP04S020, SP22S003B und UP16015 | Die [Community-Komponente für ESPHome](https://github.com/syssi/esphome-jbd-bms) führt diese und weitere JBD-Modelle als erprobt auf. Sie belegt weder den Einbau in einen bestimmten Roller noch, dass dessen BMS denselben BLE-Zugang verwendet. | Protokollkandidaten; vor Aufnahme müssen BLE-Dienst, gültige Antwort und Messwerte am konkreten Gerät geprüft werden. |
 
 Bei anderen Joyor-Modellen, Xiaomi/Ninebot, Vsett, Kaabo usw. wird **keine Serienkompatibilität behauptet**. Eine dokumentierte Xiaoxiang-App ist ein Recherchehinweis, kein Nachweis identischer Hardware oder erfolgreicher ScootPit BMS-Verbindung.
 
@@ -26,7 +27,15 @@ Bei anderen Joyor-Modellen, Xiaomi/Ninebot, Vsett, Kaabo usw. wird **keine Serie
 
 Für einen neuen bestätigten Eintrag bitte Roller-/Akkuversion, BMS-Typ und Firmware, vorhandene BLE-UUIDs sowie Ergebnisse für Lesen, Fahrtstart/-ende und gegebenenfalls Lastausgang dokumentieren; keine MAC-Adresse, PIN oder Kontodaten veröffentlichen. [ESPHome JBD-BMS](https://github.com/syssi/esphome-jbd-bms) dokumentiert zahlreiche JBD-Varianten und Protokollunterschiede, bestätigt aber nicht deren Funktion in ScootPit BMS.
 
-Recherchestand: 06.10.2026.
+Recherchestand: 12.10.2026.
+
+## Abgleich mit Funktionsumfang anderer Apps
+
+Die offiziellen Angaben zu **M365 Plus** nennen Akkugesundheit, Temperatur, BMS-Version, Ladezyklen, Zellspannungen, Live-Leistungsaufnahme sowie metrische und imperiale Einheiten. **ScooterHacking Utility** nennt Live-Daten und Fahrtaufzeichnung für das Ninebot-Umfeld. Diese Apps sind hilfreiche Vergleichspunkte, aber ihre herstellerspezifischen Steuer- und Firmwarefunktionen sind keine allgemeine BMS-Schnittstelle.
+
+ScootPit bietet bereits Fahrtenbuch und Energieverlauf, Live-Leistung, Temperaturen, Zyklen, Firmware, Zellspannungen samt Minimum/Maximum/Differenz und Schutzstatus über die unterstützten JBD-Abfragen. Derzeit offen bleiben eine belastbare Akkugesundheits-/SoH-Anzeige, Zellspannungsverläufe über längere Zeit und ein Einheitenwechsel zu mph/mi. Der JBD-Datensatz allein liefert keine verlässliche SoH-Basis; ein solcher Wert sollte nicht aus einer einzelnen Kapazitätsmessung abgeleitet werden. Schutzstatus ist als Cockpitkachel verfügbar, automatische Alarmbenachrichtigungen gibt es nicht.
+
+Quellen: [M365 Plus – Funktionsbeschreibung im App Store](https://apps.apple.com/de/app/m365-plus/id1441639626), [ScooterHacking Utility](https://scooterhacking.org/).
 
 ## BMS-Auswahl und optionale Daten
 

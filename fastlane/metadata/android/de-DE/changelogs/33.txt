@@ -1,0 +1,4 @@
+Neu in 1.6.1:
+• Verbrauch wahlweise in Wh/km oder als geschätzter Akkuverbrauch in Prozent pro 10 km.
+• Der Messwertpfeil sitzt innerhalb der Rundskala und passt seinen Schwarz-Weiß-Kontrast an.
+• Standardschriftgröße neuer Messkacheln: 20 sp; Cockpiteinstellungen aus der bereitgestellten Datei übernommen.

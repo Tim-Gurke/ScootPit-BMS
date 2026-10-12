@@ -137,6 +137,28 @@ final class CockpitBoard extends FrameLayout {
         }
         return result;
     }
+    static boolean updateImportedDefaults(JSONArray existing,String boardKey,JSONArray imported)throws Exception{
+        if(!"cockpit_board".equals(boardKey))return false;
+        boolean changed=false;
+        JSONObject currentSoc=null,importedSoc=null;
+        for(int i=0;i<existing.length();i++)if(existing.getJSONObject(i).optString("key").equals("soc")){currentSoc=existing.getJSONObject(i);break;}
+        for(int i=0;i<imported.length();i++)if(imported.getJSONObject(i).optString("key").equals("soc")){importedSoc=imported.getJSONObject(i);break;}
+        if(currentSoc!=null&&importedSoc!=null&&currentSoc.optInt("scale_gradient_low_full",-1)==20&&currentSoc.optInt("scale_gradient_high_full",-1)==80){
+            currentSoc.put("scale_gradient_low_full",importedSoc.optInt("scale_gradient_low_full",20)).put("scale_gradient_high_full",importedSoc.optInt("scale_gradient_high_full",80));changed=true;
+        }
+        // The supplied portrait has a second consumption tile at index 21; migrate it only while
+        // it still has the previous stock size, leaving individually resized tiles untouched.
+        if(existing.length()>21&&imported.length()>21){
+            JSONObject current=existing.getJSONObject(21),target=imported.getJSONObject(21);
+            if(current.optString("key").equals("consumption_500m")&&target.optString("key").equals("consumption_500m")&&current.optInt("font",-1)==28&&target.optInt("font",-1)==20){
+                current.put("font",20);
+                if(target.has("scale_gradient_mode"))current.put("scale_gradient_mode",target.get("scale_gradient_mode"));
+                if(target.has("scale_reverse"))current.put("scale_reverse",target.get("scale_reverse"));
+                changed=true;
+            }
+        }
+        return changed;
+    }
     static JSONArray arrange121(JSONArray previous)throws Exception{
         JSONArray result=defaults();boolean[] used=new boolean[previous.length()];
         for(int i=0;i<result.length();i++){

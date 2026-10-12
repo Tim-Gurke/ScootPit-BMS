@@ -957,7 +957,9 @@ public class BmsMonitorService extends Service implements LocationListener {
                 .putExtra("average_speed_kmh", movingMs > 0 ? distanceMeters / movingMs * 3600 : 0)
                 .putExtra("total_km", number(prefs.getString("total_km", "0"), 0))
                 .putExtra("wh_km", consumption())
+                .putExtra("wh_km_percent_10km", percentPer10Km(consumption()))
                 .putExtra("wh_500m", recentConsumption.whPerKm(consumptionWindowMeters()))
+                .putExtra("wh_500m_percent_10km", percentPer10Km(recentConsumption.whPerKm(consumptionWindowMeters())))
                 .putExtra("consumption_window_m",consumptionWindowMeters())
                 .putExtra("trip_time_ms", movingMs + standingMs + (tripPausedAt>0?Math.max(0,System.currentTimeMillis()-tripPausedAt):0))
                 .putExtra("range_km", rangeKm())
@@ -985,6 +987,11 @@ public class BmsMonitorService extends Service implements LocationListener {
         double reference = averageConsumption > 0 ? averageConsumption : number(prefs.getString("reference_wh_km", "20"), 20);
         double adjusted=TemperatureHistory.estimate(temperatureHistory,prefs.getBoolean("weather_enabled",true)&&weatherAt>0&&System.currentTimeMillis()-weatherAt<=1800000?outsideTemperature:Double.NaN,reference);
         return recentConsumption.estimate(adjusted);
+    }
+    private double percentPer10Km(double whPerKm){
+        double capacityAh=fullAh>0?fullAh:number(prefs.getString("capacity_ah","26"),26);
+        double nominalVoltage=number(prefs.getString("nominal_voltage","48"),48);
+        return ConsumptionUnit.percentPer10Km(whPerKm,capacityAh,nominalVoltage);
     }
     private int consumptionWindowMeters(){return Math.max(100,Math.min(1000,prefs.getInt("consumption_window_m",500)));}
     private double rangeKm() {

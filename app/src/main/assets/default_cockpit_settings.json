@@ -163,8 +163,8 @@
       "scale_gradient_high": "#34C759",
       "scale_gradient_mid": "#FF9800",
       "scale_gradient_low": "#FF3B30",
-      "scale_gradient_low_full": 20,
-      "scale_gradient_high_full": 80,
+      "scale_gradient_low_full": 10,
+      "scale_gradient_high_full": 50,
       "scale_reverse": true
     },
     {
@@ -674,7 +674,7 @@
     },
     {
       "key": "consumption_500m",
-      "font": 28,
+      "font": 20,
       "weight": 1,
       "background": "#00000000",
       "text": "#FFFFFFFF",
@@ -700,7 +700,9 @@
       "border_enabled": false,
       "corner_radius": 12,
       "content_inset": 0,
-      "unit_position": 0
+      "unit_position": 0,
+      "scale_gradient_mode": 0,
+      "scale_reverse": false
     }
   ],
   "cockpit_board_landscape": [
