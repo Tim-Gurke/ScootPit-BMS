@@ -280,7 +280,7 @@ public class CockpitSmokeTest extends Instrumentation {
             catch(Exception e){throw new RuntimeException(e);}
             finally{try{gauge.config.put("display",originalDisplay);}catch(Exception ignored){}}
             int fill=0,track=0;for(int y=0;y<360;y++)for(int x=0;x<320;x++){int pixel=rendered.getPixel(x,y);if(pixel==android.graphics.Color.parseColor("#00FF00"))fill++;if(pixel==android.graphics.Color.parseColor("#AB47BC"))track++;}rendered.recycle();
-            if(fill<10||track<10||gauge.config.optInt("scale_gradient_mode")!=2||!gauge.config.optBoolean("scale_reverse"))throw new AssertionError("Three-colour scale gradient not drawn or saved");
+            if(fill<10||track<10||gauge.config.optInt("scale_gradient_mode")!=2||!gauge.config.optBoolean("scale_reverse"))throw new AssertionError("Three-colour scale gradient not drawn or saved: fill="+fill+", track="+track+", mode="+gauge.config.optInt("scale_gradient_mode")+", reverse="+gauge.config.optBoolean("scale_reverse"));
             invoke(activity,"addTile",new Class[]{String.class},new Object[]{"consumption_500m"});
             CockpitBoard board=(CockpitBoard)findBoard(activity.getWindow().getDecorView());int index=board.tiles.length()-1;
             invoke(activity,"editBoardTile",new Class[]{int.class},new Object[]{index});dialog=(android.app.AlertDialog)member(activity,"tileDialog");
