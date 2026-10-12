@@ -20,11 +20,17 @@ Mehrere gespeicherte Scooter? Die App prüft erreichbare BMS nacheinander und ü
 
 Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch einer frei wählbaren Strecke und die aktuelle elektrische Leistung stehen im Mittelpunkt. Akku, Restreichweite, Kilometer und Temperaturen ergänzen die Übersicht; GPS-Geschwindigkeit bleibt als kleinere Anzeige verfügbar.
 
+### Aktuelle Hauptansicht · Bereitschaft aktiv
+
+![ScootPit BMS im Joyor T6e Pro mit aktiver Bereitschaft vor der Fahrt](docs/assets/screenshots/cockpit-bereitschaft-aktiv.jpg)
+
+<em>Bereitschaft ist aktiv; die Fahrtaufzeichnung hat noch nicht begonnen. Eine Ansicht während der Fahrt folgt.</em>
+
 ### Hauptansicht · Fahrt läuft
 
 ![ScootPit BMS während einer Fahrt mit Verbrauch, Leistung, Akkustand und Fahrtdaten](docs/assets/screenshots/cockpit-s20fe-android13-fahrt.jpg)
 
-<em>Aktuelle Hauptansicht während der Fahrt · Samsung Galaxy S20 FE 5G · Android 13.</em>
+<em>Vorhandene Fahrtansicht · Samsung Galaxy S20 FE 5G · Android 13.</em>
 
 ### Weitere Ansichten
 

@@ -143,10 +143,10 @@ jobs:
           path = Path(sys.argv[1])
           repo = sys.argv[2]
           text = path.read_text(encoding="utf-8")
-          image_url = f"https://raw.githubusercontent.com/{repo}/main/docs/assets/screenshots/cockpit-s20fe-android13-fahrt.jpg"
+          image_url = f"https://raw.githubusercontent.com/{repo}/main/docs/assets/screenshots/cockpit-bereitschaft-aktiv.jpg"
           if image_url not in text:
-              image = f"![ScootPit BMS Hauptansicht während der Fahrt – Samsung Galaxy S20 FE 5G, Android 13]({image_url})"
-              caption = "*Hauptansicht während der Fahrt · Samsung Galaxy S20 FE 5G · Android 13.*"
+              image = f"![ScootPit BMS Cockpit mit aktiver Bereitschaft vor Fahrtbeginn]({image_url})"
+              caption = "*Bereitschaft ist aktiv; die Fahrtaufzeichnung hat noch nicht begonnen. Eine Ansicht während der Fahrt folgt.*"
               separator_at = text.find("\n")
               if separator_at >= 0 and text.startswith("# "):
                   title, rest = text[:separator_at], text[separator_at + 1:]

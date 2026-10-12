@@ -12,9 +12,9 @@ Die Entwicklungsbasis ist der **Joyor T6E Pro mit JBD SP14S004**. Entscheidend i
 - Eigene Hoch- und Querformatlayouts, Skalen, Farben und Rundinstrumente
 - Lokale Speicherung von Profilen und Fahrten ohne Benutzerkonto
 
-![ScootPit BMS im Joyor T6E Pro während einer Fahrt](assets/screenshots/cockpit-s20fe-android13-fahrt.jpg)
+![ScootPit BMS im Joyor T6e Pro mit aktiver Bereitschaft vor der Fahrt](assets/screenshots/cockpit-bereitschaft-aktiv.jpg)
 
-*ScootPit-Cockpit während einer Fahrt · Samsung Galaxy S20 FE 5G · Android 13.*
+*Bereitschaft ist aktiv; die Fahrtaufzeichnung hat noch nicht begonnen. Eine Ansicht während der Fahrt folgt.*
 
 ## Joyor T6E Pro verbinden
 
