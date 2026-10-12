@@ -165,7 +165,7 @@ final class MetricTile extends TextView {
                 scaleLabels.add(label);scaleLabelPoints.add(new float[]{cx+(float)Math.cos(labelAngle)*labelRadius,cy+(float)Math.sin(labelAngle)*labelRadius+sp(4)});
             }
         }
-        if(gradient)drawMicroArrow(c,cx,cy,radius,start+sweep*position,gradientColor(progress,accent));
+        if(gradient)drawMicroArrow(c,cx,cy,radius,(float)(start+sweep*position),gradientColor(progress,accent));
         else if(progress>0){double angle=Math.toRadians(start+sweep*position);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(3));paint.setColor(scaleColor(progress,accent));c.drawLine(cx+(float)Math.cos(angle)*(radius+dp(2)),cy+(float)Math.sin(angle)*(radius+dp(2)),cx+(float)Math.cos(angle)*(radius-dp(17)),cy+(float)Math.sin(angle)*(radius-dp(17)),paint);}
         c.restore();
         for(int i=0;i<scaleLabels.size();i++){float[] point=scaleLabelPoints.get(i);text(c,scaleLabels.get(i),point[0],point[1],dp(36),sp(11),false,foreground);}
