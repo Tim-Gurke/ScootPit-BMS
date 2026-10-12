@@ -274,12 +274,16 @@ public class CockpitSmokeTest extends Instrumentation {
             clickText(dialog.getWindow().getDecorView(),"Übernehmen");
             MetricTile gauge=findMetric(activity.getWindow().getDecorView(),"speed");gauge.reading("20","km/h",false);gauge.layout(0,0,320,360);
             Bitmap rendered=Bitmap.createBitmap(320,360,Bitmap.Config.ARGB_8888);
+            // The tile background is transparent. Composite the sample over a known backdrop so
+            // the pixel check observes what a rider actually sees, not an uncomposited alpha color.
+            int testBackdrop=android.graphics.Color.WHITE;
+            rendered.eraseColor(testBackdrop);
             // The compact speed tile defaults to a number; use a gauge only during this colour check.
             int originalDisplay=gauge.config.optInt("display",0);
             try{gauge.config.put("display",2);gauge.draw(new android.graphics.Canvas(rendered));}
             catch(Exception e){throw new RuntimeException(e);}
             finally{try{gauge.config.put("display",originalDisplay);}catch(Exception ignored){}}
-            int fill=0,track=0;int paleTrack=ScaleColorRange.blend(android.graphics.Color.parseColor("#00FF00"),(Integer)member(gauge,"background"),.78);for(int y=0;y<360;y++)for(int x=0;x<320;x++){int pixel=rendered.getPixel(x,y);if(pixel==android.graphics.Color.parseColor("#00FF00"))fill++;if(pixel==paleTrack)track++;}rendered.recycle();
+            int fill=0,track=0;int paleTrack=ScaleColorRange.blend(android.graphics.Color.parseColor("#00FF00"),(Integer)member(gauge,"background"),.78);int expectedTrack=compositeOver(paleTrack,testBackdrop);for(int y=0;y<360;y++)for(int x=0;x<320;x++){int pixel=rendered.getPixel(x,y);if(pixel==android.graphics.Color.parseColor("#00FF00"))fill++;if(pixel==expectedTrack)track++;}rendered.recycle();
             if(fill<10||track<10||gauge.config.optInt("scale_gradient_mode")!=2||!gauge.config.optBoolean("scale_reverse"))throw new AssertionError("Three-colour scale gradient not drawn or saved: fill="+fill+", track="+track+", mode="+gauge.config.optInt("scale_gradient_mode")+", reverse="+gauge.config.optBoolean("scale_reverse"));
             invoke(activity,"addTile",new Class[]{String.class},new Object[]{"consumption_500m"});
             CockpitBoard board=(CockpitBoard)findBoard(activity.getWindow().getDecorView());int index=board.tiles.length()-1;
@@ -526,6 +530,13 @@ public class CockpitSmokeTest extends Instrumentation {
                 found.csv.delete();found.gpx.delete();new File(found.csv.getParent(),found.csv.getName().replace(".csv",".json")).delete();
             }catch(Exception e){throw new RuntimeException(e);}finally{prefs.edit().putBoolean("weather_enabled",weather).putString("total_km",total).apply();}
         });
+    }
+    private static int compositeOver(int foreground,int background){
+        int alpha=android.graphics.Color.alpha(foreground),inverse=255-alpha;
+        return android.graphics.Color.rgb(
+            (android.graphics.Color.red(foreground)*alpha+android.graphics.Color.red(background)*inverse+127)/255,
+            (android.graphics.Color.green(foreground)*alpha+android.graphics.Color.green(background)*inverse+127)/255,
+            (android.graphics.Color.blue(foreground)*alpha+android.graphics.Color.blue(background)*inverse+127)/255);
     }
     private static void setMember(Object target,String name,Object value)throws Exception{java.lang.reflect.Field f=target.getClass().getDeclaredField(name);f.setAccessible(true);f.set(target,value);}
     private void officialVersionCheck(Activity activity,SharedPreferences prefs)throws Throwable {
