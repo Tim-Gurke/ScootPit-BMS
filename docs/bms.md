@@ -14,7 +14,7 @@ ScootPit BMS wurde für den **Joyor T6e Pro mit JBD/Jiabaida-Bluetooth-BMS (SP14
 | Andere Roller mit nachgerüstetem JBD/Xiaoxiang-BMS | Der [BMS-Hersteller](https://jbdbms.com/products/sp14s004-2093589136) führt SP14S004 für 7–14S-Akkus mit integriertem Bluetooth und E-Scooter-Anwendung auf. | Technisch möglicher Einsatz, keine Freigabe einer ganzen Rollermodellreihe. |
 | Weitere JBD-Varianten, z. B. SP04S020, SP22S003B und UP16015 | Die [Community-Komponente für ESPHome](https://github.com/syssi/esphome-jbd-bms) führt diese und weitere JBD-Modelle als erprobt auf. Sie belegt weder den Einbau in einen bestimmten Roller noch, dass dessen BMS denselben BLE-Zugang verwendet. | Protokollkandidaten; vor Aufnahme müssen BLE-Dienst, gültige Antwort und Messwerte am konkreten Gerät geprüft werden. |
 
-Bei anderen Joyor-Modellen, Xiaomi/Ninebot, Vsett, Kaabo usw. wird **keine Serienkompatibilität behauptet**. Eine dokumentierte Xiaoxiang-App ist ein Recherchehinweis, kein Nachweis identischer Hardware oder erfolgreicher ScootPit BMS-Verbindung.
+Bei anderen Joyor-Modellen, Xiaomi/Ninebot, Vsett, Kaabo usw. wird **keine Serienkompatibilität behauptet**.
 
 ### Voraussetzungen für weitere Geräte
 
@@ -43,7 +43,7 @@ Protokollreferenz: [ESPHome JBD-BMS Decoder](https://github.com/syssi/esphome-jb
 
 ## BMS-Verbindungsprüfung
 
-Nach dem Aktivieren des Antwortkanals wartet die Auswahl 800 ms und wiederholt die reine Basisdaten-Leseabfrage bei fehlender Antwort bis zu achtmal im Abstand von 2 Sekunden. Neue Geräte werden weiterhin erst mit gültigen Basisdaten gespeichert. Bluetooth-Schreibfehler und Zeitüberschreitungen beim Verbindungsaufbau, bei der Dienstsuche oder der Datenabfrage werden getrennt angezeigt. Während der Prüfung andere BMS-Apps trennen und das Handy nahe an den Roller halten. Ein Emulator kann den tatsächlichen BLE-Antwortablauf des Rollers nicht bestätigen.
+Nach dem Aktivieren des Antwortkanals wartet die Auswahl 800 ms und wiederholt die reine Basisdaten-Leseabfrage bei fehlender Antwort bis zu achtmal im Abstand von 2 Sekunden. Neue Geräte werden weiterhin erst mit gültigen Basisdaten gespeichert. Bluetooth-Schreibfehler und Zeitüberschreitungen beim Verbindungsaufbau, bei der Dienstsuche oder der Datenabfrage werden getrennt angezeigt. Vor der Prüfung andere Bluetooth-Verbindungen zum BMS trennen und das Handy nahe an den Roller halten. Ein Emulator kann den tatsächlichen BLE-Antwortablauf des Rollers nicht bestätigen.
 
 ## BMS-Lastausgang / Wegfahrsperre
 
