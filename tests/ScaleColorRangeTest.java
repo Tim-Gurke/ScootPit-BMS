@@ -10,7 +10,7 @@ public class ScaleColorRangeTest {
         eq(ScaleColorRange.color(.5,RED,ORANGE,GREEN,20,80,true),ORANGE);
         eq(ScaleColorRange.color(.5,RED,ORANGE,GREEN,20,80,false),0xff808000);
         eq(ScaleColorRange.color(.5,RED,ORANGE,GREEN,60,40,false),0xff808000);
-        eq(ScaleColorRange.blend(RED,0xffffffff,.78),0xfffac7c7);
+        eq(ScaleColorRange.blend(RED,0xffffffff,.78),0xffffc7c7);
         eq(ScaleColorRange.blend(GREEN,0xff000000,.78),0xff003800);
         System.out.println("Scale color zones and gradients: OK");
     }
