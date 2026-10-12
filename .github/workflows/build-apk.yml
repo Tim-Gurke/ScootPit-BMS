@@ -136,6 +136,24 @@ jobs:
             echo "No $NOTES found; keeping the successful build as an artifact without publishing a release."
             exit 0
           fi
+          python3 - "$NOTES" "$GITHUB_REPOSITORY" <<'PYTHON'
+          import sys
+          from pathlib import Path
+          path = Path(sys.argv[1])
+          repo = sys.argv[2]
+          text = path.read_text(encoding="utf-8")
+          image_url = f"https://raw.githubusercontent.com/{repo}/main/docs/assets/screenshots/cockpit-s20fe-android13-fahrt.jpg"
+          if image_url not in text:
+              image = f"![ScootPit BMS Hauptansicht während der Fahrt – Samsung Galaxy S20 FE 5G, Android 13]({image_url})"
+              caption = "*Hauptansicht während der Fahrt · Samsung Galaxy S20 FE 5G · Android 13.*"
+              separator_at = text.find("\n")
+              if separator_at >= 0 and text.startswith("# "):
+                  title, rest = text[:separator_at], text[separator_at + 1:]
+                  text = f"{title}\n\n{image}\n\n{caption}\n\n{rest.lstrip()}"
+              else:
+                  text = f"{image}\n\n{caption}\n\n{text}"
+              path.write_text(text.rstrip() + "\n", encoding="utf-8")
+          PYTHON
           cp "$NOTES" "dist/$NOTES"
           cp dist/ScootPit-BMS.apk "dist/$APK_NAME"
           (
@@ -155,7 +173,10 @@ jobs:
             if printf '%s\n' "$ASSET_NAMES" | grep -Fxq "ScootPit-BMS.apk"; then
               gh release delete-asset "$TAG" "ScootPit-BMS.apk" --repo "$GITHUB_REPOSITORY" --yes
             fi
-            echo "Updated the existing $TAG release assets."
+            gh release edit "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --notes-file "$NOTES"
+            echo "Updated the existing $TAG release assets and notes."
             exit 0
           fi
           gh release create "$TAG" \
