@@ -155,6 +155,19 @@ jobs:
             sha256sum "$APK_NAME" > "SHA256SUMS-$VERSION.txt"
             zip -q "ScootPit-BMS-v$VERSION-Paket.zip" "$APK_NAME" signing-mode.txt "$NOTES" "SHA256SUMS-$VERSION.txt"
           )
+          move_current_version_tag() {
+            local ref_url current_tag_sha
+            ref_url="repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG"
+            if current_tag_sha="$(gh api "$ref_url" --jq '.object.sha' 2>/dev/null)"; then
+              if [ "$current_tag_sha" != "$GITHUB_SHA" ]; then
+                gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" \
+                  --field sha="$GITHUB_SHA" \
+                  --field force=true >/dev/null
+                echo "Moved $TAG to the current release commit."
+              fi
+            fi
+          }
+          move_current_version_tag
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             ASSET_NAMES=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')
             gh release upload "$TAG" \
