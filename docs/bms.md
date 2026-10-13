@@ -25,7 +25,7 @@ Bei anderen Joyor-Modellen, Xiaomi/Ninebot, Vsett, Kaabo usw. wird **keine Serie
 - Sensoranzahl, Zuordnung und Verbindungsverhalten können abweichen. Die ersten zwei Temperatursensoren sind Standardkacheln; weitere gelesene Sensoren können als optionale Kacheln ergänzt werden.
 - Bereitschaft benötigt weiterhin ein auslesbares BMS: Es gibt derzeit keinen eigenständigen Startmodus für Roller ohne kompatibles BMS.
 
-Für einen neuen bestätigten Eintrag bitte Roller-/Akkuversion, BMS-Typ und Firmware, vorhandene BLE-UUIDs sowie Ergebnisse für Lesen, Fahrtstart/-ende und gegebenenfalls Lastausgang dokumentieren; keine MAC-Adresse, PIN oder Kontodaten veröffentlichen. [ESPHome JBD-BMS](https://github.com/syssi/esphome-jbd-bms) dokumentiert zahlreiche JBD-Varianten und Protokollunterschiede, bestätigt aber nicht deren Funktion in ScootPit BMS.
+Besitzer anderer Roller können sich gern melden und ihre Kombination für einen Kompatibilitätstest vorschlagen. Für eine Prüfung oder einen bestätigten Eintrag bitte Roller-/Akkuversion, BMS-Typ und Firmware, vorhandene BLE-UUIDs sowie Ergebnisse für Lesen, Fahrtstart/-ende und gegebenenfalls Lastausgang über [GitHub Issues](https://github.com/Tim-Gurke/ScootPit-BMS-Public/issues) mitteilen. Kandidaten sind erst nach erfolgreichem Test am konkreten Gerät bestätigt. Bitte keine MAC-Adresse, PIN oder Kontodaten veröffentlichen. [ESPHome JBD-BMS](https://github.com/syssi/esphome-jbd-bms) dokumentiert zahlreiche JBD-Varianten und Protokollunterschiede, bestätigt aber nicht deren Funktion in ScootPit BMS.
 
 Recherchestand: 12.10.2026.
 

@@ -291,6 +291,11 @@ public class CockpitSmokeTest extends Instrumentation {
             finally{try{gauge.config.put("display",originalDisplay);}catch(Exception ignored){}}
             int fill=0,track=0;int paleTrack=ScaleColorRange.blend(android.graphics.Color.parseColor("#00FF00"),(Integer)member(gauge,"background"),.78);int expectedTrack=compositeOver(paleTrack,testBackdrop);for(int y=0;y<360;y++)for(int x=0;x<320;x++){int pixel=rendered.getPixel(x,y);if(pixel==android.graphics.Color.parseColor("#00FF00"))fill++;if(pixel==expectedTrack)track++;}rendered.recycle();
             if(fill<10||track<10||gauge.config.optInt("scale_gradient_mode")!=2||!gauge.config.optBoolean("scale_reverse"))throw new AssertionError("Three-colour scale gradient not drawn or saved: fill="+fill+", track="+track+", mode="+gauge.config.optInt("scale_gradient_mode")+", reverse="+gauge.config.optBoolean("scale_reverse"));
+            MetricTile nightProbe=new MetricTile(activity,gauge.config,0xffffffff,0xffffb300,0xff34434d,0xff071018);
+            int nightTrack=nightProbe.inactiveTrackColor(0xff34434d,55);
+            int nightGradient=nightProbe.inactiveGradientColor(.5);
+            if(testContrast(nightTrack,0xff071018)<2.8||testContrast(nightGradient,0xff071018)<2.5||testLuminance(nightGradient)>=testLuminance(0xff34c759))
+                throw new AssertionError("Inactive dark scale must be visible against the dark surface while remaining muted");
             invoke(activity,"addTile",new Class[]{String.class},new Object[]{"consumption_500m"});
             CockpitBoard board=(CockpitBoard)findBoard(activity.getWindow().getDecorView());int index=board.tiles.length()-1;
             invoke(activity,"editBoardTile",new Class[]{int.class},new Object[]{index});dialog=(android.app.AlertDialog)member(activity,"tileDialog");
@@ -422,6 +427,15 @@ public class CockpitSmokeTest extends Instrumentation {
     private static TextView findText(View view,String text){if(view instanceof TextView&&((TextView)view).getText().toString().equals(text))return (TextView)view;if(view instanceof ViewGroup){ViewGroup group=(ViewGroup)view;for(int i=0;i<group.getChildCount();i++){TextView found=findText(group.getChildAt(i),text);if(found!=null)return found;}}return null;}
     private static MetricTile findMetric(View v,String key){if(v instanceof MetricTile && ((MetricTile)v).key.equals(key))return (MetricTile)v;if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++){MetricTile found=findMetric(g.getChildAt(i),key);if(found!=null)return found;}}return null;}
     private static MetricTile findConsumptionMetric(View view,int displayUnit){if(view instanceof MetricTile){MetricTile tile=(MetricTile)view;if(tile.key.equals("consumption_500m")&&tile.config.optInt("consumption_display_unit",0)==displayUnit)return tile;}if(view instanceof ViewGroup){ViewGroup group=(ViewGroup)view;for(int i=0;i<group.getChildCount();i++){MetricTile found=findConsumptionMetric(group.getChildAt(i),displayUnit);if(found!=null)return found;}}return null;}
+    private static double testContrast(int foreground,int background){
+        double a=testLuminance(foreground),b=testLuminance(background);
+        return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+    }
+    private static double testLuminance(int color){
+        double r=testLinear(android.graphics.Color.red(color)/255d),g=testLinear(android.graphics.Color.green(color)/255d),b=testLinear(android.graphics.Color.blue(color)/255d);
+        return .2126*r+.7152*g+.0722*b;
+    }
+    private static double testLinear(double value){return value<=.04045?value/12.92:Math.pow((value+.055)/1.055,2.4);}
     private static int tileBackground(MetricTile tile){return ((android.graphics.drawable.GradientDrawable)((View)tile.getParent()).getBackground()).getColor().getDefaultColor();}
     private void checked(Runnable task) throws Throwable {
         AtomicReference<Throwable> error=new AtomicReference<>();
