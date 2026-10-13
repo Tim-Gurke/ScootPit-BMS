@@ -22,6 +22,8 @@ Balken und Rundinstrumente können je Kachel einfarbig, zweifarbig oder dreifarb
 
 **App-Farben** bietet Dunkel/Orange und Hell/Blau. **Nur App-Farben** erhält eigene Kachelfarben; **Alle Kacheln** übernimmt das Schema auch für Hoch- und Querformat. Transparente Kacheln, Anordnung, Bilder und Texte bleiben erhalten. Der Bildschirm kann einen frei wählbaren Verlauf zwischen zwei Farben erhalten. Alle Farben sind danach manuell anpassbar.
 
+Die Android-Statusleiste übernimmt die App-Hintergrundfarbe. Uhrzeit und Symbole werden je nach Helligkeit dunkel oder hell dargestellt, auch direkt beim Appstart und beim Wechsel des Scooter-Profils. Ein eigener Bildschirm-Farbverlauf verändert den Kontrast der Statusleiste nicht. Das gilt auch unter Android 15, wo ScootPit den Hintergrund unter der transparenten Systemleiste selbst zeichnet.
+
 Im Hochformat bleibt die Bereitschaftszeile unter dem Appkopf. Im Querformat wandert Statuspunkt samt Text in den Kopf; die Kopfzeile ist dort flacher, damit die Cockpitfläche mehr Displayhöhe erhält. Das feste App-Symbol bleibt beim Schemawechsel gleich. Alle Kacheln besitzen passende Symbole mit separat wählbarer Farbe; Symbol, Beschriftung, beides oder keines sind einstellbar.
 
 ![Individuell angeordnetes Cockpit im dunklen Farbschema](assets/screenshots/cockpit-dunkel.jpg)
@@ -42,3 +44,4 @@ Das Antippen der Tourenzähler-Kachel öffnet im normalen Cockpit die Rückfrage
 ## Standardgestaltung ab 1.5.2
 
 Bei einer Neuinstallation übernimmt ScootPit das dunkle Design mit orangefarbenen Akzenten sowie die aktuellen Hoch- und Querformatlayouts aus der Voreinstellung. Das Querformat nutzt eine überlappende Anordnung. **Standardlayout** stellt beide Layouts wieder her. Bestehende Installationen und Profileinstellungen werden bei einem Update nicht überschrieben.
+

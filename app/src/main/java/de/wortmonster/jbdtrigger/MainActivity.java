@@ -77,9 +77,10 @@ public class MainActivity extends Activity {
     private String boardKey(){return getResources().getConfiguration().orientation==android.content.res.Configuration.ORIENTATION_LANDSCAPE?"cockpit_board_landscape":"cockpit_board";}
     private JSONArray loadBoard(){return CockpitBoard.load(prefs,boardKey());}
     @Override protected void onCreate(Bundle state) {
+        prefs=getSharedPreferences("settings",MODE_PRIVATE);
+        setTheme(CockpitTheme.light(prefs)?R.style.AppThemeLight:R.style.AppTheme);
         super.onCreate(state);
         WindowCompat.setDecorFitsSystemWindows(getWindow(),false);
-        prefs=getSharedPreferences("settings",MODE_PRIVATE);
         installDefaultCockpit();
         ScooterProfiles.install(prefs);
         migrateImportedCockpitSettings();
@@ -160,8 +161,11 @@ public class MainActivity extends Activity {
     private void limitDialogHeight(AlertDialog dialog,float fraction){if(dialog.getWindow()!=null)dialog.getWindow().setLayout(-1,Math.round(getResources().getDisplayMetrics().heightPixels*fraction));}
     private void rebuild() {
         setTheme(CockpitTheme.light(prefs)?R.style.AppThemeLight:R.style.AppTheme);
-        WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView()).setAppearanceLightStatusBars(CockpitTheme.light(prefs));
+        final int statusBackground=0xff000000|color(prefs.getString("app_background","#0B1015"),0xff0b1015);
+        WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView()).setAppearanceLightStatusBars(androidx.core.graphics.ColorUtils.calculateLuminance(statusBackground)>.179);
         WindowCompat.getInsetsController(getWindow(),getWindow().getDecorView()).setAppearanceLightNavigationBars(CockpitTheme.light(prefs));
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        if(Build.VERSION.SDK_INT>=29)getWindow().setStatusBarContrastEnforced(false);
         getWindow().setNavigationBarColor(android.os.Build.VERSION.SDK_INT<27?0xff0b1015:color(prefs.getString("app_background","#0B1015"),0xff0b1015));
         boolean landscape=getResources().getConfiguration().orientation==android.content.res.Configuration.ORIENTATION_LANDSCAPE;
         LinearLayout root=column();root.setPadding(dp(14),dp(landscape?0:6),dp(14),dp(landscape?0:20));
@@ -208,9 +212,15 @@ public class MainActivity extends Activity {
         ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setClipToPadding(true);
         if(prefs.getBoolean("background_gradient_enabled",false))try{scroll.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{Color.parseColor(prefs.getString("background_gradient_start","#0B1015")),Color.parseColor(prefs.getString("background_gradient_end","#26384A"))}));}catch(Exception e){scroll.setBackgroundColor(color(prefs.getString("app_background","#0B1015"),0xff0c1014));}
         else scroll.setBackgroundColor(color(prefs.getString("app_background","#0B1015"),0xff0c1014));scroll.addView(root);
+        // Draw the status-bar background ourselves; Android 15 enforces transparent system bars.
+        GradientDrawable statusProtection=new GradientDrawable();statusProtection.setColor(statusBackground);
+        android.graphics.drawable.LayerDrawable background=new android.graphics.drawable.LayerDrawable(new android.graphics.drawable.Drawable[]{scroll.getBackground(),statusProtection});
+        background.setLayerGravity(1,Gravity.TOP|Gravity.FILL_HORIZONTAL);background.setLayerHeight(1,0);
+        scroll.setBackground(background);
         ViewCompat.setOnApplyWindowInsetsListener(scroll,(view,insets)->{
             androidx.core.graphics.Insets safe=insets.getInsets(WindowInsetsCompat.Type.systemBars()|WindowInsetsCompat.Type.displayCutout());
             view.setPadding(safe.left,safe.top,safe.right,safe.bottom);
+            background.setLayerHeight(1,safe.top);
             return WindowInsetsCompat.CONSUMED;
         });
         setContentView(scroll);ViewCompat.requestApplyInsets(scroll);
@@ -863,5 +873,6 @@ public class MainActivity extends Activity {
     @Override public void onBackPressed(){if(editingBoard){new AlertDialog.Builder(this).setMessage("Ungespeicherten Layoutentwurf verwerfen?").setPositiveButton("Verwerfen",(d,w)->{boardTiles=savedBoard;editingBoard=false;orientationDrafts.clear();orientationSaved.clear();rebuild();returnAfterEditor();}).setNegativeButton("Weiter bearbeiten",null).show();}else super.onBackPressed();}
     @Override protected void onDestroy() {super.onDestroy();handler.removeCallbacksAndMessages(null);if(picker!=null)picker.close();}
 }
+
 
 

@@ -1,0 +1,1 @@
+Readable status bar in light and dark designs. Background and icon contrast update together on launch and theme changes, including Android 15. Custom screen gradients are preserved.

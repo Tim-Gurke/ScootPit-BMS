@@ -10,7 +10,7 @@ ScootPit BMS wurde mit dem **Joyor T6E Pro und dem JBD SP14S004** entwickelt. Di
 
 **ScootPit – für alle, die ihren Roller überwachen wollen, ohne selbst überwacht zu werden.**
 
-**Version 1.6.2 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS-Public/releases/latest)**
+**Version 1.6.3 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS-Public/releases/latest)**
 
 Das Highlight ist die Automatik: **Bereitschaft einschalten, zum Scooter gehen und losfahren.** ScootPit erkennt ein gespeichertes Bluetooth-BMS in Reichweite, wählt das zugehörige Scooter-Profil und verbindet sich bei ausreichend stabilem Empfang automatisch. Die Fahrtaufzeichnung startet, sobald die eingestellten Bedingungen für die Stromentnahme erfüllt sind. Die Annäherung allein startet noch keine Fahrt.
 
@@ -76,6 +76,10 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 <p><img src="docs/assets/screenshots/fahrtenbuch-ordnerimport.jpg" width="260" alt="Fahrtenbuch mit Zeitraumwahl sowie Import des kompletten Ordners oder einzelner Fahrten"></p>
 <em>Im Fahrtenbuch kannst du einen Zeitraum wählen und den gesamten Scooter-Fahrtenordner oder einzelne CSV-/GPX-Fahrten importieren.</em>
 
+
+## Neu in 1.6.3
+
+Die Android-Statusleiste bleibt im hellen und dunklen Design lesbar. Ihr Hintergrund folgt der App-Hintergrundfarbe; Uhrzeit und Symbole erhalten automatisch den passenden Kontrast. Das gilt beim Appstart, beim Design- und Profilwechsel sowie unter Android 15 mit transparenter Systemleiste. Eigene Bildschirm-Farbverläufe beeinträchtigen die Lesbarkeit der Statusleiste nicht.
 
 ## Neu in 1.6.2
 
@@ -175,5 +179,6 @@ Der Quellcode enthält keine persönlichen Geräteadressen, Fahrtdateien oder Si
 ## Lizenz
 
 Quellcode, Dokumentation und Originalgrafiken von ScootPit BMS stehen unter der [Apache-Lizenz 2.0](LICENSE). Marken und Inhalte Dritter bleiben Eigentum ihrer jeweiligen Rechteinhaber.
+
 
 

@@ -2,6 +2,8 @@
 
 In ScootPit BMS bleiben Appkopf und Bedienelemente außerhalb von Statusleiste, Navigationsleiste und Kameraausschnitten. Das gilt auch unter Android 15 und bei gedrehtem Bildschirm.
 
+Die Statusleiste bleibt in beiden Designs lesbar: Ihr Hintergrund folgt der App-Hintergrundfarbe, Uhrzeit und Symbole erhalten automatisch einen passenden hellen oder dunklen Kontrast. Appstart, Design- und Profilwechsel aktualisieren die Darstellung sofort; eigene Bildschirm-Farbverläufe bleiben erhalten.
+
 [← Übersicht](../README.md)
 
 ## Cockpit und visueller Editor
@@ -68,3 +70,4 @@ Zurück aus einem Einstellungs-Untermenü führt zum Hauptmenü der Einstellunge
 Im Editor **+ Kachel → Tageskilometer** oder **Tourenzähler** wählen. Tageskilometer beginnen am nächsten Kalendertag nach der lokalen Handyzeit wieder bei 0. Der Tourenzähler läuft bis **Einstellungen → Tourenzähler zurücksetzen**. Ein Reset betrifft nur den aktiven Scooter und verändert weder Tageskilometer noch Gesamtstand. Die drei Zähler verwenden dieselben akzeptierten GPS-Strecken.
 
 Das Einstellungen-Symbol zeigt Zahnrad und Blitz ohne Hintergrund; die Symbolgröße bleibt erhalten.
+

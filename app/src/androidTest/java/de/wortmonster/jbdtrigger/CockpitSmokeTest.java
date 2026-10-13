@@ -234,7 +234,8 @@ public class CockpitSmokeTest extends Instrumentation {
             Activity portrait=portraitMonitor.waitForActivityWithTimeout(10000);if(portrait==null)throw new AssertionError("Portrait recreation");waitForIdleSync();removeMonitor(portraitMonitor);checked(()->systemInsetsCheck(portrait));
             checked(()->{if(portrait.getResources().getConfiguration().orientation!=android.content.res.Configuration.ORIENTATION_PORTRAIT)throw new AssertionError("Portrait activity orientation");View header=findTag(portrait.getWindow().getDecorView(),"cockpit_header"),readiness=findTag(portrait.getWindow().getDecorView(),"cockpit_readiness_status");if(readiness==null||readiness.getParent()==header)throw new AssertionError("Portrait readiness should remain below the header");});
             checked(()->{try{if(!((CockpitBoard)findBoard(portrait.getWindow().getDecorView())).tiles.getJSONObject(0).getString("caption").equals("Portrait draft"))throw new AssertionError("Portrait draft lost on rotation");if(!clickText(portrait.getWindow().getDecorView(),"Speichern"))throw new AssertionError("Save orientation drafts");if(!new org.json.JSONArray(prefs.getString("cockpit_board_landscape","")).getJSONObject(0).getString("caption").equals("Landscape draft"))throw new AssertionError("Landscape draft lost on save");}catch(Exception e){throw new RuntimeException(e);}});
-            result.putString("stream","Cockpit launch, battery/range display, persisted odometer layout editor and screen-off readiness: OK\n");
+            statusBarLaunchCheck(portrait,prefs);
+            result.putString("stream","Cockpit launch, status-bar contrast, battery/range display, persisted odometer layout editor and screen-off readiness: OK\n");
             finish(Activity.RESULT_OK,result);
         } catch(Throwable e){try{screenshot("failure.png");}catch(Exception ignored){}result.putString("stream", "FAIL: "+android.util.Log.getStackTraceString(e));finish(Activity.RESULT_CANCELED,result);}
     }
@@ -446,6 +447,43 @@ public class CockpitSmokeTest extends Instrumentation {
         runOnMainSync(()->{try{task.run();}catch(Throwable t){error.set(t);}});
         if(error.get()!=null)throw error.get();waitForIdleSync();
     }
+    private void statusBarCheck(Activity activity,SharedPreferences prefs)throws Throwable {
+        final int expected=0xff000000|android.graphics.Color.parseColor(prefs.getString("app_background","#0B1015"));
+        final boolean darkIcons=testContrast(android.graphics.Color.BLACK,expected)>testContrast(android.graphics.Color.WHITE,expected);
+        final int[] statusHeight=new int[1];
+        checked(()->{
+            View decor=activity.getWindow().getDecorView();
+            if(androidx.core.view.WindowCompat.getInsetsController(activity.getWindow(),decor).isAppearanceLightStatusBars()!=darkIcons)throw new AssertionError("Status symbols do not match their background");
+            androidx.core.view.WindowInsetsCompat insets=androidx.core.view.ViewCompat.getRootWindowInsets(decor);
+            if(insets==null)throw new AssertionError("Status-bar insets missing");
+            statusHeight[0]=insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars()).top;
+        });
+        if(statusHeight[0]<=0)throw new AssertionError("Status bar should remain visible");
+        Thread.sleep(300);
+        Bitmap bitmap=getUiAutomation().takeScreenshot();
+        if(bitmap==null)throw new AssertionError("Status-bar screenshot missing");
+        try{
+            for(int numerator:new int[]{2,3}){
+                int visible=bitmap.getPixel(bitmap.getWidth()*numerator/6,statusHeight[0]/2);
+                if((visible&0x00ffffff)!=(expected&0x00ffffff)||testContrast(darkIcons?android.graphics.Color.BLACK:android.graphics.Color.WHITE,visible)<4.5)throw new AssertionError("Rendered status bar has unreadable contrast: "+Integer.toHexString(visible));
+            }
+        }finally{bitmap.recycle();}
+    }
+    private void statusBarLaunchCheck(Activity previous,SharedPreferences prefs)throws Throwable {
+        Activity current=previous;
+        for(boolean light:new boolean[]{true,false}){
+            Activity closing=current;
+            checked(()->{try{CockpitTheme.apply(prefs,light,false);prefs.edit().commit();closing.finish();}catch(Exception e){throw new RuntimeException(e);}});
+            current=startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            waitForIdleSync();statusBarCheck(current,prefs);screenshot(light?"status-bar-light-launch.png":"status-bar-dark-launch.png");
+            Activity launched=current;
+            // A custom gradient must not undo the status-bar contrast, including after scrolling.
+            checked(()->{prefs.edit().putBoolean("background_gradient_enabled",true).putString("background_gradient_start",light?"#000000":"#FFFFFF").putString("background_gradient_end",light?"#000000":"#FFFFFF").commit();invoke(launched,"rebuild",new Class[0],new Object[0]);});
+            statusBarCheck(current,prefs);
+            checked(()->findScrollView(launched.getWindow().getDecorView()).fullScroll(View.FOCUS_DOWN));
+            statusBarCheck(current,prefs);
+        }
+    }
     private void systemInsetsCheck(Activity activity){
         ViewGroup content=activity.findViewById(android.R.id.content);
         android.widget.ScrollView scroll=(android.widget.ScrollView)content.getChildAt(0);
@@ -599,7 +637,7 @@ public class CockpitSmokeTest extends Instrumentation {
                 if(found.points.size()!=2||found.moving!=2000||Math.abs(found.averagePower-96)>.01)throw new AssertionError("Journal statistics");
                 summary.gpxFile.delete();summary.csvFile.delete();summary.metadataFile.delete();
                 String version=activity.getPackageManager().getPackageInfo(activity.getPackageName(),0).versionName;
-                if(!"1.6.2".equals(version))throw new AssertionError("Official version");
+                if(!"1.6.3".equals(version))throw new AssertionError("Official version");
                 int portraitMap=JournalUi.routeMapHeight(2400,3),landscapeMap=JournalUi.routeMapHeight(1080,3);
                 if(portraitMap<=0||landscapeMap<=0||portraitMap>1080||landscapeMap>1080)throw new AssertionError("Route map must have a visible bounded height in both orientations");
             }catch(Exception e){throw new RuntimeException(e);}
@@ -623,8 +661,8 @@ public class CockpitSmokeTest extends Instrumentation {
             String totalBeforeReset=prefs.getString("total_km","0"),dailyBeforeReset=prefs.getString("daily_km","0");
             checked(()->{if(!prefs.getString("tour_km","").equals("38.2"))throw new AssertionError("Cancel reset changed counter");findDescription(activity.getWindow().getDecorView(),"Tourenzähler zurücksetzen").performClick();((android.app.AlertDialog)member(activity,"tourDialog")).getButton(-1).performClick();});
             waitForIdleSync();
-            checked(()->{if(DistanceCounters.number(prefs,"tour_km")!=0||!totalBeforeReset.equals(prefs.getString("total_km","0"))||!dailyBeforeReset.equals(prefs.getString("daily_km","0")))throw new AssertionError("Tour reset changed other counters");systemInsetsCheck(activity);});screenshot("design-light.png");
-            checked(()->{try{CockpitTheme.apply(prefs,false,true);java.lang.reflect.Field f=MainActivity.class.getDeclaredField("boardTiles");f.setAccessible(true);f.set(activity,CockpitBoard.load(prefs));invoke(activity,"rebuild",new Class[0],new Object[0]);View journal=findDescription(activity.getWindow().getDecorView(),"Fahrtenbuch"),settings=findDescription(activity.getWindow().getDecorView(),"Einstellungen öffnen");if(journal==null||settings==null||journal.getParent()!=settings.getParent())throw new AssertionError("Header actions not in same row");StorageFolders.validateValues(StorageFolders.install(getTargetContext()).snapshot().getJSONObject("settings"),false);}catch(Exception e){throw new RuntimeException(e);}});waitForIdleSync();screenshot("design-dark.png");
+            checked(()->{if(DistanceCounters.number(prefs,"tour_km")!=0||!totalBeforeReset.equals(prefs.getString("total_km","0"))||!dailyBeforeReset.equals(prefs.getString("daily_km","0")))throw new AssertionError("Tour reset changed other counters");systemInsetsCheck(activity);});statusBarCheck(activity,prefs);screenshot("design-light.png");
+            checked(()->{try{CockpitTheme.apply(prefs,false,true);java.lang.reflect.Field f=MainActivity.class.getDeclaredField("boardTiles");f.setAccessible(true);f.set(activity,CockpitBoard.load(prefs));invoke(activity,"rebuild",new Class[0],new Object[0]);View journal=findDescription(activity.getWindow().getDecorView(),"Fahrtenbuch"),settings=findDescription(activity.getWindow().getDecorView(),"Einstellungen öffnen");if(journal==null||settings==null||journal.getParent()!=settings.getParent())throw new AssertionError("Header actions not in same row");StorageFolders.validateValues(StorageFolders.install(getTargetContext()).snapshot().getJSONObject("settings"),false);}catch(Exception e){throw new RuntimeException(e);}});waitForIdleSync();statusBarCheck(activity,prefs);screenshot("design-dark.png");
         }finally{checked(()->{SharedPreferences.Editor e=prefs.edit().clear();for(java.util.Map.Entry<String,?> entry:saved.entrySet()){Object value=entry.getValue();String key=entry.getKey();if(value instanceof String)e.putString(key,(String)value);else if(value instanceof Boolean)e.putBoolean(key,(Boolean)value);else if(value instanceof Long)e.putLong(key,(Long)value);else if(value instanceof Integer)e.putInt(key,(Integer)value);}e.commit();try{java.lang.reflect.Field f=MainActivity.class.getDeclaredField("boardTiles");f.setAccessible(true);f.set(activity,savedTiles);invoke(activity,"rebuild",new Class[0],new Object[0]);}catch(Exception ex){throw new RuntimeException(ex);}});}
     }
     private static View findTag(View v,String tag){if(tag.equals(v.getTag()))return v;if(v instanceof ViewGroup)for(int i=0;i<((ViewGroup)v).getChildCount();i++){View found=findTag(((ViewGroup)v).getChildAt(i),tag);if(found!=null)return found;}return null;}
@@ -644,5 +682,6 @@ public class CockpitSmokeTest extends Instrumentation {
         try(FileOutputStream out=new FileOutputStream(new File(dir,name))){bitmap.compress(Bitmap.CompressFormat.PNG,100,out);}bitmap.recycle();
     }
 }
+
 
 

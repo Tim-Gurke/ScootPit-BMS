@@ -1,0 +1,1 @@
+Statusleiste in hellem und dunklem Design wieder lesbar. Hintergrund und Symbolkontrast wechseln gemeinsam, auch beim Appstart und unter Android 15. Eigene Farbverläufe bleiben erhalten.
