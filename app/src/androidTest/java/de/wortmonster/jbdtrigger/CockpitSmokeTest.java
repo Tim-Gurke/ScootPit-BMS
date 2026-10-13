@@ -289,8 +289,12 @@ public class CockpitSmokeTest extends Instrumentation {
             try{gauge.config.put("display",2);gauge.draw(new android.graphics.Canvas(rendered));}
             catch(Exception e){throw new RuntimeException(e);}
             finally{try{gauge.config.put("display",originalDisplay);}catch(Exception ignored){}}
-            int fill=0,track=0;int paleTrack=ScaleColorRange.blend(android.graphics.Color.parseColor("#00FF00"),(Integer)member(gauge,"background"),.78);int expectedTrack=compositeOver(paleTrack,testBackdrop);for(int y=0;y<360;y++)for(int x=0;x<320;x++){int pixel=rendered.getPixel(x,y);if(pixel==android.graphics.Color.parseColor("#00FF00"))fill++;if(pixel==expectedTrack)track++;}rendered.recycle();
+            int fill=0,track=0;int paleTrack=gauge.inactiveGradientColor(.99);int expectedTrack=compositeOver(paleTrack,testBackdrop);for(int y=0;y<360;y++)for(int x=0;x<320;x++){int pixel=rendered.getPixel(x,y);if(pixel==android.graphics.Color.parseColor("#00FF00"))fill++;if(pixel==expectedTrack)track++;}rendered.recycle();
             if(fill<10||track<10||gauge.config.optInt("scale_gradient_mode")!=2||!gauge.config.optBoolean("scale_reverse"))throw new AssertionError("Three-colour scale gradient not drawn or saved: fill="+fill+", track="+track+", mode="+gauge.config.optInt("scale_gradient_mode")+", reverse="+gauge.config.optBoolean("scale_reverse"));
+            MetricTile dayProbe=new MetricTile(activity,gauge.config,0xff172b40,0xffffb300,0xffb9cedb,0x00000000);
+            int dayTrack=dayProbe.inactiveGradientColor(.99);
+            int expectedDayTrack=ScaleColorRange.blend(android.graphics.Color.parseColor("#00FF00"),0x00000000,.78);
+            if(dayTrack!=expectedDayTrack)throw new AssertionError("Light scale styling changed");
             MetricTile nightProbe=new MetricTile(activity,gauge.config,0xffffffff,0xffffb300,0xff34434d,0xff071018);
             int nightTrack=nightProbe.inactiveTrackColor(0xff34434d,55);
             int nightGradient=nightProbe.inactiveGradientColor(.5);
