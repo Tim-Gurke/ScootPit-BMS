@@ -128,12 +128,12 @@ public class CockpitSmokeTest extends Instrumentation {
             storageCheck(prefs);
             checked(()->{
                 boolean running=BmsMonitorService.running;
-                String savedBoard=prefs.getString("cockpit_board",((CockpitBoard)findBoard(activity.getWindow().getDecorView())).tiles.toString());
+                String savedBoard=((org.json.JSONArray)member(activity,"boardTiles")).toString();
                 try{
                     org.json.JSONArray customBoard=new org.json.JSONArray(savedBoard);boolean customSoc=false;
                     for(int i=0;i<customBoard.length();i++)if(customBoard.getJSONObject(i).optString("key").equals("soc")){customBoard.getJSONObject(i).put("background","#64B966");customSoc=true;break;}
                     if(!customSoc)throw new AssertionError("SOC tile for custom background check");
-                    prefs.edit().putString("cockpit_board",customBoard.toString()).putString("tile_background","#64B966").apply();invoke(activity,"rebuild",new Class[0],new Object[0]);
+                    setMember(activity,"boardTiles",customBoard);prefs.edit().putString("cockpit_board",customBoard.toString()).putString("tile_background","#64B966").apply();invoke(activity,"rebuild",new Class[0],new Object[0]);
                     BmsMonitorService.running=true;
                     Intent fresh=new Intent().putExtra("soc",75).putExtra("range_km",24.5).putExtra("bms_at",System.currentTimeMillis()).putExtra("bms_connected",true).putExtra("trip_active",true).putExtra("gps_at",System.currentTimeMillis()).putExtra("outside_temperature",15.0).putExtra("weather_at",System.currentTimeMillis());
                     invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{fresh});
@@ -151,7 +151,7 @@ public class CockpitSmokeTest extends Instrumentation {
                     BmsMonitorService.running=false;invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{fresh});
                     if(!soc.getContentDescription().toString().contains("nicht aktuell")||!findMetric(activity.getWindow().getDecorView(),"distance").getContentDescription().toString().contains("nicht aktuell")||findMetric(activity.getWindow().getDecorView(),"total").getContentDescription().toString().contains("nicht aktuell"))throw new AssertionError("Stopped tracking and odometer");
                     invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{new Intent()});if(!soc.getContentDescription().toString().contains("nicht aktuell"))throw new AssertionError("Missing value");
-                }finally{BmsMonitorService.running=running;prefs.edit().putString("cockpit_board",savedBoard).remove("tile_background").apply();invoke(activity,"rebuild",new Class[0],new Object[0]);}
+                }finally{BmsMonitorService.running=running;setMember(activity,"boardTiles",new org.json.JSONArray(savedBoard));prefs.edit().putString("cockpit_board",savedBoard).remove("tile_background").apply();invoke(activity,"rebuild",new Class[0],new Object[0]);}
             });
             checked(()->invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{new Intent().putExtra("soc",75).putExtra("range_km",24.5).putExtra("speed_kmh",18.2).putExtra("bms_at",System.currentTimeMillis()).putExtra("bms_connected",true).putExtra("temperatures",new double[]{25,30}).putExtra("max_power_w",980.0)}));
             screenshot("cockpit.png");
