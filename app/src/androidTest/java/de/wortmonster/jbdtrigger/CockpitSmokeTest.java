@@ -36,18 +36,18 @@ public class CockpitSmokeTest extends Instrumentation {
                 if(!contains(activity.getWindow().getDecorView(),"123,45 km"))throw new AssertionError("Saved odometer before readiness");
                 if(prefs.contains("device_address")||!contains(activity.getWindow().getDecorView(),"BMS auswählen"))throw new AssertionError("Fresh installation must require BMS selection");
                 try{CockpitBoard board=(CockpitBoard)findBoard(activity.getWindow().getDecorView());CockpitBoard.validate(board.tiles);
-                    if(board.tiles.length()!=22||!board.tiles.getJSONObject(0).getString("key").equals("consumption_500m")||!board.tiles.getJSONObject(0).getString("background").equals("#00000000"))throw new AssertionError("Screenshot default layout");
+                    if(board.tiles.length()!=24||!board.tiles.getJSONObject(0).getString("key").equals("consumption_500m")||!board.tiles.getJSONObject(0).getString("background").equals("#00000000"))throw new AssertionError("Screenshot default layout");
                     org.json.JSONArray portrait=CockpitBoard.standardDefaults(activity,"cockpit_board");
                     org.json.JSONArray landscape=CockpitBoard.standardDefaults(activity,"cockpit_board_landscape");
                     CockpitBoard.validate(landscape);
-                    if(!board.tiles.toString().equals(portrait.toString())||portrait.length()!=22||landscape.length()!=22)throw new AssertionError("Standardlayout must match the supplied portrait and landscape presets");
+                    if(!board.tiles.toString().equals(portrait.toString())||portrait.length()!=24||landscape.length()!=24)throw new AssertionError("Standardlayout must match the supplied portrait and landscape presets");
                     org.json.JSONArray sourceScales=new org.json.JSONArray(portrait.toString());
                     for(int i=0;i<sourceScales.length();i++){org.json.JSONObject tile=sourceScales.getJSONObject(i);if(tile.getString("key").equals("consumption_500m"))tile.put("scale_max",31).put("scale_gradient_low_full",24).put("scale_gradient_high_full",91).put("scale_gradient_low","#112233");}
                     org.json.JSONArray synced=CockpitBoard.syncScaleSettings(sourceScales,landscape);
                     if(!synced.getJSONObject(0).getString("key").equals(landscape.getJSONObject(0).getString("key"))||synced.getJSONObject(0).getInt("x")!=landscape.getJSONObject(0).getInt("x")||synced.getJSONObject(0).getInt("scale_max")!=31||synced.getJSONObject(0).getInt("scale_gradient_low_full")!=24||synced.getJSONObject(0).getInt("scale_gradient_high_full")!=91||!synced.getJSONObject(0).getString("scale_gradient_low").equals("#112233"))throw new AssertionError("Scale sync must preserve layout and transfer scale settings");
                     org.json.JSONObject landscapeGauge=landscape.getJSONObject(0),landscapePower=landscape.getJSONObject(1),landscapeSoc=landscape.getJSONObject(2);
                     int landscapeBottom=0;for(int i=0;i<landscape.length();i++){org.json.JSONObject tile=landscape.getJSONObject(i);landscapeBottom=Math.max(landscapeBottom,tile.getInt("y")+tile.getInt("h"));}
-                    if(landscapeGauge.getInt("x")!=6||landscapeGauge.getInt("y")!=0||landscapeGauge.getInt("w")!=12||landscapeGauge.getInt("h")!=14||landscapePower.getInt("x")!=8||landscapePower.getInt("y")!=7||landscapeSoc.getInt("x")!=11||landscapeSoc.getInt("y")!=7||landscapeBottom!=19)throw new AssertionError("Imported portrait and landscape arrangements");
+                    if(landscapeGauge.getInt("x")!=6||landscapeGauge.getInt("y")!=0||landscapeGauge.getInt("w")!=12||landscapeGauge.getInt("h")!=15||landscapePower.getInt("x")!=8||landscapePower.getInt("y")!=7||landscapeSoc.getInt("x")!=11||landscapeSoc.getInt("y")!=7||landscapeBottom!=21)throw new AssertionError("Imported portrait and landscape arrangements");
                     org.json.JSONObject leadGauge=board.tiles.getJSONObject(0),powerGauge=board.tiles.getJSONObject(1),socGauge=board.tiles.getJSONObject(3);
                     if(leadGauge.getInt("w")!=24||leadGauge.getInt("h")!=14||leadGauge.optInt("gauge_sweep")!=240||leadGauge.optInt("display")!=2||powerGauge.optInt("display")!=2||powerGauge.optInt("gauge_sweep")!=160||!socGauge.optBoolean("scale_reverse"))throw new AssertionError("User cockpit gauges");
                     if(socGauge.optInt("scale_gradient_low_full")!=10||socGauge.optInt("scale_gradient_high_full")!=50||board.tiles.getJSONObject(21).optInt("font")!=20||CockpitLayout.tile("free_text").optInt("font")!=20)throw new AssertionError("Imported scale thresholds or 20-sp default");
@@ -177,7 +177,7 @@ public class CockpitSmokeTest extends Instrumentation {
                 try{
                     String portrait=prefs.getString("cockpit_board","");
                     org.json.JSONArray landscape=CockpitBoard.load(prefs,"cockpit_board_landscape");
-                    if(landscape.length()!=22||landscape.getJSONObject(0).getInt("h")!=14)throw new AssertionError("User landscape default");
+                    if(landscape.length()!=24||landscape.getJSONObject(0).getInt("h")!=15)throw new AssertionError("User landscape default");
                     landscape=new org.json.JSONArray(landscape.toString());landscape.getJSONObject(0).put("caption","Querformat-Test");
                     prefs.edit().putString("cockpit_board_landscape",landscape.toString()).putString("connect_rssi","-85").putString("departure_rssi","-95").commit();
                     if(!CockpitBoard.load(prefs,"cockpit_board_landscape").getJSONObject(0).getString("caption").equals("Querformat-Test"))throw new AssertionError("Independent landscape");
