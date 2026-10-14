@@ -24,6 +24,10 @@ public final class AverageTrackerTest {
         for(int i=0;i<10000;i++)tracker.record(1,100,0.01,true);
         close(36,tracker.reading(0,100,"speed").speedKmh());close(10,tracker.reading(0,100,"energy").whPerKm());
         AverageTracker.decode(tracker.encode());
+        AverageTracker stationary=new AverageTracker();stationary.beginTrip();stationary.reset("energy");stationary.record(100,10000,2,true);stationary.record(0,0,0,false);
+        missing(stationary.reading(1,100,"energy").whPerKm());missing(stationary.reading(2,100,"energy").whPerKm());
+        stationary=AverageTracker.decode(stationary.encode());stationary.record(100,10000,3,true);stationary.record(100,10000,3,true);
+        close(30,stationary.reading(0,100,"energy").whPerKm());
         boolean rejected=false;try{AverageTracker.decode("invalid");}catch(java.io.IOException expected){rejected=true;}if(!rejected)throw new AssertionError("Invalid persisted state accepted");
         System.out.println("AverageTracker: windows, interpolation, rides, separate resets, persistence and missing BMS coverage OK");
     }

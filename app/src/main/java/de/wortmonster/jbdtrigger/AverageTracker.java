@@ -16,7 +16,8 @@ final class AverageTracker {
     void record(double meters,double movingMilliseconds,double wattHours,boolean energyReliable){
         if(!finite(meters)||!finite(movingMilliseconds)||!finite(wattHours))return;
         total[0]+=meters;total[1]+=movingMilliseconds;total[2]+=wattHours;
-        if(!energyReliable)total[3]+=meters;
+        // A telemetry gap also loses energy while stationary. Keep a monotone coverage marker.
+        if(!energyReliable)total[3]+=Math.max(1,meters);
         if(meters>0)samples.add(total.clone());
         while(samples.size()>2&&samples.get(1)[0]<total[0]-MAX_WINDOW_METERS)samples.remove(0);
         if(samples.size()>MAX_SAMPLES){
@@ -86,6 +87,6 @@ final class AverageTracker {
     }
     private static boolean finite(double value){return Double.isFinite(value)&&value>=0;}
     private static void writePoint(DataOutputStream out,double[] point)throws IOException{for(double value:point)out.writeDouble(value);}
-    private static double[] readPoint(DataInputStream in)throws IOException{double[] result=new double[4];for(int i=0;i<4;i++){result[i]=in.readDouble();if(!finite(result[i]))throw new IOException("Invalid average value");}if(result[3]>result[0]+1e-6)throw new IOException("Invalid energy coverage");return result;}
+    private static double[] readPoint(DataInputStream in)throws IOException{double[] result=new double[4];for(int i=0;i<4;i++){result[i]=in.readDouble();if(!finite(result[i]))throw new IOException("Invalid average value");}return result;}
     private static void within(double[] before,double[] after)throws IOException{for(int i=0;i<4;i++)if(before[i]>after[i]+1e-6)throw new IOException("Invalid average baseline");}
 }
