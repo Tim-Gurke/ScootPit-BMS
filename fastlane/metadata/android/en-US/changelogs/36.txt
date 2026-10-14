@@ -1,0 +1,1 @@
+Average speed and consumption: last x metres, current ride or since reset. Independent saved counters per tile and scooter. Portrait dark settings supply colours, captions and values for both orientations and themes; tile positions and sizes stay unchanged. Unreached dark scale sections are 10% darker.

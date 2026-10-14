@@ -238,6 +238,9 @@ final class CockpitBoard extends FrameLayout {
     }
     static JSONObject position(JSONObject t,int x,int y,int w,int h)throws Exception{return t.put("x",x*2).put("y",y*2).put("w",w*2).put("h",h*2);}
     private static void validateAppearance(JSONObject tile)throws Exception{
+        if(tile.has("average_mode")&&(tile.getInt("average_mode")<0||tile.getInt("average_mode")>2))throw new Exception("Ungültiger Durchschnittsbereich");
+        if(tile.has("average_window_m")&&(tile.getInt("average_window_m")<1||tile.getInt("average_window_m")>AverageTracker.MAX_WINDOW_METERS))throw new Exception("Durchschnittsstrecke von 1 bis 100000 Metern erforderlich");
+        if(tile.has("average_id")&&!tile.getString("average_id").matches("[A-Za-z0-9_-]{1,80}"))throw new Exception("Ungültige Durchschnittskennung");
         if(tile.has("gauge_sweep")&&(tile.getInt("gauge_sweep")<90||tile.getInt("gauge_sweep")>270))throw new Exception("Kreisausschnitt muss zwischen 90° und 270° liegen");
         if(tile.has("gauge_rotation")&&(tile.getInt("gauge_rotation")<0||tile.getInt("gauge_rotation")>359))throw new Exception("Drehwinkel muss zwischen 0° und 359° liegen");
         if(tile.has("heading_mode")&&(tile.getInt("heading_mode")<0||tile.getInt("heading_mode")>3))throw new Exception("Ungültige Symbol-/Beschriftungsauswahl");
@@ -246,7 +249,8 @@ final class CockpitBoard extends FrameLayout {
         if(tile.has("gauge_value_position")&&(tile.getInt("gauge_value_position")<0||tile.getInt("gauge_value_position")>2))throw new Exception("Ungültige Messwertposition");
         if(tile.has("scale_gradient_mode")&&(tile.getInt("scale_gradient_mode")<0||tile.getInt("scale_gradient_mode")>2))throw new Exception("Ungültiger Skalenfarbmodus");
         if(tile.optInt("scale_gradient_mode",0)>0&&(tile.optInt("scale_gradient_low_full",20)<0||tile.optInt("scale_gradient_low_full",20)>=tile.optInt("scale_gradient_high_full",80)||tile.optInt("scale_gradient_high_full",80)>100))throw new Exception("Die rote Schwelle muss unter der grünen Schwelle liegen");
-        for(String field:new String[]{"background","text","instrument_color","scale_color","icon_color","border_color","scale_gradient_low","scale_gradient_mid","scale_gradient_high"})if(tile.has(field))android.graphics.Color.parseColor(tile.getString(field));
+        for(String field:new String[]{"background","text","instrument_color","scale_color","icon_color","dark_icon_color","border_color","scale_gradient_low","scale_gradient_mid","scale_gradient_high"})if(tile.has(field))android.graphics.Color.parseColor(tile.getString(field));
+        if(tile.has("dark_colors")){JSONObject colors=tile.getJSONObject("dark_colors");java.util.Iterator<String> keys=colors.keys();while(keys.hasNext()){String field=keys.next();if(!java.util.Arrays.asList(CockpitTheme.COLOR_FIELDS).contains(field))throw new Exception("Ungültige gespeicherte Designfarbe");android.graphics.Color.parseColor(colors.getString(field));}}
         if(tile.has("corner_radius")&&(tile.getInt("corner_radius")<0||tile.getInt("corner_radius")>48))throw new Exception("Eckenradius muss zwischen 0 und 48 dp liegen");
         if(tile.optString("caption").length()>300)throw new Exception("Beschriftung zu lang");
         if(tile.optString("free_text").length()>4000)throw new Exception("Freitext mit maximal 4000 Zeichen");
@@ -260,5 +264,6 @@ final class CockpitBoard extends FrameLayout {
         for(int i=0;i<tiles.length();i++)for(int j=i+1;j<tiles.length();j++){JSONObject a=tiles.getJSONObject(i),b=tiles.getJSONObject(j);if(a.getInt("x")<b.getInt("x")+b.getInt("w")&&a.getInt("x")+a.getInt("w")>b.getInt("x")&&a.getInt("y")<b.getInt("y")+b.getInt("h")&&a.getInt("y")+a.getInt("h")>b.getInt("y")&&!a.optBoolean("allow_overlap",false)&&!b.optBoolean("allow_overlap",false))throw new Exception("Kacheln überlappen – bei einer Kachel Überlappung aktivieren");}
     }
 }
+
 
 

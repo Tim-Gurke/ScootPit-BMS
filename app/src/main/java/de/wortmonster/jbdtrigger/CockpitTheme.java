@@ -40,13 +40,26 @@ final class CockpitTheme {
         return .2126*r+.7152*g+.0722*b;
     }
     private static double linear(double value){return value<=.04045?value/12.92:Math.pow((value+.055)/1.055,2.4);}
+    static final String[] COLOR_FIELDS={"background","text","instrument_color","scale_color","icon_color","border_color"};
+    private static String hex(int color){return String.format(java.util.Locale.ROOT,"#%08X",color);}
+    private static String lightSymbol(String value){int color=Color.parseColor(value);for(int n=0;n<40&&minContrast(color,new int[]{0xffffffff,0xffdcecf5})<3;n++)color=ScaleColorRange.blend(color,Color.BLACK,.05);return hex(color);}
+    static void tileColors(JSONObject t,boolean light)throws Exception{
+        String accent=light?"#1678B8":"#FF981F",tile=light?"#FFFFFF":"#0C1720",text=light?"#172B40":"#FFFFFF",scale=light?"#B9CEDB":"#34434D";
+        JSONObject dark=t.optJSONObject("dark_colors");
+        if(!light&&dark!=null){for(String field:COLOR_FIELDS)if(dark.has(field))t.put(field,dark.get(field));t.remove("dark_colors");t.put("custom_colors",true);return;}
+        if(light&&dark==null){dark=new JSONObject();for(String field:COLOR_FIELDS)if(t.has(field))dark.put(field,t.get(field));t.put("dark_colors",dark);}
+        boolean transparent=Color.alpha(Color.parseColor(t.optString("background",tile)))==0;
+        String icon=light?dark.optString("icon_color",hex(CockpitSymbols.defaultColor(t.optString("key"),false))):t.optString("icon_color",hex(CockpitSymbols.defaultColor(t.optString("key"),false)));
+        String instrument=light?dark.optString("instrument_color","#FF981F"):t.optString("instrument_color",accent);
+        t.put("background",transparent?"#00000000":tile).put("text",text).put("instrument_color",light?(instrument.equalsIgnoreCase("#FF981F")?accent:lightSymbol(instrument)):instrument).put("icon_color",light?lightSymbol(icon):icon).put("scale_color",scale).put("custom_colors",true);
+    }
     static void apply(SharedPreferences p,boolean light,boolean replaceTiles)throws Exception{
         String accent=light?"#1678B8":"#FF981F",background=light?"#F7FAFD":"#071018",tile=light?"#FFFFFF":"#0C1720",text=light?"#172B40":"#FFFFFF",scale=light?"#B9CEDB":"#34434D";
         SharedPreferences.Editor e=p.edit().putString("app_background",background).putString("accent_color",accent).putString("header_color",accent).putString("tile_background",tile).putString("tile_text",text).putString("scale_color",scale).putString("outline_color",light?"#BBD7E5":"#28647A").putBoolean("background_gradient_enabled",true).putString("background_gradient_start",light?"#FFFFFF":"#14232D").putString("background_gradient_end",light?"#DCECF5":"#071018");
         if(replaceTiles){for(String key:new String[]{"cockpit_board","cockpit_board_landscape"}){
-            JSONArray tiles=CockpitBoard.load(p,key);for(int i=0;i<tiles.length();i++){JSONObject t=tiles.getJSONObject(i);boolean transparent=Color.alpha(Color.parseColor(t.optString("background",tile)))==0;
-                t.put("background",transparent?"#00000000":tile).put("text",text).put("instrument_color",accent).put("icon_color",String.format(java.util.Locale.ROOT,"#%08X",CockpitSymbols.defaultColor(t.optString("key"),light))).put("scale_color",scale).put("custom_colors",true);
-            }CockpitBoard.validate(tiles);e.putString(key,tiles.toString());
+            JSONArray tiles=CockpitBoard.load(p,key);for(int i=0;i<tiles.length();i++)tileColors(tiles.getJSONObject(i),light);
+            CockpitBoard.validate(tiles);e.putString(key,tiles.toString());
         }}e.apply();
     }
 }
+

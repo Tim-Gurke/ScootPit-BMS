@@ -7,7 +7,7 @@ import java.util.*;
 /** Active values remain in the original preferences for service and backup compatibility. */
 final class ScooterProfiles {
     static final String LIST="scooter_profiles",ACTIVE="active_scooter";
-    static final Set<String> KEYS=new HashSet<>(Arrays.asList("cockpit_design_version","cockpit_board_before_111","cockpit_board_before_121","cockpit_board_landscape_version","cockpit_board_landscape_before_121","scale_color","outline_color","stop_seconds","slow_unpowered_stop_seconds","cockpit_scale_sync_version","pause_end_seconds","pause_disconnect_seconds","daily_day","daily_km","tour_km","routine_start_title","routine_start_text","routine_end_title","routine_end_text","journal_stats","header_name","header_color","temp1_label","temp2_label","temperature_history","device_name","device_address","active_current","active_seconds","idle_seconds","monitor_timeout","connection_policy_version","connect_rssi","connect_confirm_seconds","departure_rssi","scan_absent","scan_weak","scan_good","scan_pause","departure_seconds","gps_max_kmh","cockpit_board_landscape","capacity_ah","nominal_voltage","reserve_percent","reference_wh_km","consumption_window_m","learned_wh_km","total_km","accent_color","app_background","background_gradient_enabled","background_gradient_start","background_gradient_end","tile_background","tile_text","cockpit_layout","cockpit_board","weather_enabled","outside_temperature","weather_at","bms_available","trips_tree","trips_tree_label"));
+    static final Set<String> KEYS=new HashSet<>(Arrays.asList("average_state","cockpit_style_sync_version","cockpit_design_version","cockpit_board_before_111","cockpit_board_before_121","cockpit_board_landscape_version","cockpit_board_landscape_before_121","scale_color","outline_color","stop_seconds","slow_unpowered_stop_seconds","cockpit_scale_sync_version","pause_end_seconds","pause_disconnect_seconds","daily_day","daily_km","tour_km","routine_start_title","routine_start_text","routine_end_title","routine_end_text","journal_stats","header_name","header_color","temp1_label","temp2_label","temperature_history","device_name","device_address","active_current","active_seconds","idle_seconds","monitor_timeout","connection_policy_version","connect_rssi","connect_confirm_seconds","departure_rssi","scan_absent","scan_weak","scan_good","scan_pause","departure_seconds","gps_max_kmh","cockpit_board_landscape","capacity_ah","nominal_voltage","reserve_percent","reference_wh_km","consumption_window_m","learned_wh_km","total_km","accent_color","app_background","background_gradient_enabled","background_gradient_start","background_gradient_end","tile_background","tile_text","cockpit_layout","cockpit_board","weather_enabled","outside_temperature","weather_at","bms_available","trips_tree","trips_tree_label"));
     static boolean scoped(String key){return KEYS.contains(key)||key.startsWith("last_");}
     static JSONObject capture(SharedPreferences p)throws JSONException{
         JSONObject values=new JSONObject();for(Map.Entry<String,?> e:p.getAll().entrySet())if(scoped(e.getKey()))values.put(e.getKey(),e.getValue());
@@ -49,7 +49,7 @@ final class ScooterProfiles {
     }
     static void put(SharedPreferences.Editor edit,JSONObject values)throws JSONException{
         Iterator<String> keys=values.keys();while(keys.hasNext()){String k=keys.next();if(!scoped(k))continue;Object v=values.get(k);
-            if(v instanceof Boolean)edit.putBoolean(k,(Boolean)v);else if((k.equals("weather_at")||k.equals("last_started_at")||k.equals("last_ended_at"))&&v instanceof Number)edit.putLong(k,((Number)v).longValue());else if(v instanceof String)edit.putString(k,(String)v);
+            if(v instanceof Boolean)edit.putBoolean(k,(Boolean)v);else if(k.equals("consumption_window_m")&&v instanceof Number)edit.putInt(k,((Number)v).intValue());else if((k.equals("weather_at")||k.equals("last_started_at")||k.equals("last_ended_at"))&&v instanceof Number)edit.putLong(k,((Number)v).longValue());else if(v instanceof String)edit.putString(k,(String)v);
         }
     }
     static synchronized void add(SharedPreferences p,String name,boolean copy)throws Exception{
@@ -58,7 +58,7 @@ final class ScooterProfiles {
         JSONArray all=export(p);if(all.length()>=20)throw new Exception("Maximal 20 Scooter-Profile");String id=UUID.randomUUID().toString();
         JSONObject values=copy?capture(p):new JSONObject();
         // A copied design must never copy identity, accumulated distance or another scooter's consumption.
-        for(String k:new String[]{"daily_day","daily_km","tour_km","device_address","device_name","total_km","learned_wh_km","temperature_history","bms_available","outside_temperature","weather_at","trips_tree","trips_tree_label"})values.remove(k);
+        for(String k:new String[]{"average_state","daily_day","daily_km","tour_km","device_address","device_name","total_km","learned_wh_km","temperature_history","bms_available","outside_temperature","weather_at","trips_tree","trips_tree_label"})values.remove(k);
         ArrayList<String> remove=new ArrayList<>();Iterator<String> keys=values.keys();while(keys.hasNext()){String k=keys.next();if(k.startsWith("last_"))remove.add(k);}for(String k:remove)values.remove(k);
         all.put(new JSONObject().put("id",id).put("name",name.trim()).put("settings",values));p.edit().putString(LIST,all.toString()).commit();switchTo(p,id);
     }
@@ -72,5 +72,6 @@ final class ScooterProfiles {
         switchTo(p,kept.getJSONObject(0).getString("id"));p.edit().putString(LIST,kept.toString()).commit();
     }
 }
+
 
 

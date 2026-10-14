@@ -56,7 +56,7 @@ public class CockpitSmokeTest extends Instrumentation {
                     if(!CockpitBoard.updateImportedDefaults(oldPreset,"cockpit_board",portrait)||oldPreset.getJSONObject(3).optInt("scale_gradient_low_full")!=10||oldPreset.getJSONObject(3).optInt("scale_gradient_high_full")!=50||oldPreset.getJSONObject(21).optInt("font")!=20)throw new AssertionError("Unchanged stock settings were not updated");
                     org.json.JSONArray personalPreset=new org.json.JSONArray(oldPreset.toString());personalPreset.getJSONObject(3).put("scale_gradient_low_full",17).put("scale_gradient_high_full",63);personalPreset.getJSONObject(21).put("font",31);
                     if(CockpitBoard.updateImportedDefaults(personalPreset,"cockpit_board",portrait)||personalPreset.getJSONObject(3).optInt("scale_gradient_low_full")!=17||personalPreset.getJSONObject(21).optInt("font")!=31)throw new AssertionError("Personal scale and font settings were overwritten");
-                    if(!prefs.getBoolean("background_gradient_enabled",false)||!prefs.getString("accent_color","").equals("#FF981F")||!prefs.getString("background_gradient_start","").equals("#28282D")||!prefs.getString("background_gradient_end","").equals("#071018"))throw new AssertionError("User cockpit color defaults");
+                    if(!prefs.getBoolean("background_gradient_enabled",false)||!prefs.getString("accent_color","").equals("#FF981F")||!prefs.getString("background_gradient_start","").equals("#14232D")||!prefs.getString("background_gradient_end","").equals("#071018"))throw new AssertionError("User cockpit color defaults");
                     if(board.tiles.getJSONObject(2).getDouble("scale_max")!=22)throw new AssertionError("22 km/h default gauge scale");
                     org.json.JSONObject legacyGauge=new org.json.JSONObject().put("key","speed");
                     MetricTile probe=new MetricTile(activity,legacyGauge,0xffffffff,0xffffb300,0xff222222,0);
@@ -114,6 +114,7 @@ public class CockpitSmokeTest extends Instrumentation {
             profileCheck(prefs);
             officialVersionCheck(activity,prefs);
             designCheck(activity,prefs);
+            averageCheck(activity,prefs);
             checked(()->{
                 boolean old=BmsMonitorService.running;
                 try{invoke(activity,"addTile",new Class[]{String.class},new Object[]{"bms_cell_delta"});
@@ -297,19 +298,23 @@ public class CockpitSmokeTest extends Instrumentation {
             int expectedDayTrack=ScaleColorRange.blend(android.graphics.Color.parseColor("#00FF00"),0x00000000,.78);
             if(dayTrack!=expectedDayTrack)throw new AssertionError("Light scale styling changed");
             MetricTile nightProbe=new MetricTile(activity,gauge.config,0xffffffff,0xffffb300,0xff34434d,0xff071018);
-            int nightTrack=nightProbe.inactiveTrackColor(0xff34434d,55);
-            int nightGradient=nightProbe.inactiveGradientColor(.5);
-            if(testContrast(nightTrack,0xff071018)<2.8||testContrast(nightGradient,0xff071018)<2.5||testLuminance(nightGradient)>=testLuminance(0xff34c759))
-                throw new AssertionError("Inactive dark scale must be visible against the dark surface while remaining muted");
+            int oldTrack=ScaleColorRange.blend(0xff34434d,0xff9ca8af,.48)|0xff000000;
+            nightProbe.reading("0 W","",false);
+            if(nightProbe.inactiveTrackColor(0xff34434d,55)!=ScaleColorRange.blend(oldTrack,android.graphics.Color.BLACK,.10))throw new AssertionError("Connected dark scale must be exactly 10 percent darker");
+            int oldGradient=ScaleColorRange.blend(0xffff8000,oldTrack,.72);
+            if(nightProbe.inactiveGradientColor(.5)!=ScaleColorRange.blend(oldGradient,android.graphics.Color.BLACK,.10))throw new AssertionError("Connected dark gradient must be exactly 10 percent darker");
+            nightProbe.reading("–","",true);if(nightProbe.inactiveTrackColor(0xff34434d,55)!=oldTrack)throw new AssertionError("Disconnected scale changed");
             invoke(activity,"addTile",new Class[]{String.class},new Object[]{"consumption_500m"});
             CockpitBoard board=(CockpitBoard)findBoard(activity.getWindow().getDecorView());int index=board.tiles.length()-1;
             invoke(activity,"editBoardTile",new Class[]{int.class},new Object[]{index});dialog=(android.app.AlertDialog)member(activity,"tileDialog");
             android.widget.Spinner consumptionUnit=spinnerAfterLabel(dialog.getWindow().getDecorView(),"Verbrauchseinheit");
             if(consumptionUnit==null||consumptionUnit.getSelectedItemPosition()!=0)throw new AssertionError("Consumption unit editor default");
             consumptionUnit.setSelection(1);
-            android.widget.SeekBar window=(android.widget.SeekBar)findDescription(dialog.getWindow().getDecorView(),"Verbrauchsfenster 100 bis 1000 Meter");
-            if(window==null||window.getProgress()!=40)throw new AssertionError("Recent consumption window defaults to 500 m");window.setProgress(90);clickText(dialog.getWindow().getDecorView(),"Übernehmen");
-            if(prefs.getInt("consumption_window_m",500)!=1000||ScooterProfiles.settingsFor(prefs,prefs.getString(ScooterProfiles.ACTIVE,"")).optInt("consumption_window_m")!=1000)throw new AssertionError("Recent consumption window was not saved per scooter");
+            android.widget.Spinner scope=spinnerAfterLabel(dialog.getWindow().getDecorView(),"Durchschnittsbereich");
+            android.widget.EditText window=inputAfterLabel(dialog.getWindow().getDecorView(),"Strecke x in Metern (1–100000)");
+            if(scope.getSelectedItemPosition()!=0||!window.getText().toString().equals("500"))throw new AssertionError("Recent average defaults to last 500 m");
+            window.setText("0");clickText(dialog.getWindow().getDecorView(),"Übernehmen");if(!dialog.isShowing())throw new AssertionError("Invalid average distance accepted");window.setText("1000");clickText(dialog.getWindow().getDecorView(),"Übernehmen");
+            if(board.tiles.optJSONObject(index).optInt("average_window_m")!=1000)throw new AssertionError("Per-tile average distance was not saved");
             invoke(activity,"addTile",new Class[]{String.class},new Object[]{"free_text"});
             board=(CockpitBoard)findBoard(activity.getWindow().getDecorView());index=board.tiles.length()-1;
             invoke(activity,"editBoardTile",new Class[]{int.class},new Object[]{index});dialog=(android.app.AlertDialog)member(activity,"tileDialog");
@@ -637,11 +642,49 @@ public class CockpitSmokeTest extends Instrumentation {
                 if(found.points.size()!=2||found.moving!=2000||Math.abs(found.averagePower-96)>.01)throw new AssertionError("Journal statistics");
                 summary.gpxFile.delete();summary.csvFile.delete();summary.metadataFile.delete();
                 String version=activity.getPackageManager().getPackageInfo(activity.getPackageName(),0).versionName;
-                if(!"1.6.3".equals(version))throw new AssertionError("Official version");
+                if(!"1.6.4".equals(version))throw new AssertionError("Official version");
                 int portraitMap=JournalUi.routeMapHeight(2400,3),landscapeMap=JournalUi.routeMapHeight(1080,3);
                 if(portraitMap<=0||landscapeMap<=0||portraitMap>1080||landscapeMap>1080)throw new AssertionError("Route map must have a visible bounded height in both orientations");
             }catch(Exception e){throw new RuntimeException(e);}
         });test.edit().clear().commit();
+    }
+    private void averageCheck(Activity activity,SharedPreferences prefs)throws Throwable {
+        java.util.Map<String,?> saved=prefs.getAll();Object savedTiles=member(activity,"boardTiles"),savedStatus=member(activity,"lastStatus");
+        try{
+            checked(()->{try{
+                org.json.JSONArray portrait=CockpitBoard.standardDefaults(activity,"cockpit_board"),landscape=CockpitBoard.standardDefaults(activity,"cockpit_board_landscape");
+                portrait.getJSONObject(0).put("caption","Mein Verbrauch").put("scale_max",47);portrait.getJSONObject(21).put("caption","Zusatzwert").put("scale_max",61);
+                org.json.JSONArray synced=CockpitStyles.sync(portrait,landscape);java.util.Map<String,org.json.JSONObject> from=CockpitStyles.keyed(portrait),to=CockpitStyles.keyed(synced);
+                for(int i=0;i<landscape.length();i++){org.json.JSONObject old=landscape.getJSONObject(i),next=synced.getJSONObject(i);for(String field:new String[]{"key","x","y","w","h","display","arrangement","gauge_sweep","gauge_rotation"})if(!old.optString(field).equals(next.optString(field)))throw new AssertionError("Style sync changed tile geometry: "+field);}
+                if(!to.get("consumption_500m:0").getString("caption").equals("Mein Verbrauch")||to.get("consumption_500m:1").getInt("scale_max")!=61)throw new AssertionError("Duplicate consumption tiles were mixed during style sync");
+                prefs.edit().putString("cockpit_board",portrait.toString()).putString("cockpit_board_landscape",synced.toString()).commit();
+                String darkIcon=portrait.getJSONObject(11).getString("icon_color");CockpitTheme.apply(prefs,true,true);CockpitTheme.apply(prefs,false,true);
+                if(!new org.json.JSONArray(prefs.getString("cockpit_board","")).getJSONObject(11).getString("icon_color").equals(darkIcon))throw new AssertionError("Theme switch lost supplied icon hue");
+                org.json.JSONArray tiles=new org.json.JSONArray();
+                tiles.put(CockpitBoard.position(CockpitLayout.tile("average").put("average_mode",2).put("average_id","speed-reset").put("caption","Schnitt ab Reset"),0,0,6,3));
+                tiles.put(CockpitBoard.position(CockpitLayout.tile("consumption").put("average_mode",2).put("average_id","energy-reset").put("caption","Verbrauch ab Reset"),6,0,6,3));
+                tiles.put(CockpitBoard.position(CockpitLayout.tile("average").put("average_mode",1).put("caption","Aktuelle Fahrt"),0,3,6,3));
+                tiles.put(CockpitBoard.position(CockpitLayout.tile("consumption_500m").put("average_mode",0).put("average_window_m",500).put("caption","Letzte 500 m"),6,3,6,3));
+                AverageTracker tracker=new AverageTracker();tracker.reset("speed-reset");tracker.reset("energy-reset");tracker.beginTrip();tracker.record(1000,200000,20,true);tracker.beginTrip();tracker.record(1000,100000,40,true);
+                prefs.edit().putString(AverageMetrics.STATE,tracker.encode()).putString("cockpit_board",tiles.toString()).commit();
+                java.lang.reflect.Field f=MainActivity.class.getDeclaredField("boardTiles");f.setAccessible(true);f.set(activity,tiles);invoke(activity,"rebuild",new Class[0],new Object[0]);
+                invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{new Intent().putExtra("trip_active",false)});
+                if(!contains(activity.getWindow().getDecorView(),"24,0 km/h")||!contains(activity.getWindow().getDecorView(),"36,0 km/h")||!contains(activity.getWindow().getDecorView(),"30,0 Wh/km")||!contains(activity.getWindow().getDecorView(),"40,0 Wh/km"))throw new AssertionError("Average scopes rendered incorrectly after a ride boundary");
+                View speed=findDescription(activity.getWindow().getDecorView(),"Durchschnittsgeschwindigkeit ab Reset · zurücksetzen");if(speed==null||!speed.performClick())throw new AssertionError("Average speed reset tile not clickable");
+                android.app.AlertDialog dialog=(android.app.AlertDialog)member(activity,"tourDialog");dialog.getButton(-2).performClick();
+                if(!contains(activity.getWindow().getDecorView(),"24,0 km/h"))throw new AssertionError("Cancel changed average counter");
+                speed.performClick();((android.app.AlertDialog)member(activity,"tourDialog")).getButton(-1).performClick();
+                if(contains(activity.getWindow().getDecorView(),"24,0 km/h")||!contains(activity.getWindow().getDecorView(),"30,0 Wh/km")||!contains(activity.getWindow().getDecorView(),"36,0 km/h"))throw new AssertionError("Speed reset affected another scope/counter");
+                AverageTracker persisted=AverageTracker.decode(prefs.getString(AverageMetrics.STATE,""));if(!Double.isNaN(persisted.reading(2,500,"speed-reset").speedKmh())||Math.abs(persisted.reading(2,500,"energy-reset").whPerKm()-30)>.001)throw new AssertionError("Reset persistence lost independent energy counter");
+                StorageFolders.validateProfiles(ScooterProfiles.export(prefs),prefs.getString(ScooterProfiles.ACTIVE,""));
+                invoke(activity,"editLayout",new Class[0],new Object[0]);invoke(activity,"editBoardTile",new Class[]{int.class},new Object[]{0});dialog=(android.app.AlertDialog)member(activity,"tileDialog");
+                android.widget.Spinner scope=spinnerAfterLabel(dialog.getWindow().getDecorView(),"Durchschnittsbereich");if(scope.getCount()!=3||scope.getSelectedItemPosition()!=2)throw new AssertionError("Average scope editor missing choices");
+                scope.setSelection(0);inputAfterLabel(dialog.getWindow().getDecorView(),"Strecke x in Metern (1–100000)").setText("1250");clickText(dialog.getWindow().getDecorView(),"Übernehmen");
+                CockpitBoard edited=(CockpitBoard)findBoard(activity.getWindow().getDecorView());if(edited.tiles.getJSONObject(0).getInt("average_mode")!=0||edited.tiles.getJSONObject(0).getInt("average_window_m")!=1250)throw new AssertionError("Average speed scope/distance not applied");
+                clickText(activity.getWindow().getDecorView(),"Speichern");
+            }catch(Exception e){throw new RuntimeException(e);}});
+            waitForIdleSync();screenshot("averages-dark.png");
+        }finally{checked(()->{SharedPreferences.Editor e=prefs.edit().clear();for(java.util.Map.Entry<String,?> entry:saved.entrySet()){Object value=entry.getValue();String key=entry.getKey();if(value instanceof String)e.putString(key,(String)value);else if(value instanceof Boolean)e.putBoolean(key,(Boolean)value);else if(value instanceof Long)e.putLong(key,(Long)value);else if(value instanceof Integer)e.putInt(key,(Integer)value);}e.commit();try{java.lang.reflect.Field f=MainActivity.class.getDeclaredField("boardTiles");f.setAccessible(true);f.set(activity,savedTiles);f=MainActivity.class.getDeclaredField("lastStatus");f.setAccessible(true);f.set(activity,savedStatus);invoke(activity,"rebuild",new Class[0],new Object[0]);}catch(Exception ex){throw new RuntimeException(ex);}});}
     }
     private void designCheck(Activity activity,SharedPreferences prefs)throws Throwable {
         java.util.Map<String,?> saved=prefs.getAll();Object savedTiles=member(activity,"boardTiles");
@@ -682,6 +725,7 @@ public class CockpitSmokeTest extends Instrumentation {
         try(FileOutputStream out=new FileOutputStream(new File(dir,name))){bitmap.compress(Bitmap.CompressFormat.PNG,100,out);}bitmap.recycle();
     }
 }
+
 
 
 

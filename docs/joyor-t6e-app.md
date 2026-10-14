@@ -18,7 +18,7 @@ Die Entwicklungsbasis ist der **Joyor T6E Pro mit JBD SP14S004**. Entscheidend i
 
 ## Joyor T6E Pro verbinden
 
-1. [Aktuelle ScootPit-BMS-Version herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS-Public/releases/latest).
+1. [Aktuelle ScootPit-BMS-Version herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest).
 2. Ein Scooter-Profil anlegen und das verbaute Bluetooth-BMS auswählen.
 3. Verbindung und angezeigte BMS-Werte im Stand prüfen.
 4. Auf einer kurzen Testfahrt GPS-Aufzeichnung, Fahrtdaten und Hintergrundbetrieb kontrollieren.
@@ -32,3 +32,4 @@ Ja. Die App wurde mit dem Joyor T6E Pro und JBD SP14S004 entwickelt. Sie ist ein
 ### Funktioniert ScootPit BMS mit dem Joyor T6E ohne Pro?
 
 Die Kompatibilität des Joyor T6E ohne Pro ist nicht bestätigt. Bitte prüfe das verbaute BMS, bevor du von einer Verbindungsmöglichkeit ausgehst.
+

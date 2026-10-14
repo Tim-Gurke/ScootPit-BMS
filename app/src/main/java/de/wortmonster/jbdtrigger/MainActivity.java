@@ -75,7 +75,7 @@ public class MainActivity extends Activity {
 
     private final java.util.HashMap<String,String> orientationDrafts=new java.util.HashMap<>(),orientationSaved=new java.util.HashMap<>();
     private String boardKey(){return getResources().getConfiguration().orientation==android.content.res.Configuration.ORIENTATION_LANDSCAPE?"cockpit_board_landscape":"cockpit_board";}
-    private JSONArray loadBoard(){return CockpitBoard.load(prefs,boardKey());}
+    private JSONArray loadBoard(){JSONArray tiles=CockpitBoard.load(prefs,boardKey());try{if(AverageMetrics.ensureIds(tiles))prefs.edit().putString(boardKey(),tiles.toString()).apply();}catch(Exception e){android.util.Log.e("ScootPit","Durchschnittskacheln konnten nicht geladen werden",e);}return tiles;}
     @Override protected void onCreate(Bundle state) {
         prefs=getSharedPreferences("settings",MODE_PRIVATE);
         setTheme(CockpitTheme.light(prefs)?R.style.AppThemeLight:R.style.AppTheme);
@@ -84,6 +84,7 @@ public class MainActivity extends Activity {
         installDefaultCockpit();
         ScooterProfiles.install(prefs);
         migrateImportedCockpitSettings();
+        CockpitStyles.migrate(this,prefs);
         boardTiles=loadBoard();displayedProfile=prefs.getString(ScooterProfiles.ACTIVE,"");
         if(state!=null){
             pendingImageTile=state.getString("pending_image_tile","");pendingImageLayout=state.getString("pending_image_layout","");editorFromSettings=state.getBoolean("editor_from_settings",false);
@@ -268,12 +269,13 @@ public class MainActivity extends Activity {
                 toggle.setOnClickListener(v->{logExpanded=!logExpanded;details.setVisibility(logExpanded?View.VISIBLE:View.GONE);toggle.setText((CockpitSymbols.title(cell)?cell.optString("caption","Statusdetails / Log"):"")+" "+(logExpanded?"▾":"▸"));});
             }else{
                 JSONObject renderCell=cell;
-                if(key.equals("consumption_500m"))try{String current=cell.optString("caption","");if(current.isEmpty()||current.matches("Verbrauch · letzte \\d+ m")||current.equals(CockpitLayout.title(key)))cell.put("caption","Verbrauch · letzte "+prefs.getInt("consumption_window_m",500)+" m");}catch(Exception ignored){}
+                if(key.equals("consumption_500m"))try{String current=cell.optString("caption","");if(current.isEmpty()||current.matches("Verbrauch · letzte \\d+ m")||current.equals(CockpitLayout.title(key)))cell.put("caption","Verbrauch");}catch(Exception ignored){}
                 if((key.equals("temp1")||key.equals("temp2"))&&!cell.has("caption"))try{renderCell=new JSONObject(cell.toString()).put("caption",prefs.getString(key+"_label",CockpitLayout.title(key)));}catch(Exception ignored){}
                 MetricTile value=new MetricTile(this,renderCell,CockpitTheme.readableTileText(prefs,text,bg.getColor().getDefaultColor()),color(cell.optString("instrument_color"),accent()),color(cell.optString("scale_color",CockpitTheme.scale(prefs)),0xff35434d),bg.getColor().getDefaultColor());box.setPadding(0,0,0,0);box.addView(value,new LinearLayout.LayoutParams(-1,-1));tileKeys.add(key);tileValues.add(value);tileNotes.add(new TextView(this));
 
             }
             if(key.equals("tour")&&!editingBoard){box.setOnClickListener(v->resetTour());box.setContentDescription("Tourenzähler zurücksetzen");}
+            if(AverageMetrics.supported(key)&&AverageMetrics.mode(cell)==2&&!editingBoard){box.setOnClickListener(v->resetAverage(cell));box.setContentDescription(CockpitLayout.title(key)+" ab Reset · zurücksetzen");}
             else if(!editingBoard&&Arrays.asList("temp1","temp2","outside").contains(key)){box.setOnClickListener(v->refreshTemperature());box.setContentDescription(CockpitLayout.title(key)+" aktualisieren");}
             final int index=i;board.addTile(box,cell,()->editBoardTile(index));
         }
@@ -284,10 +286,15 @@ public class MainActivity extends Activity {
         String tileKey=cell.optString("key");boolean personal=tileKey.equals("image")||tileKey.equals("free_text");
         EditText caption=textField(l,"Beschriftung",cell.optString("caption",CockpitLayout.title(cell.optString("key"))));
         caption.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);caption.setMaxLines(3);caption.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(300)});
-        TextView windowLabel=label("Verbrauchsfenster: "+prefs.getInt("consumption_window_m",500)+" m",13,muted());
-        android.widget.SeekBar windowSlider=new android.widget.SeekBar(this);windowSlider.setMax(90);windowSlider.setProgress(Math.max(0,Math.min(90,(prefs.getInt("consumption_window_m",500)-100)/10)));
-        windowSlider.setContentDescription("Verbrauchsfenster 100 bis 1000 Meter");windowSlider.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(android.widget.SeekBar b,int n,boolean user){windowLabel.setText("Verbrauchsfenster: "+(100+n*10)+" m");}public void onStartTrackingTouch(android.widget.SeekBar b){}public void onStopTrackingTouch(android.widget.SeekBar b){}});
-        if(tileKey.equals("consumption_500m")){l.addView(windowLabel);l.addView(windowSlider);l.addView(label("Messbereich der Verbrauchsanzeige · 100–1000 m",11,muted()));}else{windowLabel.setVisibility(View.GONE);windowSlider.setVisibility(View.GONE);}
+        boolean averageTile=AverageMetrics.supported(tileKey);
+        Spinner averageScope=null;EditText averageWindow=null;
+        if(averageTile){
+            l.addView(label("Durchschnittsbereich",13,muted()));averageScope=new Spinner(this);averageScope.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"Letzte x Meter","Aktuelle Fahrt","Ab Reset"}));averageScope.setSelection(AverageMetrics.mode(cell));averageScope.setContentDescription("Durchschnittsbereich");l.addView(averageScope);
+            averageWindow=textField(l,"Strecke x in Metern (1–100000)",Integer.toString(AverageMetrics.window(cell,prefs)));averageWindow.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);averageWindow.setEnabled(AverageMetrics.mode(cell)==0);
+            final EditText windowField=averageWindow;averageScope.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){public void onItemSelected(android.widget.AdapterView<?> p,View v,int n,long id){windowField.setEnabled(n==0);}public void onNothingSelected(android.widget.AdapterView<?> p){}});
+            l.addView(label(tileKey.equals("average")?"Berechnet mit Fahrzeit ohne Standzeiten. Ab Reset: Kachel antippen, um den Zähler zurückzusetzen.":"Ab Reset: Kachel antippen, um nur diesen Verbrauchszähler zurückzusetzen.",11,muted()));
+        }
+        final Spinner averageScopeSelector=averageScope;final EditText averageWindowField=averageWindow;
         Spinner consumptionUnit=null;
         if(tileKey.equals("consumption")||tileKey.equals("consumption_500m")){
             consumptionUnit=new Spinner(this);consumptionUnit.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"Wh/km","% auf 10 km"}));consumptionUnit.setSelection(Math.max(0,Math.min(1,cell.optInt("consumption_display_unit",0))));
@@ -369,10 +376,10 @@ public class MainActivity extends Activity {
         AlertDialog dialog=new AlertDialog.Builder(this).setTitle(CockpitLayout.title(cell.optString("key"))).setView(content).create();
         tileDialog=dialog;
         back.setOnClickListener(v->dialog.dismiss());remove.setOnClickListener(v->{if(boardTiles.length()>1){boardTiles.remove(index);dialog.dismiss();rebuild();}});
-        apply.setOnClickListener(v->{boolean customUnit=hasUnit&&!unitFont.getText().toString().trim().isEmpty();Double uu=customUnit?valid(unitFont,8,80):null;Double ff=valid(font,12,80),xx=valid(x,0,23),yy=valid(y,0,600),ww=valid(w,1,24),hh=valid(h,2,24),angle=valid(sweepDegrees,90,270);Double ll=valid(lines,1,3),ss=valid(scale,.1,10000000);int gradientChoice=gradientMode.getSelectedItemPosition(),lowPct=lowFull.getProgress(),highPct=highFull.getProgress(),windowMeters=100+windowSlider.getProgress()*10;if(angle!=null&&angle!=Math.rint(angle)){sweepDegrees.setError("Bitte eine ganze Gradzahl eingeben");angle=null;}if((customUnit&&uu==null)||ff==null||xx==null||yy==null||ww==null||hh==null||angle==null||ll==null||ss==null||!validColor(bg)||!validColor(fg)||!validColor(instrument)||!validColor(track)||!validColor(icon)||!validColor(borderColor)||(gradientChoice>0&&(!validColor(gradientEnd)||!validColor(gradientMiddle)||!validColor(gradientStart))))return;if(gradientChoice>0&&lowPct>=highPct){lowFullLabel.setError("Muss unter der hohen Schwelle liegen");highFullLabel.setError("Muss über der niedrigen Schwelle liegen");return;}
+        apply.setOnClickListener(v->{boolean customUnit=hasUnit&&!unitFont.getText().toString().trim().isEmpty();Double uu=customUnit?valid(unitFont,8,80):null;Double ff=valid(font,12,80),xx=valid(x,0,23),yy=valid(y,0,600),ww=valid(w,1,24),hh=valid(h,2,24),angle=valid(sweepDegrees,90,270);Double ll=valid(lines,1,3),ss=valid(scale,.1,10000000);int gradientChoice=gradientMode.getSelectedItemPosition(),lowPct=lowFull.getProgress(),highPct=highFull.getProgress(),windowMeters=500;if(averageTile){try{windowMeters=Integer.parseInt(averageWindowField.getText().toString().trim());if(windowMeters<1||windowMeters>AverageTracker.MAX_WINDOW_METERS)throw new NumberFormatException();}catch(NumberFormatException e){averageWindowField.setError("Ganze Meter von 1 bis 100000 eingeben");return;}}if(angle!=null&&angle!=Math.rint(angle)){sweepDegrees.setError("Bitte eine ganze Gradzahl eingeben");angle=null;}if((customUnit&&uu==null)||ff==null||xx==null||yy==null||ww==null||hh==null||angle==null||ll==null||ss==null||!validColor(bg)||!validColor(fg)||!validColor(instrument)||!validColor(track)||!validColor(icon)||!validColor(borderColor)||(gradientChoice>0&&(!validColor(gradientEnd)||!validColor(gradientMiddle)||!validColor(gradientStart))))return;if(gradientChoice>0&&lowPct>=highPct){lowFullLabel.setError("Muss unter der hohen Schwelle liegen");highFullLabel.setError("Muss über der niedrigen Schwelle liegen");return;}
             JSONArray before;try{before=new JSONArray(boardTiles.toString());boolean oldOverlap=cell.optBoolean("allow_overlap",false);cell.put("allow_overlap",allowOverlap.isChecked()).put("x",xx.intValue()).put("y",yy.intValue()).put("w",ww.intValue()).put("h",hh.intValue());try{board.push(cell);CockpitBoard.validate(boardTiles);}catch(Exception e){for(int i=0;i<boardTiles.length();i++){JSONObject target=boardTiles.getJSONObject(i),original=before.getJSONObject(i);target.put("x",original.getInt("x")).put("y",original.getInt("y")).put("w",original.getInt("w")).put("h",original.getInt("h"));}cell.put("allow_overlap",oldOverlap);Toast.makeText(this,e.getMessage(),Toast.LENGTH_LONG).show();return;}
-                String nextCaption=caption.getText().toString();if(tileKey.equals("consumption_500m")&&(nextCaption.isEmpty()||nextCaption.matches("Verbrauch · letzte \\d+ m")||nextCaption.equals(CockpitLayout.title(tileKey))))nextCaption="Verbrauch · letzte "+windowMeters+" m";
-                cell.put("arrangement",arrangement.getSelectedItemPosition()).put("display",display.getSelectedItemPosition()).put("gauge_sweep",angle.intValue()).put("heading_mode",heading.getSelectedItemPosition()).put("show_title",heading.getSelectedItemPosition()==1||heading.getSelectedItemPosition()==2).put("show_note",showNote.isChecked()).put("lines",ll.intValue()).put("scale_max",ss).put("caption",nextCaption).put("font",ff.intValue()).put("background",alphaColor(bg.getText().toString(),bgAlpha.getProgress())).put("text",alphaColor(fg.getText().toString(),fgAlpha.getProgress())).put("custom_colors",true).put("instrument_color",instrument.getText().toString()).put("scale_color",track.getText().toString()).put("icon_color",icon.getText().toString()).put("border_color",borderColor.getText().toString()).put("border_enabled",borderEnabled.isChecked()).put("corner_radius",radius.getProgress()).put("content_inset",inset.getProgress()).put("scale_gradient_mode",gradientChoice).put("scale_reverse",reverseScale.isChecked());if(gradientChoice>0)cell.put("scale_gradient_high",gradientEnd.getText().toString()).put("scale_gradient_mid",gradientMiddle.getText().toString()).put("scale_gradient_low",gradientStart.getText().toString()).put("scale_gradient_low_full",lowPct).put("scale_gradient_high_full",highPct);if(tileKey.equals("consumption_500m"))prefs.edit().putInt("consumption_window_m",windowMeters).apply();if(consumptionUnitSelector!=null)cell.put("consumption_display_unit",consumptionUnitSelector.getSelectedItemPosition());if(display.getSelectedItemPosition()==2){cell.put("gauge_sweep",angle.intValue()).put("gauge_rotation",rotation.getProgress()).put("gauge_value_visible",showGaugeValue.isChecked()).put("gauge_value_position",gaugeValuePosition.getSelectedItemPosition());}if(hasUnit){cell.put("unit_position",unitPosition.getSelectedItemPosition());if(customUnit)cell.put("unit_font",uu.intValue());else cell.remove("unit_font");}if(customText!=null)cell.put("free_text",customText.getText().toString());if(photoMode!=null)cell.put("image_mode",photoMode.getSelectedItemPosition());moveTileToLayer(index,layer.getSelectedItemPosition());dialog.dismiss();rebuild();
+                String nextCaption=caption.getText().toString();if(tileKey.equals("consumption_500m")&&(nextCaption.isEmpty()||nextCaption.matches("Verbrauch · letzte \\d+ m")||nextCaption.equals(CockpitLayout.title(tileKey))))nextCaption="Verbrauch";
+                cell.put("arrangement",arrangement.getSelectedItemPosition()).put("display",display.getSelectedItemPosition()).put("gauge_sweep",angle.intValue()).put("heading_mode",heading.getSelectedItemPosition()).put("show_title",heading.getSelectedItemPosition()==1||heading.getSelectedItemPosition()==2).put("show_note",showNote.isChecked()).put("lines",ll.intValue()).put("scale_max",ss).put("caption",nextCaption).put("font",ff.intValue()).put("background",alphaColor(bg.getText().toString(),bgAlpha.getProgress())).put("text",alphaColor(fg.getText().toString(),fgAlpha.getProgress())).put("custom_colors",true).put("instrument_color",instrument.getText().toString()).put("scale_color",track.getText().toString()).put("icon_color",icon.getText().toString()).put("border_color",borderColor.getText().toString()).put("border_enabled",borderEnabled.isChecked()).put("corner_radius",radius.getProgress()).put("content_inset",inset.getProgress()).put("scale_gradient_mode",gradientChoice).put("scale_reverse",reverseScale.isChecked());if(gradientChoice>0)cell.put("scale_gradient_high",gradientEnd.getText().toString()).put("scale_gradient_mid",gradientMiddle.getText().toString()).put("scale_gradient_low",gradientStart.getText().toString()).put("scale_gradient_low_full",lowPct).put("scale_gradient_high_full",highPct);if(averageTile){cell.put("average_mode",averageScopeSelector.getSelectedItemPosition()).put("average_window_m",windowMeters);if(!cell.has("average_id"))cell.put("average_id",java.util.UUID.randomUUID().toString());if(AverageMetrics.mode(cell)==2)AverageMetrics.reading(prefs,cell);}if(consumptionUnitSelector!=null)cell.put("consumption_display_unit",consumptionUnitSelector.getSelectedItemPosition());if(display.getSelectedItemPosition()==2){cell.put("gauge_sweep",angle.intValue()).put("gauge_rotation",rotation.getProgress()).put("gauge_value_visible",showGaugeValue.isChecked()).put("gauge_value_position",gaugeValuePosition.getSelectedItemPosition());}if(hasUnit){cell.put("unit_position",unitPosition.getSelectedItemPosition());if(customUnit)cell.put("unit_font",uu.intValue());else cell.remove("unit_font");}if(customText!=null)cell.put("free_text",customText.getText().toString());if(photoMode!=null)cell.put("image_mode",photoMode.getSelectedItemPosition());moveTileToLayer(index,layer.getSelectedItemPosition());dialog.dismiss();rebuild();
             }catch(Exception e){Toast.makeText(this,"Kachel konnte nicht geändert werden",Toast.LENGTH_SHORT).show();}});dialog.show();
         dialog.getWindow().setLayout(-1,Math.round(getResources().getDisplayMetrics().heightPixels*.9f));
         if(chooseImage!=null)chooseImage.setOnClickListener(v->{apply.performClick();if(dialog.isShowing())return;try{
@@ -436,12 +443,14 @@ public class MainActivity extends Activity {
                 case "voltage":value=packet==0?"–":f(intent.getDoubleExtra("voltage",0),"%.2f V");break;
                 case "current":value=packet==0?"–":f(intent.getDoubleExtra("current",0),"%.2f A");break;
                 case "energy":value=f(intent.getDoubleExtra("energy_wh",0),"%.1f Wh");break;
-                case "consumption":{double whKm=intent.getDoubleExtra("wh_km",Double.NaN);if(metric.config.optInt("consumption_display_unit",0)==1){value=f(intent.getDoubleExtra("wh_km_percent_10km",Double.NaN),"%.1f %% / 10 km");progressOverride=ConsumptionUnit.normalizedProgress(whKm,metric.config.optDouble("scale_max",100));}else value=f(whKm,"%.1f Wh/km");break;}
-                case "consumption_500m":{double whKm=intent.getDoubleExtra("wh_500m",Double.NaN);if(metric.config.optInt("consumption_display_unit",0)==1){value=f(intent.getDoubleExtra("wh_500m_percent_10km",Double.NaN),"%.1f %% / 10 km");progressOverride=ConsumptionUnit.normalizedProgress(whKm,metric.config.optDouble("scale_max",100));}else value=f(whKm,"%.1f Wh/km");note="letzte "+consumptionWindow+" m";break;}
+                case "consumption":case "consumption_500m":{
+                    boolean stored=AverageMetrics.available(prefs);int mode=AverageMetrics.mode(metric.config);boolean window=mode==AverageTracker.WINDOW;
+                    double whKm=stored?AverageMetrics.reading(prefs,metric.config).whPerKm():mode==AverageTracker.RESET?Double.NaN:intent.getDoubleExtra(window?"wh_500m":"wh_km",Double.NaN);
+                    if(metric.config.optInt("consumption_display_unit",0)==1){double capacity=intent.getDoubleExtra("full_capacity_ah",0);if(capacity<=0)capacity=number("capacity_ah",26);double percent=stored?ConsumptionUnit.percentPer10Km(whKm,capacity,number("nominal_voltage",48)):intent.getDoubleExtra(window?"wh_500m_percent_10km":"wh_km_percent_10km",Double.NaN);value=f(percent,"%.1f %% / 10 km");progressOverride=ConsumptionUnit.normalizedProgress(whKm,metric.config.optDouble("scale_max",100));}else value=f(whKm,"%.1f Wh/km");note=AverageMetrics.note(metric.config,prefs);break;}
                 case "trip_time":value=formatDuration(intent.getLongExtra("trip_time_ms",intent.getLongExtra("moving_ms",0)+intent.getLongExtra("standing_ms",0)));note="Fahrzeit + Standzeit";break;
                 case "moving":value=formatDuration(intent.getLongExtra("moving_ms",0));break;
                 case "standing":value=formatDuration(intent.getLongExtra("standing_ms",0));break;
-                case "average":value=f(intent.getDoubleExtra("average_speed_kmh",0),"%.1f km/h");break;
+                case "average":value=f(AverageMetrics.available(prefs)?AverageMetrics.reading(prefs,metric.config).speedKmh():AverageMetrics.mode(metric.config)==AverageTracker.TRIP?intent.getDoubleExtra("average_speed_kmh",Double.NaN):Double.NaN,"%.1f km/h");note=AverageMetrics.note(metric.config,prefs);break;
                 case "maximum":value=f(intent.getDoubleExtra("max_speed_kmh",0),"%.1f km/h");break;
                 case "altitude":value=f(intent.getDoubleExtra("altitude_m",0),"%.0f m");break;
                 case "ascent":value=f(intent.getDoubleExtra("ascent_m",0),"%.0f m");break;
@@ -457,7 +466,7 @@ public class MainActivity extends Activity {
                 if(!bmsFresh)note=packet==0?"Keine aktuellen BMS-Daten":!BmsMonitorService.running?"Inaktiv · letzter Messwert":"Veraltet · "+Math.max(0,(now-packet)/1000)+" s";
             }else if(key.equals("speed")||key.equals("altitude"))inactive|=!gpsFresh;
             else if(key.equals("outside")){long at=intent.getLongExtra("weather_at",0);inactive|=!prefs.getBoolean("weather_enabled",true)||at==0||now-at>1800000;}
-            else if(!Arrays.asList("total","daily","tour").contains(key))inactive|=!BmsMonitorService.running||!trip;
+            else if(!Arrays.asList("total","daily","tour").contains(key)&&!(AverageMetrics.supported(key)&&AverageMetrics.mode(metric.config)==AverageTracker.RESET))inactive|=!BmsMonitorService.running||!trip;
             metric.reading(value,note,inactive,progressOverride);tileNotes.get(i).setText(note);
         }
     }
@@ -535,6 +544,8 @@ public class MainActivity extends Activity {
         new AlertDialog.Builder(this).setTitle("Erkannte BMS-Daten dieses Scooters").setItems(names,(d,i)->addTile(keys.get(i))).setNegativeButton("Zurück",null).show();
     }
 
+    private void resetAverage(JSONObject tile){String profile=prefs.getString(ScooterProfiles.ACTIVE,"");tourDialog=new AlertDialog.Builder(this).setTitle("Durchschnitt zurücksetzen?").setMessage(CockpitLayout.title(tile.optString("key"))+" für "+ScooterProfiles.name(prefs)+" wird ab jetzt neu berechnet.")
+        .setPositiveButton("Zurücksetzen",(d,w)->{if(!profile.equals(prefs.getString(ScooterProfiles.ACTIVE,"")))return;AverageMetrics.reset(prefs,tile);if(lastStatus!=null)renderStatus(lastStatus);else buildTiles();}).setNegativeButton("Zurück",null).show();}
     private void resetTour(){String profile=prefs.getString(ScooterProfiles.ACTIVE,"");tourDialog=new AlertDialog.Builder(this).setTitle("Tourenzähler zurücksetzen?").setMessage("Nur der Tourenzähler für "+ScooterProfiles.name(prefs)+" wird auf 0 gesetzt. Tages- und Gesamtkilometer bleiben erhalten.")
         .setPositiveButton("Zurücksetzen",(d,w)->{if(!profile.equals(prefs.getString(ScooterProfiles.ACTIVE,""))){Toast.makeText(this,"Scooter wurde gewechselt. Tourenzähler erneut öffnen.",Toast.LENGTH_LONG).show();return;}prefs.edit().putString("tour_km","0").apply();if(lastStatus!=null)renderStatus(lastStatus);else buildTiles();}).setNegativeButton("Zurück",null).show();}
     private void editRoutineMessages(){
@@ -827,6 +838,8 @@ public class MainActivity extends Activity {
                 distance / 1000.0, max, ascent, energy, numberPref("last_max_power")));
     }
 
+    private double number(String key,double fallback){try{double n=Double.parseDouble(prefs.getString(key,Double.toString(fallback)));return Double.isFinite(n)&&n>0?n:fallback;}catch(Exception e){return fallback;}}
+
     private double numberPref(String key) {
         try { return Double.parseDouble(prefs.getString(key, "0")); }
         catch (Exception ignored) { return 0; }
@@ -873,6 +886,7 @@ public class MainActivity extends Activity {
     @Override public void onBackPressed(){if(editingBoard){new AlertDialog.Builder(this).setMessage("Ungespeicherten Layoutentwurf verwerfen?").setPositiveButton("Verwerfen",(d,w)->{boardTiles=savedBoard;editingBoard=false;orientationDrafts.clear();orientationSaved.clear();rebuild();returnAfterEditor();}).setNegativeButton("Weiter bearbeiten",null).show();}else super.onBackPressed();}
     @Override protected void onDestroy() {super.onDestroy();handler.removeCallbacksAndMessages(null);if(picker!=null)picker.close();}
 }
+
 
 
 

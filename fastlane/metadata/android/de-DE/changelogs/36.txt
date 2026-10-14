@@ -1,0 +1,1 @@
+Durchschnittsgeschwindigkeit und Verbrauch: letzte x Meter, aktuelle Fahrt oder ab Reset. Unabhängige gespeicherte Zähler je Kachel und Scooter. Farben, Bezeichnungen und Werte aus dem dunklen Hochformat für beide Ausrichtungen und Designs übernommen; Kacheln bleiben an Ort und Stelle. Inaktive Skalenabschnitte im dunklen Design 10 % dunkler.

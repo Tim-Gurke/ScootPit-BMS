@@ -25,7 +25,7 @@ Bei anderen Joyor-Modellen, Xiaomi/Ninebot, Vsett, Kaabo usw. wird **keine Serie
 - Sensoranzahl, Zuordnung und Verbindungsverhalten können abweichen. Die ersten zwei Temperatursensoren sind Standardkacheln; weitere gelesene Sensoren können als optionale Kacheln ergänzt werden.
 - Bereitschaft benötigt weiterhin ein auslesbares BMS: Es gibt derzeit keinen eigenständigen Startmodus für Roller ohne kompatibles BMS.
 
-Besitzer anderer Roller können sich gern melden und ihre Kombination für einen Kompatibilitätstest vorschlagen. Für eine Prüfung oder einen bestätigten Eintrag bitte Roller-/Akkuversion, BMS-Typ und Firmware, vorhandene BLE-UUIDs sowie Ergebnisse für Lesen, Fahrtstart/-ende und gegebenenfalls Lastausgang über [GitHub Issues](https://github.com/Tim-Gurke/ScootPit-BMS-Public/issues) mitteilen. Kandidaten sind erst nach erfolgreichem Test am konkreten Gerät bestätigt. Bitte keine MAC-Adresse, PIN oder Kontodaten veröffentlichen. [ESPHome JBD-BMS](https://github.com/syssi/esphome-jbd-bms) dokumentiert zahlreiche JBD-Varianten und Protokollunterschiede, bestätigt aber nicht deren Funktion in ScootPit BMS.
+Besitzer anderer Roller können sich gern melden und ihre Kombination für einen Kompatibilitätstest vorschlagen. Für eine Prüfung oder einen bestätigten Eintrag bitte Roller-/Akkuversion, BMS-Typ und Firmware, vorhandene BLE-UUIDs sowie Ergebnisse für Lesen, Fahrtstart/-ende und gegebenenfalls Lastausgang über [GitHub Issues](https://github.com/Tim-Gurke/ScootPit-BMS/issues) mitteilen. Kandidaten sind erst nach erfolgreichem Test am konkreten Gerät bestätigt. Bitte keine MAC-Adresse, PIN oder Kontodaten veröffentlichen. [ESPHome JBD-BMS](https://github.com/syssi/esphome-jbd-bms) dokumentiert zahlreiche JBD-Varianten und Protokollunterschiede, bestätigt aber nicht deren Funktion in ScootPit BMS.
 
 Recherchestand: 12.10.2026.
 
@@ -52,3 +52,4 @@ Nur Zustandsfarben: **grün** = Entladung freigegeben, **rot** = Entladung gespe
 Beide Schaltrichtungen benötigen beendete Fahrt, frische BMS-Daten und keine gemeldete GPS-Bewegung. Sperren zusätzlich erst nach mindestens 5 s unter 0,15 A Absolutstrom. Nur am stehenden Roller benutzen; ohne GPS-Fix kann die App Stillstand nicht selbst garantieren. JBD-V4-Befehl E1 mit Prüfsumme, Fehlerauswertung und anschließendem FET-Readback; Timeout nach 10 s ohne automatischen erneuten Versand. Kein Factory-Mode oder Parameter-Schreiben.
 
 E1 betrifft Lade- und Entladesperre gemeinsam. Bei ausgeschaltetem Lade-MOS werden Befehle abgelehnt, damit eine vorhandene Ladesperre erhalten bleibt. Steuerfunktion, BMS-Neustartverhalten und Bluetooth-Erreichbarkeit müssen am konkreten BMS getestet werden. Die App entsperrt niemals automatisch.
+

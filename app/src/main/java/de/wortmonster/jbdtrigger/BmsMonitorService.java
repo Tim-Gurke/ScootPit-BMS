@@ -72,6 +72,26 @@ public class BmsMonitorService extends Service implements LocationListener {
     private boolean manualHold;
     private final java.io.ByteArrayOutputStream packetBuffer = new java.io.ByteArrayOutputStream();
     private double averageConsumption;
+    private AverageTracker averages;
+    private String averagesProfile="";
+    private double averageLastDistance,averageLastEnergy;
+    private long averageLastMoving,averageSavedAt;
+    String averageProfile(){return averagesProfile;}
+    AverageTracker averageTracker(){updateAverages(false);return averages;}
+    private void loadAverages(){
+        averages=AverageTracker.restore(prefs.getString(AverageMetrics.STATE,""));averagesProfile=prefs.getString(ScooterProfiles.ACTIVE,"");AverageMetrics.initialize(averages,prefs);
+        averageLastDistance=distanceMeters;averageLastMoving=movingMs;averageLastEnergy=energyWh;averageSavedAt=0;
+    }
+    private void updateAverages(boolean force){
+        if(averages==null)loadAverages();
+        if(recorder!=null){
+            double targetEnergy=tripPausedAt>0?pausedEnergyWh:energyWh;
+            averages.record(Math.max(0,distanceMeters-averageLastDistance),Math.max(0,movingMs-averageLastMoving),Math.max(0,targetEnergy-averageLastEnergy),lastPacket>0&&System.currentTimeMillis()-lastPacket<=8000);
+            averageLastDistance=distanceMeters;averageLastMoving=movingMs;averageLastEnergy=targetEnergy;
+        }
+        long now=android.os.SystemClock.elapsedRealtime();
+        if(force||recorder!=null&&now-averageSavedAt>=10000){prefs.edit().putString(AverageMetrics.STATE,averages.encode()).apply();averageSavedAt=now;}
+    }
     private final Runnable clock = new Runnable() {
         @Override public void run() {
             long now = System.currentTimeMillis();
@@ -173,6 +193,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         super.onCreate();
         prefs = getSharedPreferences("settings", MODE_PRIVATE);
         ScooterProfiles.install(prefs);
+        loadAverages();
         weather = new WeatherClient(handler);
         outsideTemperature = number(prefs.getString("outside_temperature", "NaN"), Double.NaN);
         weatherAt = prefs.getLong("weather_at", 0);
@@ -380,9 +401,10 @@ public class BmsMonitorService extends Service implements LocationListener {
                 if(autoSelection && recorder==null){
                     String id=knownBms.get(mac);
                     try{if(!id.equals(prefs.getString(ScooterProfiles.ACTIVE,""))){
-                        ScooterProfiles.switchForService(prefs,id);loadProfileSettings();
+                        updateAverages(true);ScooterProfiles.switchForService(prefs,id);loadProfileSettings();
                         manualHold=false;motion.reset();lastLocation=null;gpsAt=0;extras.values.clear();extras.times.clear();soc=-1;voltage=current=dischargeWatts=0;
                         temperatures=new double[0];distanceMeters=energyWh=maxPowerW=maxSpeedKmh=0;movingMs=standingMs=0;
+                        loadAverages();
                     }}catch(Exception e){setState("Profil konnte nicht gewählt werden: "+e.getMessage());return;}
                     address=mac;tried.put(mac,scanNow);
                 }
@@ -733,6 +755,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         lastPowerAt = now;
         lastLocation = null;
         movingMs = standingMs = 0;
+        averageLastDistance=averageLastEnergy=0;averageLastMoving=0;averages.beginTrip();
         tripPausedAt=0;pausedGpsSpeedKmh=0;resumeGate.reset();
         lastClock = now;motion.reset();
         startLocationTracking();
@@ -769,6 +792,7 @@ public class BmsMonitorService extends Service implements LocationListener {
     private void finishTrip(long endedAt) {
         if (recorder == null) return;
         stopLocationTracking();
+        updateAverages(true);
         if(tripPausedAt>0 && endedAt==tripPausedAt){energyWh=pausedEnergyWh;maxPowerW=pausedMaxPowerW;}
         tripPausedAt=0;
         double averageTemperature=temperatureSamples>0?temperatureSum/temperatureSamples:Double.NaN;
@@ -923,6 +947,7 @@ public class BmsMonitorService extends Service implements LocationListener {
     }
 
     private Intent baseIntent(String action) {
+        updateAverages(false);
         return new Intent(action)
                 .putExtra("scooter_id",prefs.getString(ScooterProfiles.ACTIVE,""))
                 .putExtra("device_address", address)
@@ -932,6 +957,7 @@ public class BmsMonitorService extends Service implements LocationListener {
                 .putExtra("current", current)
                 .putExtra("discharge_watts", dischargeWatts)
                 .putExtra("energy_wh", energyWh)
+                .putExtra("full_capacity_ah",fullAh)
                 .putExtra("max_power_w",maxPowerW)
                 .putExtra("range_recent",recentConsumption.ready())
                 .putExtra("speed_kmh", currentSpeedKmh)
@@ -1053,6 +1079,7 @@ public class BmsMonitorService extends Service implements LocationListener {
     }
 
     @Override public void onDestroy() {
+        updateAverages(true);
         running = false;liveService=null;
         if(wakeLock!=null && wakeLock.isHeld())wakeLock.release();
         weather.close();
@@ -1068,5 +1095,6 @@ public class BmsMonitorService extends Service implements LocationListener {
 
     @Override public IBinder onBind(Intent intent) { return null; }
 }
+
 
 

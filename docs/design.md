@@ -18,9 +18,11 @@ Mit **Skalenrichtung umkehren** liegen hohe Werte am Anfang und niedrige Werte a
 
 Balken und Rundinstrumente können je Kachel einfarbig, zweifarbig oder dreifarbig dargestellt werden. Anfangsfarbe und Endfarbe sind frei wählbar; im Dreifarbenmodus ist auch die Mittelfarbe wählbar. Schieberegler legen fest, bis zu welchem Wert die Anfangsfarbe und ab welchem Wert die Endfarbe voll erscheint. Dazwischen blendet ScootPit stufenlos. Farben und Schwellen werden im jeweiligen Scooter-Layout gespeichert.
 
+Die noch nicht erreichten farbigen Skalenabschnitte sind bei gültigen Messwerten im dunklen Design gegenüber 1.6.3 um **10 % abgedunkelt**. Der aktive Bereich, das helle Design und die graue Anzeige bei fehlenden BMS-Daten behalten ihre bisherige Abstufung.
+
 ## Helles und dunkles Design
 
-**App-Farben** bietet Dunkel/Orange und Hell/Blau. **Nur App-Farben** erhält eigene Kachelfarben; **Alle Kacheln** übernimmt das Schema auch für Hoch- und Querformat. Transparente Kacheln, Anordnung, Bilder und Texte bleiben erhalten. Der Bildschirm kann einen frei wählbaren Verlauf zwischen zwei Farben erhalten. Alle Farben sind danach manuell anpassbar.
+**App-Farben** bietet Dunkel/Orange und Hell/Blau. **Nur App-Farben** erhält eigene Kachelfarben; **Alle Kacheln** übernimmt das Schema auch für Hoch- und Querformat. Transparente Kacheln, Anordnung, Bilder und Texte bleiben erhalten. Der Bildschirm kann einen frei wählbaren Verlauf zwischen zwei Farben erhalten. Die gelieferten Symbolfarben behalten im hellen Design ihren Farbton und werden für den Kontrast angepasst. Beim Zurückschalten wird die gespeicherte dunkle Kachelfarbe wiederhergestellt. Alle Farben sind danach manuell anpassbar.
 
 Die Android-Statusleiste übernimmt die App-Hintergrundfarbe. Uhrzeit und Symbole werden je nach Helligkeit dunkel oder hell dargestellt, auch direkt beim Appstart und beim Wechsel des Scooter-Profils. Ein eigener Bildschirm-Farbverlauf verändert den Kontrast der Statusleiste nicht. Das gilt auch unter Android 15, wo ScootPit den Hintergrund unter der transparenten Systemleiste selbst zeichnet.
 
@@ -43,5 +45,6 @@ Das Antippen der Tourenzähler-Kachel öffnet im normalen Cockpit die Rückfrage
 
 ## Standardgestaltung ab 1.5.2
 
-Bei einer Neuinstallation übernimmt ScootPit das dunkle Design mit orangefarbenen Akzenten sowie die aktuellen Hoch- und Querformatlayouts aus der Voreinstellung. Das Querformat nutzt eine überlappende Anordnung. **Standardlayout** stellt beide Layouts wieder her. Bestehende Installationen und Profileinstellungen werden bei einem Update nicht überschrieben.
+Bei einer Neuinstallation übernimmt ScootPit das dunkle Design mit orangefarbenen Akzenten sowie die aktuellen Hoch- und Querformatlayouts aus der Voreinstellung. Das Querformat nutzt eine überlappende Anordnung. **Standardlayout** stellt beide Layouts wieder her. Das Update auf 1.6.4 überträgt Farben, Bezeichnungen und Werte aus dem dunklen Hochformat auf die entsprechenden Querformatkacheln. Unveränderte Standardwerte werden aus der bereinigten Vorlage aktualisiert; persönliche Werte bleiben erhalten. Kachelauswahl, Positionen und Größen ändern sich dabei nicht.
+
 

@@ -9,7 +9,7 @@ ScootPit BMS is an Android dashboard and ride log app for the Joyor T6E Pro with
 <li>Starts with an airy portrait layout and a compact landscape cockpit with readiness status in a shorter header</li>
 <li>Colors scales with custom start, middle, and end colors and adjustable transition thresholds</li>
 <li>Reverses bars and gauge scales per tile without changing the reading</li>
-<li>Sets the live consumption distance per scooter from 100 to 1000 m with a slider</li>
+<li>Shows average speed and consumption for the last x metres (1–100000 m), the current ride or since an independent reset; configurable per tile and scooter</li>
 <li>Imports single GPX or CSV rides and restores complete ride journals from folders</li>
 <li>Skips rides already in the journal; an “All” view shows the complete date range</li>
 </ul>
@@ -17,5 +17,6 @@ ScootPit BMS is an Android dashboard and ride log app for the Joyor T6E Pro with
 Requires Android 8 or later and a compatible JBD/Jiabaida Bluetooth BMS. The app was developed with the Joyor T6e Pro and JBD SP14S004; compatibility with other BMS models is not guaranteed. Bluetooth and location permissions are used for device scanning and GPS ride recording. The app interface is currently in German.
 
 Privacy: Profiles and ride files are stored locally. Optional weather updates send rounded location coordinates to Open-Meteo. Opening a map loads the visible map tiles from OpenStreetMap.
+
 
 

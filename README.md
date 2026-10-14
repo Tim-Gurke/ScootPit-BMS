@@ -10,7 +10,7 @@ ScootPit BMS wurde mit dem **Joyor T6E Pro und dem JBD SP14S004** entwickelt. Di
 
 **ScootPit – für alle, die ihren Roller überwachen wollen, ohne selbst überwacht zu werden.**
 
-**Version 1.6.3 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS-Public/releases/latest)**
+**Version 1.6.4 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
 
 Das Highlight ist die Automatik: **Bereitschaft einschalten, zum Scooter gehen und losfahren.** ScootPit erkennt ein gespeichertes Bluetooth-BMS in Reichweite, wählt das zugehörige Scooter-Profil und verbindet sich bei ausreichend stabilem Empfang automatisch. Die Fahrtaufzeichnung startet, sobald die eingestellten Bedingungen für die Stromentnahme erfüllt sind. Die Annäherung allein startet noch keine Fahrt.
 
@@ -77,6 +77,12 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 <em>Im Fahrtenbuch kannst du einen Zeitraum wählen und den gesamten Scooter-Fahrtenordner oder einzelne CSV-/GPX-Fahrten importieren.</em>
 
 
+## Neu in 1.6.4
+
+**Durchschnittsgeschwindigkeit** und **Durchschnittsverbrauch** bieten pro Kachel drei Bezugsbereiche: **letzte x Meter**, **aktuelle Fahrt** oder **ab Reset**. Die Strecke ist von 1 bis 100000 m einstellbar. Die Geschwindigkeit nutzt die Fahrzeit ohne Standzeiten; Verbrauch erscheint in Wh/km oder % auf 10 km. Im Bereich „Ab Reset“ öffnet Antippen eine Rückfrage und setzt nur den Zähler dieser Kachel zurück. Zähler und Streckenfenster werden pro Scooter gespeichert.
+
+Farben, Bezeichnungen und Skalenwerte der bereitgestellten dunklen Hochformat-Einstellungen sind auch im Querformat und entsprechend im hellen Design übernommen. Kachelauswahl, Positionen und Größen bleiben erhalten. Die noch nicht erreichten Skalenabschnitte sind bei gültigen Messwerten im dunklen Design **10 % dunkler**. Die Durchschnittskacheln stehen unter **Cockpit bearbeiten → + Kachel** bereit.
+
 ## Neu in 1.6.3
 
 Die Android-Statusleiste bleibt im hellen und dunklen Design lesbar. Ihr Hintergrund folgt der App-Hintergrundfarbe; Uhrzeit und Symbole erhalten automatisch den passenden Kontrast. Das gilt beim Appstart, beim Design- und Profilwechsel sowie unter Android 15 mit transparenter Systemleiste. Eigene Bildschirm-Farbverläufe beeinträchtigen die Lesbarkeit der Statusleiste nicht.
@@ -123,7 +129,7 @@ Die Richtung von Balken und Rundinstrumenten lässt sich pro Kachel umkehren. Ho
 
 ## Neu in 1.5.0
 
-Skalen von Balken und Rundinstrumenten lassen sich pro Kachel einfarbig, zweifarbig oder dreifarbig gestalten. Anfangsfarbe und Endfarbe sind frei wählbar; im Dreifarbenmodus kommt eine frei wählbare Mittelfarbe hinzu. Schieberegler legen fest, bis zu welchem Prozentwert die Anfangsfarbe und ab welchem Wert die Endfarbe voll angezeigt wird. Dazwischen verläuft der Übergang stufenlos. Der Verbrauch der letzten Strecke lässt sich für jeden Scooter zwischen 100 und 1000 m einstellen.
+Skalen von Balken und Rundinstrumenten lassen sich pro Kachel einfarbig, zweifarbig oder dreifarbig gestalten. Anfangsfarbe und Endfarbe sind frei wählbar; im Dreifarbenmodus kommt eine frei wählbare Mittelfarbe hinzu. Schieberegler legen fest, bis zu welchem Prozentwert die Anfangsfarbe und ab welchem Wert die Endfarbe voll angezeigt wird. Dazwischen verläuft der Übergang stufenlos. Durchschnittsgeschwindigkeit und Durchschnittsverbrauch lassen sich je Kachel auf die letzten 1–100000 m, die aktuelle Fahrt oder den Zeitraum ab manuellem Reset beziehen.
 
 ## Neu in 1.4.3
 
@@ -153,7 +159,7 @@ Bluetooth, präziser Standort und die nötigen Berechtigungen müssen aktiv sein
 
 ## Loslegen
 
-1. Die signierte APK aus der [offiziellen Veröffentlichung](https://github.com/Tim-Gurke/ScootPit-BMS-Public/releases/latest) installieren und Berechtigungen erlauben.
+1. Die signierte APK aus der [offiziellen Veröffentlichung](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest) installieren und Berechtigungen erlauben.
 2. Je Scooter ein Profil anlegen, das eigene BMS auswählen und die Werte prüfen.
 3. **Bereitschaft starten** – danach Cockpit nutzen oder Handy sperren und einstecken.
 4. Nach der Fahrt das **Fahrtenbuch-Symbol** im Kopf antippen.
@@ -179,6 +185,7 @@ Der Quellcode enthält keine persönlichen Geräteadressen, Fahrtdateien oder Si
 ## Lizenz
 
 Quellcode, Dokumentation und Originalgrafiken von ScootPit BMS stehen unter der [Apache-Lizenz 2.0](LICENSE). Marken und Inhalte Dritter bleiben Eigentum ihrer jeweiligen Rechteinhaber.
+
 
 
 

@@ -196,14 +196,17 @@ final class MetricTile extends TextView {
         catch(Exception ignored){return fallback;}
     }
     private boolean darkSurface(){return relativeLuminance(foreground)>.5;}
+    private int darkTrackColor(int base){return ScaleColorRange.blend(base,0xff9ca8af,.48)|0xff000000;}
     int inactiveTrackColor(int base,int lightGray){
         if(!darkSurface())return Color.argb(Color.alpha(base),lightGray,lightGray,lightGray);
-        int muted=ScaleColorRange.blend(base,0xff9ca8af,.48);
-        return Color.rgb(Color.red(muted),Color.green(muted),Color.blue(muted));
+        int muted=darkTrackColor(base);
+        return inactive?muted:ScaleColorRange.blend(muted,Color.BLACK,.10);
     }
     int inactiveGradientColor(double progress){
         int color=gradientColor(progress,scale);
-        return darkSurface()?ScaleColorRange.blend(color,inactiveTrackColor(scale,55),.72):ScaleColorRange.blend(color,background,.78);
+        if(!darkSurface())return ScaleColorRange.blend(color,background,.78);
+        int muted=ScaleColorRange.blend(color,darkTrackColor(scale),.72);
+        return inactive?muted:ScaleColorRange.blend(muted,Color.BLACK,.10);
     }
     private void drawGradientArc(Canvas c,RectF bounds,float start,float sweep,float strokeWidth,double fromFraction,double toFraction,boolean pale,boolean reversed){
         double from=Math.max(0,Math.min(1,fromFraction)),to=Math.max(from,Math.min(1,toFraction));if(to<=from)return;int segments=Math.max(30,(int)Math.ceil(sweep/2.5f));
@@ -243,4 +246,5 @@ final class MetricTile extends TextView {
         }
     }
 }
+
 
