@@ -151,7 +151,11 @@ public class CockpitSmokeTest extends Instrumentation {
                     BmsMonitorService.running=false;invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{fresh});
                     if(!soc.getContentDescription().toString().contains("nicht aktuell")||!findMetric(activity.getWindow().getDecorView(),"distance").getContentDescription().toString().contains("nicht aktuell")||findMetric(activity.getWindow().getDecorView(),"total").getContentDescription().toString().contains("nicht aktuell"))throw new AssertionError("Stopped tracking and odometer");
                     invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{new Intent()});if(!soc.getContentDescription().toString().contains("nicht aktuell"))throw new AssertionError("Missing value");
-                }finally{BmsMonitorService.running=running;setMember(activity,"boardTiles",new org.json.JSONArray(savedBoard));prefs.edit().putString("cockpit_board",savedBoard).remove("tile_background").apply();invoke(activity,"rebuild",new Class[0],new Object[0]);}
+                }catch(Exception e){throw new RuntimeException(e);}finally{
+                    BmsMonitorService.running=running;
+                    try{setMember(activity,"boardTiles",new org.json.JSONArray(savedBoard));}catch(Exception e){throw new RuntimeException(e);}
+                    prefs.edit().putString("cockpit_board",savedBoard).remove("tile_background").apply();invoke(activity,"rebuild",new Class[0],new Object[0]);
+                }
             });
             checked(()->invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{new Intent().putExtra("soc",75).putExtra("range_km",24.5).putExtra("speed_kmh",18.2).putExtra("bms_at",System.currentTimeMillis()).putExtra("bms_connected",true).putExtra("temperatures",new double[]{25,30}).putExtra("max_power_w",980.0)}));
             screenshot("cockpit.png");
