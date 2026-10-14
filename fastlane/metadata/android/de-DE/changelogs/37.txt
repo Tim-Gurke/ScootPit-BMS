@@ -1,0 +1,1 @@
+Das Hochformat-Standardcockpit übernimmt jetzt die eingerichteten Kacheln und Werte, einschließlich Durchschnittsgeschwindigkeit und Durchschnittsverbrauch. Neue Kacheln übernehmen Transparenz und Überlappung, erscheinen direkt hinter der letzten Kachel und werden eingeblendet. Längeres Ausrollen bei 0 W pausiert die Fahrtaufzeichnung nicht, solange GPS eine Fahrbewegung erkennt.

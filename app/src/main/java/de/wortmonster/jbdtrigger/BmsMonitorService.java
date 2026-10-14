@@ -732,7 +732,7 @@ public class BmsMonitorService extends Service implements LocationListener {
                 farConfirmations = 0;
                 emit(ACTION_IDLE);
 
-                setState("Fahrt pausiert – BMS wird weiter überwacht");
+                setState("Motorlast gering – Fahrtaufzeichnung läuft weiter");
             }
         } else if (active) {
             idleSince = 0;

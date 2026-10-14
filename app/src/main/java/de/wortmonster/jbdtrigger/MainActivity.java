@@ -53,6 +53,7 @@ public class MainActivity extends Activity {
     private static final int GREEN=0xff21c879, RED=0xffff535d;
     private JSONArray boardTiles;
     private boolean editingBoard;
+    private boolean scrollAfterAddingTile;
     private JSONArray savedBoard;
     private CockpitBoard board;
     private Intent lastStatus;
@@ -225,6 +226,7 @@ public class MainActivity extends Activity {
             return WindowInsetsCompat.CONSUMED;
         });
         setContentView(scroll);ViewCompat.requestApplyInsets(scroll);
+        if(scrollAfterAddingTile){scrollAfterAddingTile=false;scroll.post(()->scroll.fullScroll(View.FOCUS_DOWN));}
         if(lastStatus!=null)renderStatus(lastStatus);
         else renderStatus(new Intent().putExtra("outside_temperature",prefs.getBoolean("weather_enabled",true)&&prefs.contains("outside_temperature")?numberPref("outside_temperature"):Double.NaN).putExtra("weather_at",prefs.getLong("weather_at",0)));
     }
@@ -534,7 +536,7 @@ public class MainActivity extends Activity {
     private void addTile(String key){
         if(boardTiles.length()>=100){Toast.makeText(this,"Maximal 100 Kacheln",Toast.LENGTH_LONG).show();return;}
         if(Arrays.asList("bms_output","log").contains(key))for(int i=0;i<boardTiles.length();i++)if(boardTiles.optJSONObject(i).optString("key").equals(key)){Toast.makeText(this,"Diese Kachel ist bereits vorhanden",Toast.LENGTH_SHORT).show();return;}
-        try{boardTiles.put(CockpitBoard.position(CockpitLayout.tile(key).put("heading_mode",2).put("show_title",true),0,board.bottom(),6,3));rebuild();}catch(Exception e){Toast.makeText(this,e.getMessage(),Toast.LENGTH_LONG).show();}
+        try{int y=Math.min(600,board==null?3:board.bottom());JSONObject tile=CockpitLayout.tile(key,boardTiles).put("heading_mode",2).put("show_title",true).put("x",0).put("y",y).put("w",6).put("h",3);boardTiles.put(tile);scrollAfterAddingTile=true;rebuild();}catch(Exception e){Toast.makeText(this,e.getMessage(),Toast.LENGTH_LONG).show();}
     }
     private void optionalTiles(){
         ArrayList<String> keys=new ArrayList<>();try{JSONArray available=new JSONArray(prefs.getString("bms_available","[]"));for(int i=0;i<available.length();i++){String key=available.getString(i);if(BmsExtras.known(key))keys.add(key);}}catch(Exception ignored){}
@@ -627,7 +629,7 @@ public class MainActivity extends Activity {
         String[] titles={"Fahrt ab Entladestrom (A)","Startverzögerung (s)","Pause ohne Entnahme nach (s)","Ohne Fahrt zurück zur Suche nach (s)","Verbinden ab Empfang (dBm)","Entfernung unter Empfang (dBm)","Suchpause: BMS fehlt (s)","Suchpause: schwacher Empfang (s)","Suchpause: guter Empfang (s)","Wiederverbindung während Fahrtpause (s)","Entfernung bestätigen ohne BMS-Daten (s)","Maximal plausible GPS-Geschwindigkeit (km/h)","Starken Empfang vor Erstverbindung bestätigen (s)","Fahrt pausieren nach Stillstand (s)","Bei langsamer Bewegung ohne Motorlast pausieren (s)","Fahrtende nach langer Pause (s)","Wiederverbindung erlauben bis nach Pausenbeginn (s)"};
         String[] defs={"0.30","1","5","90","-75","-95","5","15","2","2","30","45","3","45","15","600","120"};
         List<EditText> es=new ArrayList<>();for(int i=0;i<keys.length;i++){EditText input=field(l,titles[i],prefs.getString(keys[i],defs[i]));if(i==4||i==5)input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_SIGNED|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);es.add(input);}
-        l.addView(label("Erstverbindung nach mindestens drei stabilen Empfangsmessungen. Automatik prüft nur gespeicherte, eindeutig zugeordnete BMS und hält das Profil während einer Fahrt fest. Ausrollen wird weiter aufgezeichnet. Nach 45 s Stillstand oder 15 s langsamer Bewegung ohne Motorlast pausiert die Fahrtaufzeichnung; Fußwege werden nicht als Fahrstrecke aufgezeichnet. Die BMS-Verbindung bleibt bestehen. Fortsetzen erfordert GPS-Fahrgeschwindigkeit und anhaltende Motorlast. Nach 10 Minuten endet sie rückwirkend ab Pausenbeginn. Bei bestätigter Entfernung wird die Pause ebenfalls als Fahrtende gewertet. GPS-Ausfall zählt nicht als Stillstand. Änderungen der Erkennung gelten nach Neustart der Bereitschaft.",12,muted()));ScrollView sv=new ScrollView(this);sv.addView(l);
+        l.addView(label("Erstverbindung nach mindestens drei stabilen Empfangsmessungen. Automatik prüft nur gespeicherte, eindeutig zugeordnete BMS und hält das Profil während einer Fahrt fest. Ausrollen bei 0 W und erkennbarer GPS-Fahrgeschwindigkeit wird weiter aufgezeichnet; 0 W allein pausiert die Fahrt nicht. Nach 45 s Stillstand oder 15 s langsamer Bewegung ohne Motorlast pausiert die Fahrtaufzeichnung; Fußwege werden nicht als Fahrstrecke aufgezeichnet. Die BMS-Verbindung bleibt bestehen. Fortsetzen erfordert GPS-Fahrgeschwindigkeit und anhaltende Motorlast. Nach 10 Minuten endet sie rückwirkend ab Pausenbeginn. Bei bestätigter Entfernung wird die Pause ebenfalls als Fahrtende gewertet. GPS-Ausfall zählt nicht als Stillstand. Änderungen der Erkennung gelten nach Neustart der Bereitschaft.",12,muted()));ScrollView sv=new ScrollView(this);sv.addView(l);
         AlertDialog d=new AlertDialog.Builder(this).setTitle("BMS und Fahrt-Erkennung").setView(sv).setPositiveButton("Speichern",null).setNegativeButton("Zurück",null).create();d.setOnShowListener(x->d.getButton(-1).setOnClickListener(v->{
             double[] mins={.01,1,1,1,-110,-120,5,5,1,1,10,10,1,15,5,60,0},maxs={100,3600,3600,3600,-30,-30,3600,3600,3600,60,600,150,15,3600,120,7200,7200};
             Double[] values=new Double[keys.length];for(int i=0;i<keys.length;i++){values[i]=valid(es.get(i),mins[i],maxs[i]);if(values[i]==null)return;}

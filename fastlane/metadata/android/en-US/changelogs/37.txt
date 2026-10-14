@@ -1,0 +1,1 @@
+The portrait default cockpit now uses the configured tiles and values, including average speed and average consumption. New tiles inherit transparency and overlap settings, appear directly after the last tile, and are brought into view. Long coasting at 0 W does not pause trip recording while GPS still detects riding movement.

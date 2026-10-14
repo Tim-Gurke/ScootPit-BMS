@@ -10,17 +10,23 @@ ScootPit BMS wurde mit dem **Joyor T6E Pro und dem JBD SP14S004** entwickelt. Di
 
 **ScootPit – für alle, die ihren Roller überwachen wollen, ohne selbst überwacht zu werden.**
 
-**Version 1.6.4 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
+**Version 1.6.5 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
 
 Das Highlight ist die Automatik: **Bereitschaft einschalten, zum Scooter gehen und losfahren.** ScootPit erkennt ein gespeichertes Bluetooth-BMS in Reichweite, wählt das zugehörige Scooter-Profil und verbindet sich bei ausreichend stabilem Empfang automatisch. Die Fahrtaufzeichnung startet, sobald die eingestellten Bedingungen für die Stromentnahme erfüllt sind. Die Annäherung allein startet noch keine Fahrt.
 
-Die Aufzeichnung läuft auch mit ausgeschaltetem Bildschirm und gesperrtem Handy. Beim Ausrollen wird GPS weiter ausgewertet. Nach **45 Sekunden zuverlässig erkanntem Stillstand** oder **15 Sekunden langsamer Bewegung ohne Motorlast** pausiert die Fahrt; Fußwege werden nicht als Fahrstrecke gezählt. Die BMS-Verbindung bleibt bestehen. Eine Fortsetzung erfordert passende GPS-Fahrgeschwindigkeit und anhaltende Motorlast. Nach **10 Minuten Pause** wird sie rückwirkend zum Pausenbeginn abgeschlossen. Geht die Verbindung während der Pause verloren, sucht die App weiter und wartet standardmäßig bis 2 Minuten nach Pausenbeginn auf eine Wiederverbindung. Die Zeiten sind je Scooter einstellbar. GPS-Ausfall allein gilt nicht als Stillstand.
+Die Aufzeichnung läuft auch mit ausgeschaltetem Bildschirm und gesperrtem Handy. Beim Ausrollen wird GPS weiter ausgewertet: **0 W allein pausiert die Fahrt nicht**, auch eine längere Bergabfahrt bleibt bei erkennbarer GPS-Fahrgeschwindigkeit in der Aufzeichnung. Nach **45 Sekunden zuverlässig erkanntem Stillstand** oder **15 Sekunden langsamer Bewegung ohne Motorlast** pausiert sie; Fußwege werden nicht als Fahrstrecke gezählt. Die BMS-Verbindung bleibt bestehen. Eine Fortsetzung erfordert passende GPS-Fahrgeschwindigkeit und anhaltende Motorlast. Nach **10 Minuten Pause** wird sie rückwirkend zum Pausenbeginn abgeschlossen. Geht die Verbindung während der Pause verloren, sucht die App weiter und wartet standardmäßig bis 2 Minuten nach Pausenbeginn auf eine Wiederverbindung. Die Zeiten sind je Scooter einstellbar. GPS-Ausfall allein gilt nicht als Stillstand.
 
 Mehrere gespeicherte Scooter? Die App prüft erreichbare BMS nacheinander und übernimmt das passende Profil. Während einer laufenden Fahrt bleibt die Zuordnung fest. Unbekannte BMS werden nicht ungefragt übernommen; jedes Gerät wird bei der Einrichtung einmal seinem Profil zugeordnet.
 
 Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch einer frei wählbaren Strecke und die aktuelle elektrische Leistung stehen im Mittelpunkt. Akku, Restreichweite, Kilometer und Temperaturen ergänzen die Übersicht; GPS-Geschwindigkeit bleibt als kleinere Anzeige verfügbar.
 
-### Aktuelle Hauptansicht · Bereitschaft aktiv
+### Aktuelles Cockpit · Version 1.6.5
+
+![ScootPit BMS mit dem eingerichteten dunklen Joyor-Cockpit und den zusätzlichen Durchschnittskacheln](docs/assets/screenshots/cockpit-dunkel-1.6.5.jpg)
+
+<em>Das dunkle Cockpit aus der aktuellen Einstellungsdatei. Die Anordnung und Messwerte sind zugleich die Vorlage für das helle Design.</em>
+
+### Hauptansicht · Bereitschaft aktiv
 
 ![ScootPit BMS im Joyor T6e Pro mit aktiver Bereitschaft vor der Fahrt](docs/assets/screenshots/cockpit-bereitschaft-aktiv.jpg)
 
@@ -76,6 +82,12 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 <p><img src="docs/assets/screenshots/fahrtenbuch-ordnerimport.jpg" width="260" alt="Fahrtenbuch mit Zeitraumwahl sowie Import des kompletten Ordners oder einzelner Fahrten"></p>
 <em>Im Fahrtenbuch kannst du einen Zeitraum wählen und den gesamten Scooter-Fahrtenordner oder einzelne CSV-/GPX-Fahrten importieren.</em>
 
+
+## Neu in 1.6.5
+
+Das Standardcockpit im Hochformat übernimmt jetzt die eingerichteten Werte und Kacheln, einschließlich Durchschnittsgeschwindigkeit und Durchschnittsverbrauch. Beim Aktualisieren erhalten unveränderte Standardlayouts die neuen Kacheln; individuell angeordnete Layouts bleiben erhalten. Neue Kacheln übernehmen die üblichen Transparenz-, Überlappungs- und Darstellungswerte des Cockpits und erscheinen direkt nach der letzten Kachel. Ihre Position wird nicht mehr versehentlich verdoppelt.
+
+Das dunkle Cockpit ist die gemeinsame Vorlage für Kachelanordnung und Messwerte im hellen Design; dessen Farben passen sich weiterhin an den hellen Hintergrund an. Eine längere 0-W-Phase beim Ausrollen pausiert die Fahrtaufzeichnung nicht, solange GPS eine Fahrbewegung erkennt.
 
 ## Neu in 1.6.4
 
