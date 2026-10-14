@@ -672,12 +672,18 @@ public class CockpitSmokeTest extends Instrumentation {
                 if(!contains(activity.getWindow().getDecorView(),"24,0 km/h")||!contains(activity.getWindow().getDecorView(),"36,0 km/h")||!contains(activity.getWindow().getDecorView(),"30,0 Wh/km")||!contains(activity.getWindow().getDecorView(),"40,0 Wh/km"))throw new AssertionError("Average scopes rendered incorrectly after a ride boundary");
                 View speed=findDescription(activity.getWindow().getDecorView(),"Durchschnittsgeschwindigkeit ab Reset · zurücksetzen");if(speed==null||!speed.performClick())throw new AssertionError("Average speed reset tile not clickable");
                 android.app.AlertDialog dialog=(android.app.AlertDialog)member(activity,"tourDialog");dialog.getButton(-2).performClick();
+            }catch(Exception e){throw new RuntimeException(e);}});
+            waitForIdleSync();
+            checked(()->{try{
                 if(!contains(activity.getWindow().getDecorView(),"24,0 km/h"))throw new AssertionError("Cancel changed average counter");
-                speed.performClick();((android.app.AlertDialog)member(activity,"tourDialog")).getButton(-1).performClick();
+                findDescription(activity.getWindow().getDecorView(),"Durchschnittsgeschwindigkeit ab Reset · zurücksetzen").performClick();((android.app.AlertDialog)member(activity,"tourDialog")).getButton(-1).performClick();
+            }catch(Exception e){throw new RuntimeException(e);}});
+            waitForIdleSync();
+            checked(()->{try{
                 if(contains(activity.getWindow().getDecorView(),"24,0 km/h")||!contains(activity.getWindow().getDecorView(),"30,0 Wh/km")||!contains(activity.getWindow().getDecorView(),"36,0 km/h"))throw new AssertionError("Speed reset affected another scope/counter");
                 AverageTracker persisted=AverageTracker.decode(prefs.getString(AverageMetrics.STATE,""));if(!Double.isNaN(persisted.reading(2,500,"speed-reset").speedKmh())||Math.abs(persisted.reading(2,500,"energy-reset").whPerKm()-30)>.001)throw new AssertionError("Reset persistence lost independent energy counter");
                 StorageFolders.validateProfiles(ScooterProfiles.export(prefs),prefs.getString(ScooterProfiles.ACTIVE,""));
-                invoke(activity,"editLayout",new Class[0],new Object[0]);invoke(activity,"editBoardTile",new Class[]{int.class},new Object[]{0});dialog=(android.app.AlertDialog)member(activity,"tileDialog");
+                invoke(activity,"editLayout",new Class[0],new Object[0]);invoke(activity,"editBoardTile",new Class[]{int.class},new Object[]{0});android.app.AlertDialog dialog=(android.app.AlertDialog)member(activity,"tileDialog");
                 android.widget.Spinner scope=spinnerAfterLabel(dialog.getWindow().getDecorView(),"Durchschnittsbereich");if(scope.getCount()!=3||scope.getSelectedItemPosition()!=2)throw new AssertionError("Average scope editor missing choices");
                 scope.setSelection(0);inputAfterLabel(dialog.getWindow().getDecorView(),"Strecke x in Metern (1–100000)").setText("1250");clickText(dialog.getWindow().getDecorView(),"Übernehmen");
                 CockpitBoard edited=(CockpitBoard)findBoard(activity.getWindow().getDecorView());if(edited.tiles.getJSONObject(0).getInt("average_mode")!=0||edited.tiles.getJSONObject(0).getInt("average_window_m")!=1250)throw new AssertionError("Average speed scope/distance not applied");
