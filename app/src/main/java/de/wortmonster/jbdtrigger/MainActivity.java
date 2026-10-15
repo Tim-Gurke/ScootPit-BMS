@@ -515,9 +515,9 @@ public class MainActivity extends Activity {
         }
         boolean paused=lastStatus.getBooleanExtra("trip_paused",false);
         boolean manual=lastStatus.getBooleanExtra("trip_paused_manual",false);
-        PopupMenu menu=new PopupMenu(this,tripActionButton);
+        PopupMenu menu=new PopupMenu(new android.view.ContextThemeWrapper(this,CockpitTheme.light(prefs)?R.style.AppThemeLight:R.style.AppTheme),tripActionButton);
         if(paused&&manual){
-            menu.getMenu().add("Fortsetzung erfolgt bei Weiterfahrt automatisch").setEnabled(false);
+            menu.getMenu().add("Weiterfahrt: automatisch fortsetzen").setEnabled(false);
         }else if(paused){
             menu.getMenu().add("Manuelle Pause bis zu 12 Stunden").setOnMenuItemClickListener(item->{pauseTripManually();return true;});
         }else{

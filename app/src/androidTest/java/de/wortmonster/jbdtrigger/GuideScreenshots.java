@@ -70,7 +70,7 @@ final class GuideScreenshots {
             runner.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK);runner.waitForIdleSync();
             runner.runOnMainSync(()->{invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{sample(true)});invoke(activity,"tripAction",new Class[0],new Object[0]);});
             screenshot("anleitung-pause-automatik.png");
-            requireText("Fortsetzung erfolgt bei Weiterfahrt automatisch");
+            requireText("Weiterfahrt: automatisch fortsetzen");
             runner.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK);runner.waitForIdleSync();
             runner.runOnMainSync(()->invoke(activity,"showSettings",new Class[0],new Object[0]));
             screenshot("anleitung-einstellungen.png");
