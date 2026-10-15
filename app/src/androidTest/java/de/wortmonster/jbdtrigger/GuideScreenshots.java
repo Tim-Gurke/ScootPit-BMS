@@ -30,8 +30,8 @@ final class GuideScreenshots {
             runner.runOnMainSync(()->{
                 try{
                     ScooterProfiles.rename(prefs,"Beispiel-Scooter");
-                    prefs.edit().putString("total_km","123.45").putString("tour_km","16.63").putString("daily_km","16.63")
-                        .putString("daily_day",DistanceCounters.day(System.currentTimeMillis())).putBoolean("weather_enabled",false).commit();
+                    prefs.edit().putString("device_address","02:00:00:00:00:01").putString("device_name","Beispiel-BMS").putString("total_km","123.45").putString("tour_km","16.63").putString("daily_km","16.63")
+                        .putString("daily_day",DistanceCounters.day(System.currentTimeMillis())).putBoolean("weather_enabled",true).commit();
                     AverageTracker averages=new AverageTracker();AverageMetrics.initialize(averages,prefs);averages.beginTrip();
                     averages.record(7900,1422000,130.0,true);averages.record(300,54000,4.02,true);
                     prefs.edit().putString(AverageMetrics.STATE,averages.encode()).commit();
