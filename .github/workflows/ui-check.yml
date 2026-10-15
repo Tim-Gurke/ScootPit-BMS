@@ -50,7 +50,8 @@ jobs:
             adb pull /sdcard/Android/data/de.wortmonster.jbdtrigger/files/screenshots ui-screenshots
             grep 'Cockpit launch.*OK' ui-result.txt
             adb shell am instrument -w de.wortmonster.jbdtrigger.test/de.wortmonster.jbdtrigger.GuideScreenshots | tee guide-result.txt
-            adb pull /sdcard/Android/data/de.wortmonster.jbdtrigger/files/screenshots ui-screenshots
+            adb pull /sdcard/Android/data/de.wortmonster.jbdtrigger/files/screenshots ui-guide
+            cp ui-guide/anleitung-*.png ui-screenshots/
             grep 'Guide screenshots: OK' guide-result.txt
       - uses: actions/upload-artifact@v4
         if: always()
