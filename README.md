@@ -10,7 +10,9 @@ ScootPit BMS wurde mit dem **Joyor T6E Pro und dem JBD SP14S004** entwickelt. Di
 
 **ScootPit – für alle, die ihren Roller überwachen wollen, ohne selbst überwacht zu werden.**
 
-**Version 1.6.8 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
+**Version 1.6.9 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
+
+**[Bedienungsanleitung mit Bildern: Was finde ich wo und wie funktioniert es?](docs/anleitung.md)**
 
 Das Highlight ist die Automatik: **Bereitschaft einschalten, zum Scooter gehen und losfahren.** ScootPit erkennt ein gespeichertes Bluetooth-BMS in Reichweite, wählt das zugehörige Scooter-Profil und verbindet sich bei ausreichend stabilem Empfang automatisch. Die Fahrtaufzeichnung startet, sobald die eingestellten Bedingungen für die Stromentnahme erfüllt sind. Die Annäherung allein startet noch keine Fahrt.
 
@@ -20,11 +22,11 @@ Mehrere gespeicherte Scooter? Die App prüft erreichbare BMS nacheinander und ü
 
 Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch einer frei wählbaren Strecke und die aktuelle elektrische Leistung stehen im Mittelpunkt. Akku, Restreichweite, Kilometer und Temperaturen ergänzen die Übersicht; GPS-Geschwindigkeit bleibt als kleinere Anzeige verfügbar.
 
-### Aktuelles Cockpit · Version 1.6.5
+### Aktuelles Cockpit · Version 1.6.9
 
-![ScootPit BMS mit dem eingerichteten dunklen Joyor-Cockpit und den zusätzlichen Durchschnittskacheln](docs/assets/screenshots/cockpit-dunkel-1.6.5.jpg)
+![ScootPit BMS 1.6.9 mit der neuen Cockpitanordnung und dem kontrastreichen Pausezeichen](docs/assets/screenshots/anleitung-cockpit-dunkel.png)
 
-<em>Das dunkle Cockpit aus der Einstellungsdatei. Die Anordnung und Messwerte sind zugleich die Vorlage für das helle Design; die große Verbrauchsskala startet in 1.6.6 mit 40.</em>
+<em>Version 1.6.9 im Android-Emulator mit gekennzeichneten Beispielwerten. Die neue Anordnung und Werteinstellungen gelten auch für das helle Design. Verbrauch: letzte 300 m, Skala bis 40; Durchschnittsgeschwindigkeit: aktuelle Fahrt; Durchschnittsverbrauch: ab Reset.</em>
 
 ### BMS-Lastausgang ausgeschaltet
 
@@ -89,6 +91,12 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 <em>Im Fahrtenbuch kannst du einen Zeitraum wählen und den gesamten Scooter-Fahrtenordner oder einzelne CSV-/GPX-Fahrten importieren.</em>
 
 
+## Neu in 1.6.9
+
+Die neue Cockpit-Vorlage übernimmt die bereitgestellte Anordnung und Werte: Fahrtaktionen über das Pausezeichen zwischen den Instrumenten, Durchschnittsverbrauch unten rechts und dessen Bezugsbereich **Ab Reset**. Die Verbrauchsanzeige nutzt **300 m** und die große Skala endet bei **40**. Das Pausezeichen wird heller und erhält auf hellem und dunklem Design einen passenden Kontrast, auch in vorhandenen Layouts mit schwarzer Symbolfarbe.
+
+Die [bebilderte Bedienungsanleitung](docs/anleitung.md) erklärt Einrichtung, Kacheln, Fahrtaktionen, Automatik, Fahrtenbuch und Sicherungen Schritt für Schritt. Die Menü- und Cockpitaufnahmen entstehen direkt aus der App im Android-Emulator; die Messwerte darin sind Beispiele.
+
 ## Neu in 1.6.6
 
 Fahrten lassen sich über die Fahrtkachel manuell bis zu 12 Stunden pausieren und nach bestätigter Weiterfahrt als dieselbe Fahrt fortführen. Währenddessen ist die Wegfahrsperre verfügbar. Der BMS-Lastausgang kann zum Sperren erst ausgeschaltet werden, wenn die App pro Scooter einen stabilen Standstrom bei eingeschaltetem Roller ermittelt hat und der gemessene Strom mindestens 5 Sekunden sicher darunter liegt. Das BMS meldet den Gesamtstrom des Fahrzeugs; ein isolierter Display-Verbrauch lässt sich daraus nicht ablesen. Bei fehlender oder zu grober Messauflösung bleibt das Ausschalten gesperrt. Die Statuszeile weist auf einen ausgeschalteten Lastausgang hin. Bei aktiver Bereitschaft bleibt das Telefondisplay im Vordergrund eingeschaltet. Die große Verbrauchsskala erhält standardmäßig den Maximalwert **40**; eigene Skalenwerte bleiben erhalten.
@@ -99,7 +107,7 @@ Eine manuell pausierte Fahrt setzt sich bei bestätigter Weiterfahrt automatisch
 
 ## Neu in 1.6.7
 
-Die Fahrtaktionen sind jetzt über ein Pausensymbol erreichbar. Das Kontextmenü bietet passend zum Zustand **Fahrt pausieren**, **Fahrt fortsetzen** oder **Fahrt beenden**. Das Beenden wird noch einmal bestätigt.
+Die Fahrtaktionen sind jetzt über ein Pausensymbol erreichbar. Das Kontextmenü bietet passend zum Zustand **Fahrt pausieren** oder **Fahrt beenden**; während einer manuellen Pause weist es auf die automatische Fortsetzung hin. Das Beenden wird noch einmal bestätigt.
 
 ## Neu in 1.6.5
 

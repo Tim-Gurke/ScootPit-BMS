@@ -1,0 +1,1 @@
+Updated cockpit preset with ride actions between the gauges and average consumption at the bottom right. Consumption window: 300 m, scale maximum: 40; average consumption since reset. Brighter pause symbol with checked contrast in both themes. Illustrated German user guide on GitHub. Custom arrangements and scales are preserved.

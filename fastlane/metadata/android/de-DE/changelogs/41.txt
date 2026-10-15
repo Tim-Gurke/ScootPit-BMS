@@ -1,0 +1,1 @@
+Neue Cockpit-Vorlage mit Pausezeichen zwischen den Instrumenten und Durchschnittsverbrauch unten rechts. Verbrauchsfenster 300 m, Skala bis 40; Durchschnittsverbrauch ab Reset. Helleres, kontrastgeprüftes Pausezeichen für beide Designs. Bebilderte Bedienungsanleitung auf GitHub. Eigene Anordnungen und Skalen bleiben erhalten.

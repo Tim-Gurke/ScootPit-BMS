@@ -4,7 +4,7 @@ In ScootPit BMS bleiben Appkopf und Bedienelemente außerhalb von Statusleiste, 
 
 Die Statusleiste bleibt in beiden Designs lesbar: Ihr Hintergrund folgt der App-Hintergrundfarbe, Uhrzeit und Symbole erhalten automatisch einen passenden hellen oder dunklen Kontrast. Appstart, Design- und Profilwechsel aktualisieren die Darstellung sofort; eigene Bildschirm-Farbverläufe bleiben erhalten.
 
-[← Übersicht](../README.md)
+[← Übersicht](../README.md) · [Bedienungsanleitung mit Bildern](anleitung.md)
 
 ## Cockpit und visueller Editor
 
@@ -76,3 +76,9 @@ Im Editor **+ Kachel → Tageskilometer** oder **Tourenzähler** wählen. Tagesk
 Das Einstellungen-Symbol zeigt Zahnrad und Blitz ohne Hintergrund; die Symbolgröße bleibt erhalten.
 
 
+
+## Cockpit-Vorlage 1.6.9
+
+Das Pausezeichen sitzt zwischen den Instrumenten, der Durchschnittsverbrauch unten rechts. Die Verbrauchsanzeige nutzt ein 300-m-Fenster mit Skalenmaximum 40, die Geschwindigkeit im Durchschnitt die aktuelle Fahrt und der zusätzliche Durchschnittsverbrauch den Bereich **Ab Reset**. Das Pausezeichen erhält einen hellen, für den jeweiligen Knopfhintergrund geprüften Kontrast; das gilt auch für ältere Kacheln mit schwarzer Symbolfarbe.
+
+Unveränderte Standardanordnungen übernehmen die neue Vorlage beim Update. Persönlich verschobene Kacheln und eigene Skalenwerte bleiben erhalten. Mit **Standardlayout → Zurücksetzen → Speichern** lässt sich die komplette neue Vorgabe im gewünschten Format übernehmen.

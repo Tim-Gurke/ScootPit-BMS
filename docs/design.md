@@ -50,3 +50,9 @@ Das Antippen der Tourenzähler-Kachel öffnet im normalen Cockpit die Rückfrage
 Bei einer Neuinstallation übernimmt ScootPit das dunkle Design mit orangefarbenen Akzenten sowie die aktuellen Hoch- und Querformatlayouts aus der Voreinstellung. Das Querformat nutzt eine überlappende Anordnung. **Standardlayout** stellt beide Layouts wieder her. Das Update auf 1.6.4 überträgt Farben, Bezeichnungen und Werte aus dem dunklen Hochformat auf die entsprechenden Querformatkacheln. Unveränderte Standardwerte werden aus der bereinigten Vorlage aktualisiert; persönliche Werte bleiben erhalten. Kachelauswahl, Positionen und Größen ändern sich dabei nicht.
 
 
+
+## Vorlage für Version 1.6.9
+
+![Vom Nutzer gelieferte Vorlage für die neue Anordnung](assets/screenshots/cockpit-vorlage-1.6.9.jpg)
+
+*Originalvorlage vom 15. Oktober 2026. Positionen, Farben und Werteinstellungen stammen aus der dazugehörigen Einstellungsdatei. 1.6.9 ergänzt das hellere, kontrastgeprüfte Pausezeichen. Aktuelle Appaufnahmen stehen in der [Bedienungsanleitung](anleitung.md).*

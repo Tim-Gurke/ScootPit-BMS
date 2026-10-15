@@ -13,6 +13,7 @@ final class CockpitSymbols extends Drawable {
     private static final Map<String,Path> CACHE=new HashMap<>();
     CockpitSymbols(String key,int color){this.key=key;this.color=color;}
     static int defaultColor(String key,boolean light){
+        if(key.equals("trip_end"))return light?0xff526579:0xffd7dee5;
         switch(family(key)){
             case "play":case "stop":return Color.BLACK;
             case "battery":return light?0xff238b35:0xff73df58;

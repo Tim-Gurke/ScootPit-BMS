@@ -152,6 +152,8 @@ public class MainActivity extends Activity {
     private int muted(){return CockpitTheme.light(prefs)?0xff526579:0xffacb7c1;}
     private void updateStateDot(){if(stateDot==null)return;android.graphics.drawable.GradientDrawable dot=new android.graphics.drawable.GradientDrawable();dot.setShape(android.graphics.drawable.GradientDrawable.OVAL);if(BmsMonitorService.running){dot.setColors(new int[]{GREEN,GREEN,0x0039dc74});dot.setGradientType(android.graphics.drawable.GradientDrawable.RADIAL_GRADIENT);dot.setGradientRadius(dp(8));}else dot.setColor(muted());stateDot.setBackground(dot);}
     private int iconColor(JSONObject cell){return color(cell.optString("icon_color"),CockpitSymbols.defaultColor(cell.optString("key"),CockpitTheme.light(prefs)));}
+    private int tripActionBackground(){return CockpitTheme.light(prefs)?0xffe2eaf0:0xff263743;}
+    private int tripActionColor(JSONObject cell){return CockpitTheme.readableTileText(prefs,iconColor(cell),tripActionBackground());}
     private ImageButton headerAction(String key,String description,Runnable action){ImageButton b=new ImageButton(this);b.setContentDescription(description);b.setBackgroundColor(Color.TRANSPARENT);b.setPadding(dp(10),dp(10),dp(10),dp(10));b.setScaleType(ImageView.ScaleType.FIT_CENTER);if(key.equals("settings")){b.setImageResource(R.drawable.settings_bolt);b.setImageTintList(android.content.res.ColorStateList.valueOf(accent()));}else b.setImageDrawable(new CockpitSymbols(key,accent()));b.setEnabled(!editingBoard);b.setOnClickListener(v->action.run());return b;}
     private View separator(boolean vertical){return new View(this){private final android.graphics.Paint p=new android.graphics.Paint(3);@Override protected void onDraw(android.graphics.Canvas c){float w=getWidth(),h=getHeight();p.setShader(new android.graphics.LinearGradient(0,0,vertical?0:w,vertical?h:0,new int[]{accent(),Color.argb(35,Color.red(accent()),Color.green(accent()),Color.blue(accent())),Color.TRANSPARENT},new float[]{0,.4f,1},android.graphics.Shader.TileMode.CLAMP));c.drawRect(0,0,w,h,p);}};}
     private void personalHeading(LinearLayout box,JSONObject cell,int text){
@@ -251,9 +253,10 @@ public class MainActivity extends Activity {
             if(key.equals("ready_start")||key.equals("ready_end")||key.equals("trip_end")){
                 Button action=button(cell.optString("caption",CockpitLayout.title(key)));
                 if(key.equals("trip_end")){tripActionButton=action;tripActionShowsTitle=CockpitSymbols.title(cell);}
-                if(!CockpitSymbols.title(cell))action.setText("");if(CockpitSymbols.icon(cell)){CockpitSymbols icon=new CockpitSymbols(key,iconColor(cell));icon.setBounds(0,0,dp(26),dp(26));action.setCompoundDrawables(null,icon,null,null);action.setCompoundDrawablePadding(dp(4));}action.setContentDescription(CockpitLayout.title(key));
+                if(!CockpitSymbols.title(cell))action.setText("");if(CockpitSymbols.icon(cell)){CockpitSymbols icon=new CockpitSymbols(key,key.equals("trip_end")?tripActionColor(cell):iconColor(cell));icon.setBounds(0,0,dp(26),dp(26));action.setCompoundDrawables(null,icon,null,null);action.setCompoundDrawablePadding(dp(4));}action.setContentDescription(CockpitLayout.title(key));
                 action.setTextSize(Math.max(12,Math.min(30,cell.optInt("font",18))));action.setMaxLines(Math.max(1,Math.min(3,cell.optInt("lines",2))));action.setAutoSizeTextTypeUniformWithConfiguration(10,Math.max(12,Math.min(30,cell.optInt("font",18))),1,android.util.TypedValue.COMPLEX_UNIT_SP);
-                if(!key.equals("trip_end")){action.setBackgroundTintList(android.content.res.ColorStateList.valueOf(key.equals("ready_start")?GREEN:RED));action.setTextColor(Color.BLACK);}
+                if(key.equals("trip_end")){action.setBackgroundTintList(android.content.res.ColorStateList.valueOf(tripActionBackground()));action.setTextColor(tripActionColor(cell));}
+                else{action.setBackgroundTintList(android.content.res.ColorStateList.valueOf(key.equals("ready_start")?GREEN:RED));action.setTextColor(Color.BLACK);}
                 action.setOnClickListener(v->{if(key.equals("ready_start"))startMonitoring();else if(key.equals("ready_end"))confirmEndReadiness();else tripAction();});
                 box.addView(action,new LinearLayout.LayoutParams(-1,-1));
             }else if(key.equals("bms_output")){

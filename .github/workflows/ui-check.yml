@@ -1,7 +1,7 @@
 name: ScootPit BMS Android UI check
 on:
   push:
-    branches: [ main ]
+    branches: [ main, release/1.6.9 ]
   workflow_dispatch:
 jobs:
   ui:
@@ -49,6 +49,9 @@ jobs:
             adb shell am instrument -w de.wortmonster.jbdtrigger.test/de.wortmonster.jbdtrigger.CockpitSmokeTest | tee ui-result.txt
             adb pull /sdcard/Android/data/de.wortmonster.jbdtrigger/files/screenshots ui-screenshots
             grep 'Cockpit launch.*OK' ui-result.txt
+            adb shell am instrument -w de.wortmonster.jbdtrigger.test/de.wortmonster.jbdtrigger.GuideScreenshots | tee guide-result.txt
+            adb pull /sdcard/Android/data/de.wortmonster.jbdtrigger/files/screenshots ui-screenshots
+            grep 'Guide screenshots: OK' guide-result.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -14,7 +14,7 @@ Erreichbare BMS werden nacheinander verbunden und auf Stromentnahme geprüft. Be
 - **Fahrtstart:** Standardmäßig mindestens 0,30 A Entnahme für 1 Sekunde. GPS und Fahrtenbuch starten automatisch.
 - **Ausrollen:** GPS wird auch ohne Stromentnahme weiter ausgewertet. Fehlende Motorleistung setzt den Tacho nicht auf null.
 - **Stillstand:** Nach standardmäßig **45 Sekunden** zuverlässig erkanntem Stillstand pausiert die Fahrt. Die BMS-Verbindung bleibt erhalten. GPS-Ausfall oder schlechte Messungen gelten nicht als bestätigter Stillstand. **Fahrt pausieren nach Stillstand** ist je Scooter einstellbar (15–3600 Sekunden).
-- **Weiterfahrt:** Bewegung oder bestätigte Stromentnahme setzt dieselbe Fahrt fort. Die Pause zählt dann zur Standzeit.
+- **Weiterfahrt:** Passende GPS-Fahrgeschwindigkeit zusammen mit anhaltender Motorlast setzt dieselbe Fahrt fort. Die Pause zählt dann zur Standzeit.
 - **Lange Pause:** Nach standardmäßig **600 Sekunden** Pause wird die Fahrt rückwirkend zum Pausenbeginn abgeschlossen. Die BMS-Verbindung bleibt bestehen, solange das Gerät erreichbar ist. **Fahrtende nach langer Pause** ist von 60–7200 Sekunden einstellbar.
 - **Verbindungsverlust in der Pause:** Die App sucht weiter. Ohne Wiederverbindung bis standardmäßig **120 Sekunden nach Pausenbeginn** wird die Pause als Fahrtende gespeichert. Dieses Zeitfenster ist von 0–7200 Sekunden einstellbar; das Limit für lange Pausen gilt weiterhin.
 - **Entfernung:** Bestätigter Verlust der BMS-Verbindung kann die Fahrt ebenfalls beenden. Schwacher Empfang allein genügt bei frischen BMS-Daten nicht.

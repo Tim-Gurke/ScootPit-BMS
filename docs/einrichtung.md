@@ -1,6 +1,6 @@
 # Installation und Ersteinrichtung
 
-[← Übersicht](../README.md)
+[← Übersicht](../README.md) · [Bedienungsanleitung mit Bildern](anleitung.md)
 
 ## Build, Tests und Installation
 
@@ -18,7 +18,7 @@ Bei einer frischen Installation ist kein BMS vorbelegt. Über **BMS auswählen �
 
 *Der Kandidat lässt sich vor der Verbindung prüfen; die Bluetooth-Adresse ist im Screenshot geschwärzt.*
 
-Bei einer Neuinstallation ist das dunkle Cockpit mit orangefarbenen Akzenten und deinem bereinigten Hoch- und Querformatlayout voreingestellt. Oben stehen Verbrauch der letzten 500 m und aktuelle Leistung als Rundinstrumente; die übrigen Messwerte und Bedienelemente folgen deiner Konfiguration. Die Bereitschaftsschaltflächen heißen **Bereit**; **Fahrt beenden** schließt die aktuelle Aufzeichnung ab. Der Appkopf bleibt ScootPit BMS. Bestehende Installationen behalten ihr eigenes Design.
+Bei einer Neuinstallation ist das dunkle Cockpit mit orangefarbenen Akzenten und deinem bereinigten Hoch- und Querformatlayout voreingestellt. Oben stehen Verbrauch der letzten 300 m und aktuelle Leistung als Rundinstrumente; die übrigen Messwerte und Bedienelemente folgen deiner Konfiguration. Grünes Startdreieck und rotes Stopquadrat steuern die Bereitschaft; das helle Pausezeichen zwischen den Instrumenten öffnet die Fahrtaktionen. **Fahrt beenden** schließt die aktuelle Aufzeichnung nach Bestätigung ab. Der Appkopf bleibt ScootPit BMS. Bestehende Installationen behalten ihr eigenes Design.
 
 Version 1.2.1 stellt vorhandene Hochformatlayouts einmalig auf die neue Anordnung um und sichert den vorherigen Stand in den Einstellungen. Fotos, eigene Texte und zusätzliche Kacheln werden übernommen. Gespeicherte Querformatlayouts werden auf das feinere Raster umgerechnet. Das Standardlayout lässt sich jederzeit unter **Einstellungen → Cockpit bearbeiten → Standardlayout → Zurücksetzen → Speichern** übernehmen.
 
