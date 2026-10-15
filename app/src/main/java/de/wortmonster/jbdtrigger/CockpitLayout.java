@@ -9,7 +9,7 @@ import java.util.Map;
 final class CockpitLayout {
     static final double DEFAULT_SPEED_SCALE_MAX = 22;
     static final String[] KEYS = {"speed","soc","range","distance","total","power","voltage","current","energy","consumption","consumption_500m","trip_time","moving","standing","average","maximum","altitude","ascent","temp1","temp2","outside","max_power","bms_output","ready_start","ready_end","trip_end","log","image","free_text","daily","tour"};
-    static final String[] TITLES = {"Geschwindigkeit","Akku","Restreichweite ≈","Fahrtstrecke","Gesamtkilometer","Leistung","Spannung","Strom","Verbrauchte Energie","Durchschnittsverbrauch","Verbrauch · letzte Strecke","Gesamtzeit","Fahrzeit","Standzeit","Durchschnittsgeschwindigkeit","Maximum","Höhe","Höhenmeter","Temp1","Temp2","Außentemperatur","Maximale Fahrtleistung","BMS-Lastausgang","Bereitschaft starten","Bereitschaft beenden","Fahrt beenden","Statusdetails / Log","Bild","Freitext","Tageskilometer","Tourenzähler"};
+    static final String[] TITLES = {"Geschwindigkeit","Akku","Restreichweite ≈","Fahrtstrecke","Gesamtkilometer","Leistung","Spannung","Strom","Verbrauchte Energie","Durchschnittsverbrauch","Verbrauch · letzte Strecke","Gesamtzeit","Fahrzeit","Standzeit","Durchschnittsgeschwindigkeit","Maximum","Höhe","Höhenmeter","Temp1","Temp2","Außentemperatur","Maximale Fahrtleistung","BMS-Lastausgang","Bereitschaft starten","Bereitschaft beenden","Fahrtaktionen","Statusdetails / Log","Bild","Freitext","Tageskilometer","Tourenzähler"};
     static JSONObject tile(String key) {
         JSONObject t = new JSONObject();
         try { t.put("key",key).put("font",20).put("weight",1).put("background","#00000000").put("text","#FFFFFFFF")

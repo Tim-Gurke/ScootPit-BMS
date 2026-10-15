@@ -10,7 +10,7 @@ ScootPit BMS wurde mit dem **Joyor T6E Pro und dem JBD SP14S004** entwickelt. Di
 
 **ScootPit – für alle, die ihren Roller überwachen wollen, ohne selbst überwacht zu werden.**
 
-**Version 1.6.6 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
+**Version 1.6.7 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
 
 Das Highlight ist die Automatik: **Bereitschaft einschalten, zum Scooter gehen und losfahren.** ScootPit erkennt ein gespeichertes Bluetooth-BMS in Reichweite, wählt das zugehörige Scooter-Profil und verbindet sich bei ausreichend stabilem Empfang automatisch. Die Fahrtaufzeichnung startet, sobald die eingestellten Bedingungen für die Stromentnahme erfüllt sind. Die Annäherung allein startet noch keine Fahrt.
 
@@ -92,6 +92,10 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 ## Neu in 1.6.6
 
 Fahrten lassen sich über die Fahrtkachel manuell bis zu 12 Stunden pausieren und anschließend als dieselbe Fahrt fortsetzen. Währenddessen ist die Wegfahrsperre verfügbar. Der BMS-Lastausgang kann zum Sperren erst ausgeschaltet werden, wenn die App pro Scooter einen stabilen Standstrom bei eingeschaltetem Roller ermittelt hat und der gemessene Strom mindestens 5 Sekunden sicher darunter liegt. Das BMS meldet den Gesamtstrom des Fahrzeugs; ein isolierter Display-Verbrauch lässt sich daraus nicht ablesen. Bei fehlender oder zu grober Messauflösung bleibt das Ausschalten gesperrt. Die Statuszeile weist auf einen ausgeschalteten Lastausgang hin. Bei aktiver Bereitschaft bleibt das Telefondisplay im Vordergrund eingeschaltet. Die große Verbrauchsskala erhält standardmäßig den Maximalwert **40**; eigene Skalenwerte bleiben erhalten.
+
+## Neu in 1.6.7
+
+Die Fahrtaktionen sind jetzt über ein Pausensymbol erreichbar. Das Kontextmenü bietet passend zum Zustand **Fahrt pausieren**, **Fahrt fortsetzen** oder **Fahrt beenden**. Das Beenden wird noch einmal bestätigt; zum Fortsetzen muss der BMS-Lastausgang eingeschaltet sein.
 
 ## Neu in 1.6.5
 

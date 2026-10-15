@@ -704,6 +704,7 @@ public class CockpitSmokeTest extends Instrumentation {
         java.util.Map<String,?> saved=prefs.getAll();Object savedTiles=member(activity,"boardTiles");
         try{
             checked(()->{try{
+                if(!"pause".equals(CockpitSymbols.family("trip_end")))throw new AssertionError("Trip action tile must use the pause symbol");
                 for(String key:CockpitLayout.KEYS){Bitmap b=Bitmap.createBitmap(48,48,Bitmap.Config.ARGB_8888);CockpitSymbols.draw(new android.graphics.Canvas(b),key,0,0,48,0xffff9800);int count=0;for(int y=0;y<48;y++)for(int x=0;x<48;x++)if(android.graphics.Color.alpha(b.getPixel(x,y))>0)count++;b.recycle();if(count<40)throw new AssertionError("Missing icon: "+key);}
                 for(int mode=0;mode<4;mode++){org.json.JSONObject t=new org.json.JSONObject().put("key","tour").put("heading_mode",mode);if(CockpitSymbols.icon(t)!=(mode==0||mode==2)||CockpitSymbols.title(t)!=(mode==1||mode==2))throw new AssertionError("Heading choice");}
                 org.json.JSONArray tiles=new org.json.JSONArray(savedTiles.toString());tiles.put(CockpitBoard.position(CockpitLayout.tile("tour"),0,40,6,2));prefs.edit().putString("cockpit_board",tiles.toString()).putString("tour_km","38.2").putString("daily_km","12.6").commit();

@@ -49,7 +49,8 @@ final class CockpitSymbols extends Drawable {
             case "outside":return "weather";
             case "bms_output":return "switch";
             case "ready_start":return "play";
-            case "ready_end":case "trip_end":return "stop";
+            case "ready_end":return "stop";
+            case "trip_end":return "pause";
             case "log":case "free_text":return "text";
             case "image":return "image";
             case "journal":return "journal";

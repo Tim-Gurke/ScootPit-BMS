@@ -49,6 +49,7 @@ public class MainActivity extends Activity {
     private LinearLayout dashboard;
     private Switch dischargeSwitch;
     private Button tripActionButton;
+    private boolean tripActionShowsTitle;
     private TextView dischargeNote;
     private boolean updatingDischarge;
     private static final int GREEN=0xff21c879, RED=0xffff535d;
@@ -239,7 +240,7 @@ public class MainActivity extends Activity {
             .setPositiveButton("Beenden",(d,w)->endReadiness()).setNegativeButton("Zurück",null).show();else endReadiness();
     }
     private void buildTiles(){
-        dashboard.removeAllViews();tileValues.clear();tileKeys.clear();tileNotes.clear();dischargeSwitch=null;dischargeNote=null;tripActionButton=null;logView=null;
+        dashboard.removeAllViews();tileValues.clear();tileKeys.clear();tileNotes.clear();dischargeSwitch=null;dischargeNote=null;tripActionButton=null;tripActionShowsTitle=false;logView=null;
         board=new CockpitBoard(this,boardTiles,editingBoard,()->{});dashboard.addView(board);
         for(int i=0;i<boardTiles.length();i++){
             JSONObject cell=boardTiles.optJSONObject(i);if(cell==null)continue;
@@ -249,7 +250,7 @@ public class MainActivity extends Activity {
             int text=color(cell.optBoolean("custom_colors",false)?cell.optString("text"):prefs.getString("tile_text",CockpitTheme.light(prefs)?"#172B40":"#FFFFFF"),foreground());
             if(key.equals("ready_start")||key.equals("ready_end")||key.equals("trip_end")){
                 Button action=button(cell.optString("caption",CockpitLayout.title(key)));
-                if(key.equals("trip_end"))tripActionButton=action;
+                if(key.equals("trip_end")){tripActionButton=action;tripActionShowsTitle=CockpitSymbols.title(cell);}
                 if(!CockpitSymbols.title(cell))action.setText("");if(CockpitSymbols.icon(cell)){CockpitSymbols icon=new CockpitSymbols(key,iconColor(cell));icon.setBounds(0,0,dp(26),dp(26));action.setCompoundDrawables(null,icon,null,null);action.setCompoundDrawablePadding(dp(4));}action.setContentDescription(CockpitLayout.title(key));
                 action.setTextSize(Math.max(12,Math.min(30,cell.optInt("font",18))));action.setMaxLines(Math.max(1,Math.min(3,cell.optInt("lines",2))));action.setAutoSizeTextTypeUniformWithConfiguration(10,Math.max(12,Math.min(30,cell.optInt("font",18))),1,android.util.TypedValue.COMPLEX_UNIT_SP);
                 if(!key.equals("trip_end")){action.setBackgroundTintList(android.content.res.ColorStateList.valueOf(key.equals("ready_start")?GREEN:RED));action.setTextColor(Color.BLACK);}
@@ -416,7 +417,7 @@ public class MainActivity extends Activity {
                 &&!intent.getBooleanExtra("discharge_enabled",false);
         String readiness=!BmsMonitorService.running?"Bereitschaft aus":trip?(paused?"Bereitschaft aktiv · Fahrt pausiert":"Bereitschaft aktiv · Fahrt läuft"):"Bereitschaft aktiv";
         stateView.setText(outputOff?readiness+" · BMS-Lastausgang aus – bitte einschalten":readiness);
-        updateTripAction(intent,trip,paused);
+        updateTripAction(trip);
         updateCockpitScreenAwake(BmsMonitorService.running);
         String detail=intent.getStringExtra("state");
         String storageError=prefs.getString("trip_storage_error",prefs.getString("settings_storage_error",""));
@@ -499,10 +500,11 @@ public class MainActivity extends Activity {
         if(awake)getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         else getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
-    private void updateTripAction(Intent intent,boolean trip,boolean paused){
+    private void updateTripAction(boolean trip){
         if(tripActionButton==null)return;
-        String text=!trip?"Fahrt beenden":paused?"Fahrt fortsetzen":"Fahrt pausieren";
-        tripActionButton.setText(text);tripActionButton.setContentDescription(text);
+        tripActionButton.setText(tripActionShowsTitle?"Fahrtaktionen":"");
+        tripActionButton.setContentDescription(trip?"Fahrtaktionen öffnen":"Keine aktive Fahrt");
+        tripActionButton.setEnabled(trip);
     }
     private void tripAction(){
         if(!BmsMonitorService.running||lastStatus==null||!lastStatus.getBooleanExtra("trip_active",false)){
@@ -510,14 +512,32 @@ public class MainActivity extends Activity {
         }
         boolean paused=lastStatus.getBooleanExtra("trip_paused",false);
         boolean manual=lastStatus.getBooleanExtra("trip_paused_manual",false);
-        String title=paused?(manual?"Fahrt fortsetzen?":"Fahrtpause verlängern?"):"Fahrt manuell pausieren?";
-        String message=paused?(manual?"Zum Fortsetzen zuerst den BMS-Lastausgang einschalten. Die bisherige Fahrt wird danach fortgeführt.":"Die Fahrt bleibt bis zu 12 Stunden als dieselbe Fahrt erhalten. Die Wegfahrsperre kann währenddessen eingeschaltet werden."):
-                "Die Fahrt bleibt bis zu 12 Stunden als dieselbe Fahrt erhalten. Danach kann die Wegfahrsperre eingeschaltet werden. Zum Fortsetzen zuerst den Lastausgang einschalten.";
-        String primary=paused?(manual?"Fortsetzen":"Bis zu 12 Stunden pausieren"):"Pausieren";
-        String action=paused&&manual?BmsMonitorService.ACTION_RESUME_TRIP:BmsMonitorService.ACTION_PAUSE_TRIP;
-        new AlertDialog.Builder(this).setTitle(title).setMessage(message)
-                .setPositiveButton(primary,(d,w)->{if(BmsMonitorService.running)startService(new Intent(this,BmsMonitorService.class).setAction(action));})
-                .setNeutralButton("Fahrt beenden",(d,w)->{if(BmsMonitorService.running)startService(new Intent(this,BmsMonitorService.class).setAction(BmsMonitorService.ACTION_END_TRIP));})
+        PopupMenu menu=new PopupMenu(this,tripActionButton);
+        if(paused&&manual){
+            menu.getMenu().add("Fahrt fortsetzen").setOnMenuItemClickListener(item->{resumeManualTrip();return true;});
+        }else if(paused){
+            menu.getMenu().add("Manuelle Pause bis zu 12 Stunden").setOnMenuItemClickListener(item->{pauseTripManually();return true;});
+        }else{
+            menu.getMenu().add("Fahrt pausieren").setOnMenuItemClickListener(item->{pauseTripManually();return true;});
+        }
+        menu.getMenu().add("Fahrt beenden").setOnMenuItemClickListener(item->{confirmEndTrip();return true;});
+        menu.show();
+    }
+    private void pauseTripManually(){
+        if(BmsMonitorService.running)startService(new Intent(this,BmsMonitorService.class).setAction(BmsMonitorService.ACTION_PAUSE_TRIP));
+    }
+    private void resumeManualTrip(){
+        if(lastStatus==null||!lastStatus.getBooleanExtra("discharge_enabled",false)){
+            new AlertDialog.Builder(this).setTitle("Lastausgang einschalten")
+                    .setMessage("Zum Fortsetzen der Fahrt zuerst den BMS-Lastausgang einschalten.")
+                    .setPositiveButton("Verstanden",null).show();return;
+        }
+        if(BmsMonitorService.running)startService(new Intent(this,BmsMonitorService.class).setAction(BmsMonitorService.ACTION_RESUME_TRIP));
+    }
+    private void confirmEndTrip(){
+        new AlertDialog.Builder(this).setTitle("Fahrt beenden?")
+                .setMessage("Die Fahrt wird gespeichert und kann danach nicht als dieselbe Fahrt fortgesetzt werden.")
+                .setPositiveButton("Fahrt beenden",(d,w)->{if(BmsMonitorService.running)startService(new Intent(this,BmsMonitorService.class).setAction(BmsMonitorService.ACTION_END_TRIP));})
                 .setNegativeButton("Zurück",null).show();
     }
     private void refreshTemperature(){
