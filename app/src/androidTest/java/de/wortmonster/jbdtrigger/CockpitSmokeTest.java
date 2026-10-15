@@ -16,8 +16,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /** Device smoke check: fresh launch, actual rendered measurements, persistence and editors. */
 public class CockpitSmokeTest extends Instrumentation {
-    @Override public void onCreate(Bundle arguments) { super.onCreate(arguments); start(); }
+    private boolean guideOnly;
+    @Override public void onCreate(Bundle arguments) { guideOnly=arguments!=null&&"guide".equals(arguments.getString("mode"));super.onCreate(arguments);start(); }
     @Override public void onStart() {
+        if(guideOnly){new GuideScreenshots(this).capture();return;}
         Bundle result = new Bundle();
         try {
             SharedPreferences prefs=getTargetContext().getSharedPreferences("settings",0);
