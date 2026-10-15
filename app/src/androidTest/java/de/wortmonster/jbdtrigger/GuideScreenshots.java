@@ -67,10 +67,12 @@ final class GuideScreenshots {
             });
             screenshot("anleitung-pausenmenue.png");
             requireText("Fahrt pausieren");requireText("Fahrt beenden");
+            requireReadableDarkMenu("Fahrt beenden");
             runner.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK);runner.waitForIdleSync();
             runner.runOnMainSync(()->{invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{sample(true)});invoke(activity,"tripAction",new Class[0],new Object[0]);});
             screenshot("anleitung-pause-automatik.png");
             requireText("Weiterfahrt: automatisch fortsetzen");
+            requireReadableDarkMenu("Weiterfahrt: automatisch fortsetzen");
             runner.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK);runner.waitForIdleSync();
             runner.runOnMainSync(()->invoke(activity,"showSettings",new Class[0],new Object[0]));
             screenshot("anleitung-einstellungen.png");
@@ -118,6 +120,16 @@ final class GuideScreenshots {
         }finally{test.edit().clear().commit();}
     }
     private void requireText(String text){android.view.accessibility.AccessibilityNodeInfo root=runner.getUiAutomation().getRootInActiveWindow();if(root==null||root.findAccessibilityNodeInfosByText(text).isEmpty())throw new AssertionError("Missing guide control: "+text);}
+    private void requireReadableDarkMenu(String text){
+        android.view.accessibility.AccessibilityNodeInfo root=runner.getUiAutomation().getRootInActiveWindow();
+        java.util.List<android.view.accessibility.AccessibilityNodeInfo> nodes=root.findAccessibilityNodeInfosByText(text);
+        if(nodes.isEmpty())throw new AssertionError("Missing menu text: "+text);
+        android.graphics.Rect bounds=new android.graphics.Rect();nodes.get(0).getBoundsInScreen(bounds);
+        Bitmap screen=runner.getUiAutomation().takeScreenshot();int bright=0;
+        try{for(int y=Math.max(0,bounds.top);y<Math.min(screen.getHeight(),bounds.bottom);y++)for(int x=Math.max(0,bounds.left);x<Math.min(screen.getWidth(),bounds.right);x++)if(androidx.core.graphics.ColorUtils.calculateLuminance(screen.getPixel(x,y))>.3)bright++;}
+        finally{screen.recycle();}
+        if(bright<24)throw new AssertionError("Dark ride menu text is unreadable after switching themes: "+text);
+    }
     private static Object invoke(Object target,String name,Class[] types,Object[] args){try{Method m=target.getClass().getDeclaredMethod(name,types);m.setAccessible(true);return m.invoke(target,args);}catch(Exception e){throw new RuntimeException(e);}}
     private static Object get(Object target,String name)throws Exception{java.lang.reflect.Field f=target.getClass().getDeclaredField(name);f.setAccessible(true);return f.get(target);}
     private static void set(Object target,String name,Object value)throws Exception{java.lang.reflect.Field f=target.getClass().getDeclaredField(name);f.setAccessible(true);f.set(target,value);}

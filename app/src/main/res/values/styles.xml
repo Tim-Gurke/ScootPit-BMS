@@ -27,4 +27,18 @@
     <style name="ScootPitDialogButton" parent="android:style/Widget.Material.Button.Borderless">
         <item name="android:textAllCaps">false</item>
     </style>
+    <style name="RideActionsDark" parent="AppTheme">
+        <item name="android:textAppearanceLargePopupMenu">@style/RideActionTextDark</item>
+        <item name="android:textAppearanceSmallPopupMenu">@style/RideActionTextDark</item>
+    </style>
+    <style name="RideActionsLight" parent="AppThemeLight">
+        <item name="android:textAppearanceLargePopupMenu">@style/RideActionTextLight</item>
+        <item name="android:textAppearanceSmallPopupMenu">@style/RideActionTextLight</item>
+    </style>
+    <style name="RideActionTextDark" parent="android:style/TextAppearance.Material.Widget.PopupMenu.Large">
+        <item name="android:textColor">@color/ride_actions_dark</item>
+    </style>
+    <style name="RideActionTextLight" parent="android:style/TextAppearance.Material.Widget.PopupMenu.Large">
+        <item name="android:textColor">@color/ride_actions_light</item>
+    </style>
 </resources>
