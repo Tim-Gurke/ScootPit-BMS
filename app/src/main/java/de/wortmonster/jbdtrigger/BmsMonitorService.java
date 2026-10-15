@@ -48,7 +48,6 @@ public class BmsMonitorService extends Service implements LocationListener {
 
     public static final String ACTION_END_TRIP = "de.wortmonster.jbdtrigger.END_TRIP";
     public static final String ACTION_PAUSE_TRIP = "de.wortmonster.jbdtrigger.PAUSE_TRIP";
-    public static final String ACTION_RESUME_TRIP = "de.wortmonster.jbdtrigger.RESUME_TRIP";
     public static final String ACTION_REFRESH_TEMPERATURE = "de.wortmonster.jbdtrigger.REFRESH_TEMPERATURE";
     public static final String ACTION_SET_DISCHARGE = "de.wortmonster.jbdtrigger.SET_DISCHARGE";
     private PowerManager.WakeLock wakeLock;
@@ -240,9 +239,6 @@ public class BmsMonitorService extends Service implements LocationListener {
         }
         if(intent!=null && ACTION_PAUSE_TRIP.equals(intent.getAction())){
             pauseTripManually();return START_STICKY;
-        }
-        if(intent!=null && ACTION_RESUME_TRIP.equals(intent.getAction())){
-            resumeTripManually();return START_STICKY;
         }
         if (intent != null && ACTION_END_TRIP.equals(intent.getAction())) {
             active = false; manualHold = true; activeSince = 0;
@@ -745,9 +741,12 @@ public class BmsMonitorService extends Service implements LocationListener {
             return;
         }
         if(recorder!=null&&tripPausedAt>0){
-            if(manualTripPause){activeSince=0;return;}
+            if(manualTripPause&&!dischargeEnabled){resumeGate.reset();activeSince=0;return;}
             boolean confirmed=resumeGate.update(now,dischargeAmps,activeAmps,pausedGpsSpeedKmh,now-gpsAt<=5000);
-            if(confirmed){resumeTrip(now);active=true;idleSince=0;emit(ACTION_ACTIVE);setState("Fahrt fortgesetzt");}
+            if(confirmed){
+                if(manualTripPause){manualTripPause=false;manualPauseStartedAt=0;controlMessage="";}
+                resumeTrip(now);active=true;idleSince=0;emit(ACTION_ACTIVE);setState("Fahrt fortgesetzt");
+            }
             activeSince=0;return;
         }
         if (!active && dischargeAmps >= activeAmps) {
@@ -824,14 +823,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         }
         manualTripPause=true;manualPauseStartedAt=now;active=false;activeSince=0;idleSince=0;
         controlMessage="Fahrt manuell pausiert · bis zu 12 Stunden";
-        setState("Fahrt manuell pausiert – Wegfahrsperre kann eingeschaltet werden");
-    }
-
-    private void resumeTripManually(){
-        if(recorder==null||tripPausedAt==0||!manualTripPause){controlMessage="Keine manuell pausierte Fahrt";sendStatus();return;}
-        if(!dischargeEnabled){controlMessage="Lastausgang zuerst einschalten, dann die Fahrt fortsetzen";sendStatus();return;}
-        manualTripPause=false;manualPauseStartedAt=0;resumeTrip(System.currentTimeMillis());
-        controlMessage="Fahrt fortgesetzt";setState("Fahrt fortgesetzt – Aufzeichnung läuft weiter");
+        setState("Fahrt manuell pausiert – setzt bei bestätigter Weiterfahrt automatisch fort");
     }
 
     private void completeDeparture() {

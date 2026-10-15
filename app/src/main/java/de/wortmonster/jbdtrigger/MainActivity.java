@@ -514,7 +514,7 @@ public class MainActivity extends Activity {
         boolean manual=lastStatus.getBooleanExtra("trip_paused_manual",false);
         PopupMenu menu=new PopupMenu(this,tripActionButton);
         if(paused&&manual){
-            menu.getMenu().add("Fahrt fortsetzen").setOnMenuItemClickListener(item->{resumeManualTrip();return true;});
+            menu.getMenu().add("Fortsetzung erfolgt bei Weiterfahrt automatisch").setEnabled(false);
         }else if(paused){
             menu.getMenu().add("Manuelle Pause bis zu 12 Stunden").setOnMenuItemClickListener(item->{pauseTripManually();return true;});
         }else{
@@ -525,14 +525,6 @@ public class MainActivity extends Activity {
     }
     private void pauseTripManually(){
         if(BmsMonitorService.running)startService(new Intent(this,BmsMonitorService.class).setAction(BmsMonitorService.ACTION_PAUSE_TRIP));
-    }
-    private void resumeManualTrip(){
-        if(lastStatus==null||!lastStatus.getBooleanExtra("discharge_enabled",false)){
-            new AlertDialog.Builder(this).setTitle("Lastausgang einschalten")
-                    .setMessage("Zum Fortsetzen der Fahrt zuerst den BMS-Lastausgang einschalten.")
-                    .setPositiveButton("Verstanden",null).show();return;
-        }
-        if(BmsMonitorService.running)startService(new Intent(this,BmsMonitorService.class).setAction(BmsMonitorService.ACTION_RESUME_TRIP));
     }
     private void confirmEndTrip(){
         new AlertDialog.Builder(this).setTitle("Fahrt beenden?")

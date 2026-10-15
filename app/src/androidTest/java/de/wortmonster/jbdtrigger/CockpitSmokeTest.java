@@ -599,6 +599,7 @@ public class CockpitSmokeTest extends Instrumentation {
                 long previousStanding=(Long)member(service,"standingMs");
                 invoke(service,"resumeTrip",new Class[]{long.class},new Object[]{System.currentTimeMillis()});
                 if(member(service,"recorder")!=recorder||(Long)member(service,"tripPausedAt")!=0||(Long)member(service,"standingMs")<previousStanding+119000)throw new AssertionError("Continuation must retain trip and include pause in standing time");
+                automaticManualResumeCheck(service,recorder);
                 setMember(service,"energyWh",12.0);setMember(service,"maxPowerW",500.0);
                 now=android.os.SystemClock.elapsedRealtime();motion.reset();for(long at=now-45000;at<=now;at+=1000)motion.fix(at,0,true);
                 ((Runnable)member(service,"clock")).run();
@@ -611,6 +612,27 @@ public class CockpitSmokeTest extends Instrumentation {
                 found.csv.delete();found.gpx.delete();new File(found.csv.getParent(),found.csv.getName().replace(".csv",".json")).delete();
             }catch(Exception e){throw new RuntimeException(e);}finally{prefs.edit().putBoolean("weather_enabled",weather).putString("total_km",total).apply();}
         });
+    }
+    private void automaticManualResumeCheck(BmsMonitorService service,Object recorder)throws Exception{
+        RideResumeGate thresholdCheck=new RideResumeGate();
+        if(thresholdCheck.update(1000,.99,.3,10,true)||thresholdCheck.update(2000,1.0,.3,10,true)
+                ||thresholdCheck.update(4499,1.0,.3,10,true)||!thresholdCheck.update(4500,1.0,.3,10,true))
+            throw new AssertionError("Automatic resume must require sufficient current and sustained riding speed");
+        long now=System.currentTimeMillis();
+        setMember(service,"activeAmps",.3);setMember(service,"current",-2.0);setMember(service,"gpsAt",now);
+        setMember(service,"pausedGpsSpeedKmh",10.0);setMember(service,"tripPausedAt",now-60000);
+        setMember(service,"manualTripPause",true);setMember(service,"manualPauseStartedAt",now-60000);
+        RideResumeGate gate=(RideResumeGate)member(service,"resumeGate");
+        setMember(gate,"candidateSince",now-3000);setMember(gate,"lastSample",now-500);
+        setMember(service,"dischargeEnabled",false);invoke(service,"evaluateCurrent",new Class[0]);
+        if((Long)member(service,"tripPausedAt")==0||!(Boolean)member(service,"manualTripPause")||member(service,"recorder")!=recorder)
+            throw new AssertionError("Turning load output off must keep a manual ride pause");
+        now=System.currentTimeMillis();setMember(service,"gpsAt",now);setMember(service,"pausedGpsSpeedKmh",10.0);
+        setMember(gate,"candidateSince",now-3000);setMember(gate,"lastSample",now-500);
+        setMember(service,"dischargeEnabled",true);invoke(service,"evaluateCurrent",new Class[0]);
+        if((Long)member(service,"tripPausedAt")!=0||(Boolean)member(service,"manualTripPause")||!(Boolean)member(service,"active")||member(service,"recorder")!=recorder)
+            throw new AssertionError("A manually paused trip must resume automatically after output and ride detection return");
+        setMember(service,"current",0.0);
     }
     private static int compositeOver(int foreground,int background){
         int alpha=android.graphics.Color.alpha(foreground),inverse=255-alpha;
@@ -650,7 +672,7 @@ public class CockpitSmokeTest extends Instrumentation {
                 if(found.points.size()!=2||found.moving!=2000||Math.abs(found.averagePower-96)>.01)throw new AssertionError("Journal statistics");
                 summary.gpxFile.delete();summary.csvFile.delete();summary.metadataFile.delete();
                 String version=activity.getPackageManager().getPackageInfo(activity.getPackageName(),0).versionName;
-                if(!"1.6.7".equals(version))throw new AssertionError("Official version");
+                if(!"1.6.8".equals(version))throw new AssertionError("Official version");
                 int portraitMap=JournalUi.routeMapHeight(2400,3),landscapeMap=JournalUi.routeMapHeight(1080,3);
                 if(portraitMap<=0||landscapeMap<=0||portraitMap>1080||landscapeMap>1080)throw new AssertionError("Route map must have a visible bounded height in both orientations");
             }catch(Exception e){throw new RuntimeException(e);}
