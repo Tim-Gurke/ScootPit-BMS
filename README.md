@@ -10,11 +10,11 @@ ScootPit BMS wurde mit dem **Joyor T6E Pro und dem JBD SP14S004** entwickelt. Di
 
 **ScootPit – für alle, die ihren Roller überwachen wollen, ohne selbst überwacht zu werden.**
 
-**Version 1.6.5 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
+**Version 1.6.6 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
 
 Das Highlight ist die Automatik: **Bereitschaft einschalten, zum Scooter gehen und losfahren.** ScootPit erkennt ein gespeichertes Bluetooth-BMS in Reichweite, wählt das zugehörige Scooter-Profil und verbindet sich bei ausreichend stabilem Empfang automatisch. Die Fahrtaufzeichnung startet, sobald die eingestellten Bedingungen für die Stromentnahme erfüllt sind. Die Annäherung allein startet noch keine Fahrt.
 
-Die Aufzeichnung läuft auch mit ausgeschaltetem Bildschirm und gesperrtem Handy. Beim Ausrollen wird GPS weiter ausgewertet: **0 W allein pausiert die Fahrt nicht**, auch eine längere Bergabfahrt bleibt bei erkennbarer GPS-Fahrgeschwindigkeit in der Aufzeichnung. Nach **45 Sekunden zuverlässig erkanntem Stillstand** oder **15 Sekunden langsamer Bewegung ohne Motorlast** pausiert sie; Fußwege werden nicht als Fahrstrecke gezählt. Die BMS-Verbindung bleibt bestehen. Eine Fortsetzung erfordert passende GPS-Fahrgeschwindigkeit und anhaltende Motorlast. Nach **10 Minuten Pause** wird sie rückwirkend zum Pausenbeginn abgeschlossen. Geht die Verbindung während der Pause verloren, sucht die App weiter und wartet standardmäßig bis 2 Minuten nach Pausenbeginn auf eine Wiederverbindung. Die Zeiten sind je Scooter einstellbar. GPS-Ausfall allein gilt nicht als Stillstand.
+Die Aufzeichnung läuft auch mit ausgeschaltetem Bildschirm und gesperrtem Handy. Beim Ausrollen wird GPS weiter ausgewertet: **0 W allein pausiert die Fahrt nicht**, auch eine längere Bergabfahrt bleibt bei erkennbarer GPS-Fahrgeschwindigkeit in der Aufzeichnung. Nach **45 Sekunden zuverlässig erkanntem Stillstand** oder **15 Sekunden langsamer Bewegung ohne Motorlast** pausiert sie; Fußwege werden nicht als Fahrstrecke gezählt. Die BMS-Verbindung bleibt bestehen. Eine Fortsetzung erfordert passende GPS-Fahrgeschwindigkeit und anhaltende Motorlast. Nach **10 Minuten automatischer Pause** wird sie rückwirkend zum Pausenbeginn abgeschlossen. Eine manuelle Pause hält dieselbe Fahrt bis zu 12 Stunden offen; währenddessen kann die Wegfahrsperre eingeschaltet werden. Geht die Verbindung während einer automatischen Pause verloren, sucht die App weiter und wartet standardmäßig bis 2 Minuten nach Pausenbeginn auf eine Wiederverbindung. Die Zeiten sind je Scooter einstellbar. GPS-Ausfall allein gilt nicht als Stillstand.
 
 Mehrere gespeicherte Scooter? Die App prüft erreichbare BMS nacheinander und übernimmt das passende Profil. Während einer laufenden Fahrt bleibt die Zuordnung fest. Unbekannte BMS werden nicht ungefragt übernommen; jedes Gerät wird bei der Einrichtung einmal seinem Profil zugeordnet.
 
@@ -24,7 +24,13 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 
 ![ScootPit BMS mit dem eingerichteten dunklen Joyor-Cockpit und den zusätzlichen Durchschnittskacheln](docs/assets/screenshots/cockpit-dunkel-1.6.5.jpg)
 
-<em>Das dunkle Cockpit aus der aktuellen Einstellungsdatei. Die Anordnung und Messwerte sind zugleich die Vorlage für das helle Design.</em>
+<em>Das dunkle Cockpit aus der Einstellungsdatei. Die Anordnung und Messwerte sind zugleich die Vorlage für das helle Design; die große Verbrauchsskala startet in 1.6.6 mit 40.</em>
+
+### BMS-Lastausgang ausgeschaltet
+
+![Bereitschaftsstatus bei ausgeschaltetem BMS-Lastausgang](docs/assets/screenshots/cockpit-lastausgang-aus-1.6.6.jpg)
+
+<em>Der Statushinweis „BMS-Lastausgang aus – bitte einschalten“ wird in 1.6.6 ergänzt.</em>
 
 ### Hauptansicht · Bereitschaft aktiv
 
@@ -82,6 +88,10 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 <p><img src="docs/assets/screenshots/fahrtenbuch-ordnerimport.jpg" width="260" alt="Fahrtenbuch mit Zeitraumwahl sowie Import des kompletten Ordners oder einzelner Fahrten"></p>
 <em>Im Fahrtenbuch kannst du einen Zeitraum wählen und den gesamten Scooter-Fahrtenordner oder einzelne CSV-/GPX-Fahrten importieren.</em>
 
+
+## Neu in 1.6.6
+
+Fahrten lassen sich über die Fahrtkachel manuell bis zu 12 Stunden pausieren und anschließend als dieselbe Fahrt fortsetzen. Währenddessen ist die Wegfahrsperre verfügbar. Der BMS-Lastausgang kann zum Sperren erst ausgeschaltet werden, wenn die App pro Scooter einen stabilen Standstrom bei eingeschaltetem Roller ermittelt hat und der gemessene Strom mindestens 5 Sekunden sicher darunter liegt. Das BMS meldet den Gesamtstrom des Fahrzeugs; ein isolierter Display-Verbrauch lässt sich daraus nicht ablesen. Bei fehlender oder zu grober Messauflösung bleibt das Ausschalten gesperrt. Die Statuszeile weist auf einen ausgeschalteten Lastausgang hin. Bei aktiver Bereitschaft bleibt das Telefondisplay im Vordergrund eingeschaltet. Die große Verbrauchsskala erhält standardmäßig den Maximalwert **40**; eigene Skalenwerte bleiben erhalten.
 
 ## Neu in 1.6.5
 

@@ -52,7 +52,7 @@ final class CockpitBoard extends FrameLayout {
                     if(dx!=0||dy!=0)moved=true;
                     restore(initial);
                     try {if(resizing){tile.put("w",Math.max(1,Math.min(GRID_COLUMNS-oldX,oldW+dx))).put("h",Math.max(2,Math.min(24,oldH+dy)));}
-                    else tile.put("x",Math.max(0,Math.min(GRID_COLUMNS-oldW,oldX+dx))).put("y",Math.max(0,Math.min(600,oldY+dy)));}catch(Exception ignored){}
+                    else tile.put("x",Math.max(0,Math.min(GRID_COLUMNS-oldW,oldX+dx))).put("y",Math.max(0,Math.min(GridPacking.MAX_TILE_Y,oldY+dy)));}catch(Exception ignored){}
                     try{push(tile);}catch(Exception e){restore(initial);}
                     requestLayout();return true;
                 }
@@ -260,7 +260,7 @@ final class CockpitBoard extends FrameLayout {
     static void validate(JSONArray tiles)throws Exception{
         if(tiles.length()<1||tiles.length()>100)throw new Exception("1–100 Kacheln erforderlich");
         java.util.HashSet<String> single=new java.util.HashSet<>();
-        for(int i=0;i<tiles.length();i++){JSONObject t=tiles.getJSONObject(i);String key=t.getString("key");if((key.equals("bms_output")||key.equals("log"))&&!single.add(key))throw new Exception("Doppelte Steuerkachel");validateAppearance(t);int x=t.getInt("x"),y=t.getInt("y"),w=t.getInt("w"),h=t.getInt("h");if(x<0||y<0||y>600||w<1||w>GRID_COLUMNS||x+w>GRID_COLUMNS||h<2||h>24||(!java.util.Arrays.asList(CockpitLayout.KEYS).contains(t.getString("key"))&&!BmsExtras.known(key)))throw new Exception("Ungültige Kachel");}
+        for(int i=0;i<tiles.length();i++){JSONObject t=tiles.getJSONObject(i);String key=t.getString("key");if((key.equals("bms_output")||key.equals("log"))&&!single.add(key))throw new Exception("Doppelte Steuerkachel");validateAppearance(t);int x=t.getInt("x"),y=t.getInt("y"),w=t.getInt("w"),h=t.getInt("h");if(x<0||y<0||y>GridPacking.MAX_TILE_Y||w<1||w>GRID_COLUMNS||x+w>GRID_COLUMNS||h<2||h>24||(!java.util.Arrays.asList(CockpitLayout.KEYS).contains(t.getString("key"))&&!BmsExtras.known(key)))throw new Exception("Ungültige Kachel");}
         for(int i=0;i<tiles.length();i++)for(int j=i+1;j<tiles.length();j++){JSONObject a=tiles.getJSONObject(i),b=tiles.getJSONObject(j);if(a.getInt("x")<b.getInt("x")+b.getInt("w")&&a.getInt("x")+a.getInt("w")>b.getInt("x")&&a.getInt("y")<b.getInt("y")+b.getInt("h")&&a.getInt("y")+a.getInt("h")>b.getInt("y")&&!a.optBoolean("allow_overlap",false)&&!b.optBoolean("allow_overlap",false))throw new Exception("Kacheln überlappen – bei einer Kachel Überlappung aktivieren");}
     }
 }

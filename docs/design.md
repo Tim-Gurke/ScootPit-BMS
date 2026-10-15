@@ -28,6 +28,8 @@ Die Android-Statusleiste übernimmt die App-Hintergrundfarbe. Uhrzeit und Symbol
 
 Im Hochformat bleibt die Bereitschaftszeile unter dem Appkopf. Im Querformat wandert Statuspunkt samt Text in den Kopf; die Kopfzeile ist dort flacher, damit die Cockpitfläche mehr Displayhöhe erhält. Das feste App-Symbol bleibt beim Schemawechsel gleich. Alle Kacheln besitzen passende Symbole mit separat wählbarer Farbe; Symbol, Beschriftung, beides oder keines sind einstellbar.
 
+Bei aktiver Bereitschaft und sichtbarem Cockpit hält die App das Telefondisplay eingeschaltet. Sobald die App in den Hintergrund wechselt, wird diese Display-Sperre gelöst.
+
 ![Individuell angeordnetes Cockpit im dunklen Farbschema](assets/screenshots/cockpit-dunkel.jpg)
 
 <em>Das aktuelle Cockpit im dunklen Farbschema mit überlagerten Anzeigen und Statuswerten.</em>

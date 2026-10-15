@@ -11,17 +11,20 @@ public class JbdControlTest {
         ack[2]=(byte)0x80;ack[4]=(byte)0xff;ack[5]=(byte)0x80;
         if(!JbdControl.validReply(ack))throw new AssertionError("Error reply");
         ack[4]=0;if(JbdControl.validReply(ack))throw new AssertionError("Corrupt ACK");
-        reject(false,false,true,false,0,6000,0);
-        reject(true,true,true,false,0,6000,0);
-        reject(true,false,false,true,0,6000,0);
-        reject(true,false,true,false,-0.2,6000,0);
-        reject(true,false,true,false,0,4999,0);
-        reject(true,false,true,true,0,6000,4);
-        reject(true,false,true,false,Double.NaN,6000,0);
-        if(JbdControl.rejection(true,false,true,false,0,5000,0)!=null)throw new AssertionError("Quiet stationary release");
-        System.out.println("JBD command, ACK checksum, stale/ride/current/charging/movement safeguards: OK");
+        reject(false,false,false,true,false,0,0.01,6000,0,0.3,0.01);
+        reject(true,true,false,true,false,0,0.01,6000,0,0.3,0.01);
+        reject(true,false,false,false,true,0,0.01,6000,0,0.3,0.01);
+        reject(true,false,false,true,false,-0.30,0.01,6000,0,0.30,0.01);
+        reject(true,false,false,true,false,0,0.01,4999,0,0.30,0.01);
+        reject(true,false,false,true,false,0,0.01,6000,4,0.30,0.01);
+        reject(true,false,false,true,false,Double.NaN,0.01,6000,0,0.30,0.01);
+        reject(true,false,false,true,false,0,0.01,6000,0,0,0);
+        reject(true,false,false,true,false,0,0.10,6000,0,0.10,0.10);
+        if(JbdControl.rejection(true,false,true,true,false,0,0.01,6000,0,0.30,0.01)!=null)throw new AssertionError("Manual paused cutoff below learned baseline");
+        if(JbdControl.rejection(true,false,false,true,true,0,0.01,0,0,0,0)!=null)throw new AssertionError("Re-enable output without learned display value");
+        System.out.println("JBD command, ACK checksum, learned display-current and manual-pause safeguards: OK");
     }
-    private static void reject(boolean fresh,boolean trip,boolean charge,boolean enabled,double current,long quiet,double speed){
-        if(JbdControl.rejection(fresh,trip,charge,enabled,current,quiet,speed)==null)throw new AssertionError("Unsafe command accepted");
+    private static void reject(boolean fresh,boolean trip,boolean manual,boolean charge,boolean enabled,double current,double resolution,long quiet,double speed,double baseline,double baselineResolution){
+        if(JbdControl.rejection(fresh,trip,manual,charge,enabled,current,resolution,quiet,speed,baseline,baselineResolution)==null)throw new AssertionError("Unsafe command accepted");
     }
 }

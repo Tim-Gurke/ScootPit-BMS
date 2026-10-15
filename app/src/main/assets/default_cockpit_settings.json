@@ -24,7 +24,7 @@
       "text": "#FFFFFFFF",
       "arrangement": 2,
       "display": 2,
-      "scale_max": 30,
+      "scale_max": 40,
       "caption": "Verbrauch",
       "gauge_sweep": 240,
       "custom_colors": true,

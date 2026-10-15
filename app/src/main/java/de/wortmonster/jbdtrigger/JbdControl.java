@@ -12,13 +12,17 @@ final class JbdControl {
         int sum=0;for(int i=2;i<b.length-3;i++)sum+=b[i]&255;
         return ((-sum)&65535)==((b[b.length-3]&255)<<8 | (b[b.length-2]&255));
     }
-    static String rejection(boolean fresh, boolean trip, boolean chargeOn, boolean enabled,
-                            double current, long quietMs, double speed) {
+    static String rejection(boolean fresh, boolean trip, boolean manuallyPaused, boolean chargeOn,
+                            boolean enabled, double current, double currentResolution,
+                            long quietMs, double speed, double displayCurrent,
+                            double displayResolution) {
         if(!fresh)return "Frische BMS-Verbindung erforderlich";
         if(!chargeOn)return "Lade-MOS ist aus: Schalten gesperrt, damit der Ladezustand unverändert bleibt";
-        if(trip)return "Zuerst die laufende Fahrt beenden";
+        if(trip&&!manuallyPaused)return "Fahrt zuerst manuell pausieren";
         if(speed>=2)return "Nur bei stehendem Roller schalten";
-        if(!enabled && (!Double.isFinite(current) || Math.abs(current)>=0.15 || quietMs<5000))return "Roller ausschalten und mindestens 5 Sekunden ohne Last warten";
+        if(!enabled && displayCurrent<=0)return "Standstrom-Referenz wird noch ermittelt; Lastausgang bleibt eingeschaltet";
+        if(!enabled && !DisplayCurrentLearner.safelyBelow(current,currentResolution,displayCurrent,displayResolution))return "Standstrom liegt noch an – zum Sperren muss der Strom sicher unter die Standstrom-Referenz fallen";
+        if(!enabled && quietMs<5000)return "Strom muss mindestens 5 Sekunden sicher unter der Standstrom-Referenz bleiben";
         return null;
     }
 }

@@ -7,7 +7,7 @@ import java.util.*;
 
 /** Syncs standard presentation while preserving an individually arranged board. */
 final class CockpitStyles {
-    private static final String VERSION="1.6.5",MARKER="cockpit_style_sync_version";
+    private static final String VERSION="1.6.6",MARKER="cockpit_style_sync_version";
     static final String[] FIELDS={"caption","font","weight","unit_font","scale_max","consumption_display_unit","background","text","instrument_color","scale_color","icon_color","border_color","custom_colors","allow_overlap","border_enabled","corner_radius","content_inset","scale_gradient_mode","scale_gradient_low","scale_gradient_mid","scale_gradient_high","scale_gradient_low_full","scale_gradient_high_full","scale_reverse","average_mode","average_window_m","dark_colors"};
     private CockpitStyles(){}
     static Map<String,JSONObject> keyed(JSONArray tiles)throws JSONException{

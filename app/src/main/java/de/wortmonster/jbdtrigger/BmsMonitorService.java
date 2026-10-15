@@ -47,10 +47,12 @@ public class BmsMonitorService extends Service implements LocationListener {
     public static final String ACTION_STATUS = "de.wortmonster.jbdtrigger.STATUS";
 
     public static final String ACTION_END_TRIP = "de.wortmonster.jbdtrigger.END_TRIP";
+    public static final String ACTION_PAUSE_TRIP = "de.wortmonster.jbdtrigger.PAUSE_TRIP";
+    public static final String ACTION_RESUME_TRIP = "de.wortmonster.jbdtrigger.RESUME_TRIP";
     public static final String ACTION_REFRESH_TEMPERATURE = "de.wortmonster.jbdtrigger.REFRESH_TEMPERATURE";
     public static final String ACTION_SET_DISCHARGE = "de.wortmonster.jbdtrigger.SET_DISCHARGE";
     private PowerManager.WakeLock wakeLock;
-    private long wakeRenewed, quietSince;
+    private long wakeRenewed, belowDisplayCurrentSince;
     private boolean chargeEnabled, dischargeEnabled, controlPending, controlAcknowledged, desiredDischarge, writeBusy;
     private String controlMessage = "Bereitschaft starten, um den BMS-Lastausgang zu lesen";
     static volatile Intent latestStatus;
@@ -65,7 +67,13 @@ public class BmsMonitorService extends Service implements LocationListener {
     private double outsideTemperature = Double.NaN;
     private long weatherAt, movingMs, standingMs, lastClock, gpsAt;
     private long tripPausedAt;
+    private long manualPauseStartedAt;
+    private boolean manualTripPause;
+    private long lastHighLoadAt;
+    private double currentResolution = 0.01;
+    private DisplayCurrentLearner displayCurrentLearner = new DisplayCurrentLearner(0, 0);
     private long pauseEndMs=600_000, disconnectedPauseGraceMs=120_000, slowUnpoweredStopMs=15_000;
+    private static final long MAX_MANUAL_PAUSE_MS = 12L * 60 * 60 * 1000;
     private double pausedGpsSpeedKmh;
     private final RideResumeGate resumeGate=new RideResumeGate();
     private double pausedEnergyWh, pausedMaxPowerW;
@@ -109,9 +117,11 @@ public class BmsMonitorService extends Service implements LocationListener {
                 active=false;activeSince=0;idleSince=0;tripPausedAt=now;pausedGpsSpeedKmh=0;pausedEnergyWh=energyWh;pausedMaxPowerW=maxPowerW;motion.reset();resumeGate.reset();
                 emit(ACTION_IDLE);setState("Fahrt pausiert – BMS-Verbindung bleibt aktiv");
             }
-            if(recorder!=null && tripPausedAt>0 && ((gatt==null&&now-tripPausedAt>=disconnectedPauseGraceMs)||now-tripPausedAt>=pauseEndMs)){
+            boolean manualPauseExpired=manualTripPause&&manualPauseStartedAt>0&&now-manualPauseStartedAt>=MAX_MANUAL_PAUSE_MS;
+            if(recorder!=null && tripPausedAt>0 && (manualPauseExpired
+                    || !manualTripPause && ((gatt==null&&now-tripPausedAt>=disconnectedPauseGraceMs)||now-tripPausedAt>=pauseEndMs))){
                 long endAt=tripPausedAt;active=false;activeSince=0;idleSince=0;
-                finishTrip(endAt);if(gatt==null)scheduleScan(1000);setState("Fahrt nach längerer Pause beendet");
+                finishTrip(manualPauseExpired?now:endAt);if(gatt==null)scheduleScan(1000);setState("Fahrt nach längerer Pause beendet");
             }
             lastClock = now;
             sendStatus();
@@ -228,9 +238,14 @@ public class BmsMonitorService extends Service implements LocationListener {
         if(intent!=null && ACTION_SET_DISCHARGE.equals(intent.getAction())){
             setDischarge(intent.getBooleanExtra("enabled",true));return START_STICKY;
         }
+        if(intent!=null && ACTION_PAUSE_TRIP.equals(intent.getAction())){
+            pauseTripManually();return START_STICKY;
+        }
+        if(intent!=null && ACTION_RESUME_TRIP.equals(intent.getAction())){
+            resumeTripManually();return START_STICKY;
+        }
         if (intent != null && ACTION_END_TRIP.equals(intent.getAction())) {
             active = false; manualHold = true; activeSince = 0;
-            tripPausedAt=0;
             finishTrip();
             closeGatt();
             near = false;
@@ -285,6 +300,10 @@ public class BmsMonitorService extends Service implements LocationListener {
         disconnectedPauseGraceMs=(long)(setting("pause_disconnect_seconds",120,0,7200)*1000);
         gpsMaxKmh=setting("gps_max_kmh",45,10,150);
         averageConsumption=number(prefs.getString("learned_wh_km","0"),0);
+        displayCurrentLearner=new DisplayCurrentLearner(
+                number(prefs.getString("display_current_a","0"),0),
+                number(prefs.getString("display_current_resolution_a","0"),0));
+        lastHighLoadAt=0;
         outsideTemperature=number(prefs.getString("outside_temperature","NaN"),Double.NaN);weatherAt=prefs.getLong("weather_at",0);
         try{temperatureHistory=new org.json.JSONArray(prefs.getString("temperature_history","[]"));}catch(Exception e){temperatureHistory=new org.json.JSONArray();}
     }
@@ -612,8 +631,7 @@ public class BmsMonitorService extends Service implements LocationListener {
     private void setDischarge(boolean enabled){
         if(controlPending)return;
         long now=System.currentTimeMillis();
-        String error=JbdControl.rejection(gatt!=null && writeCharacteristic!=null && lastPacket>0 && now-lastPacket<4000,
-            recorder!=null,chargeEnabled,enabled,current,quietSince>0?now-quietSince:0,currentSpeedKmh);
+        String error=dischargeRejection(enabled,now);
         if(error!=null){controlMessage=error;sendStatus();return;}
         desiredDischarge=enabled;controlPending=true;controlAcknowledged=false;
         controlMessage="BMS-Bestätigung wird geprüft …";sendStatus();
@@ -625,13 +643,18 @@ public class BmsMonitorService extends Service implements LocationListener {
     private final Runnable submitControl=new Runnable(){public void run(){
         if(!controlPending)return;
         long now=System.currentTimeMillis();
-        String error=JbdControl.rejection(gatt!=null && writeCharacteristic!=null && now-lastPacket<4000,
-            recorder!=null,chargeEnabled,desiredDischarge,current,quietSince>0?now-quietSince:0,currentSpeedKmh);
+        String error=dischargeRejection(desiredDischarge,now);
         if(error!=null){controlFinished(error);return;}
         if(writeBusy){handler.postDelayed(this,100);return;}
         if(!write(JbdControl.discharge(desiredDischarge))){controlFinished("BMS-Befehl konnte nicht gesendet werden");return;}
         handler.postDelayed(pollRunnable,BMS_POLL_MS);
     }};
+    private String dischargeRejection(boolean enabled,long now){
+        return JbdControl.rejection(gatt!=null&&writeCharacteristic!=null&&lastPacket>0&&now-lastPacket<4000,
+                recorder!=null,manualTripPause,chargeEnabled,enabled,current,currentResolution,
+                belowDisplayCurrentSince>0?now-belowDisplayCurrentSince:0,currentSpeedKmh,
+                displayCurrentLearner.learnedAmps(),displayCurrentLearner.learnedResolution());
+    }
     private final Runnable controlTimeout=()->controlFinished("Keine Bestätigung – Lastausgang prüfen, erneut verbinden");
     private void controlFinished(String message){
         controlPending=false;controlAcknowledged=false;controlMessage=message;
@@ -674,21 +697,39 @@ public class BmsMonitorService extends Service implements LocationListener {
         lastPowerAt = now;
         voltage = packet.voltage;
         current = packet.current;
+        currentResolution = packet.currentResolution;
         remainingAh = packet.remainingAh;
         fullAh = packet.fullAh;
         temperatures = packet.temperatures;
         soc = packet.soc;
         dischargeWatts = current < 0 ? -current * voltage : 0;
         if(recorder!=null){maxPowerW=Math.max(maxPowerW,dischargeWatts);recentConsumption.add(distanceMeters,energyWh);}
-        if(lastPacket==0 || now-lastPacket>4000 || Math.abs(current)>=0.15)quietSince=0;
-        if(Math.abs(current)<0.15 && quietSince==0)quietSince=now;
+        if(lastPacket==0 || now-lastPacket>4000)belowDisplayCurrentSince=0;
         chargeEnabled=packet.chargeEnabled;dischargeEnabled=packet.dischargeEnabled;
         lastPacket = now;
         missingSince = 0;
+        if(dischargeEnabled&&current<0&&-current>=activeAmps)lastHighLoadAt=now;
+        learnDisplayCurrent(now);
+        if(DisplayCurrentLearner.safelyBelow(current,currentResolution,
+                displayCurrentLearner.learnedAmps(),displayCurrentLearner.learnedResolution())){
+            if(belowDisplayCurrentSince==0)belowDisplayCurrentSince=now;
+        }else belowDisplayCurrentSince=0;
         if(controlPending && controlAcknowledged && dischargeEnabled==desiredDischarge)
             controlFinished("Schaltvorgang vom BMS bestätigt");
         evaluateCurrent();
         sendStatus();
+    }
+
+    private void learnDisplayCurrent(long now){
+        boolean recentPoweredRide=lastHighLoadAt>0&&now-lastHighLoadAt<=30L*60*1000;
+        boolean stationaryGps=gpsAt>0&&now-gpsAt<=10_000&&currentSpeedKmh<1.0;
+        boolean changed=displayCurrentLearner.observe(current,currentResolution,
+                dischargeEnabled&&recentPoweredRide&&stationaryGps);
+        if(changed)prefs.edit()
+                .putString("display_current_a",Double.toString(displayCurrentLearner.learnedAmps()))
+                .putString("display_current_resolution_a",Double.toString(displayCurrentLearner.learnedResolution()))
+                .apply();
+        if(changed)controlMessage="";
     }
 
     private void evaluateCurrent() {
@@ -704,6 +745,7 @@ public class BmsMonitorService extends Service implements LocationListener {
             return;
         }
         if(recorder!=null&&tripPausedAt>0){
+            if(manualTripPause){activeSince=0;return;}
             boolean confirmed=resumeGate.update(now,dischargeAmps,activeAmps,pausedGpsSpeedKmh,now-gpsAt<=5000);
             if(confirmed){resumeTrip(now);active=true;idleSince=0;emit(ACTION_ACTIVE);setState("Fahrt fortgesetzt");}
             activeSince=0;return;
@@ -760,7 +802,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         lastLocation = null;
         movingMs = standingMs = 0;
         averageLastDistance=averageLastEnergy=0;averageLastMoving=0;averagePauseGap=false;averages.beginTrip();
-        tripPausedAt=0;pausedGpsSpeedKmh=0;resumeGate.reset();
+        tripPausedAt=0;manualPauseStartedAt=0;manualTripPause=false;pausedGpsSpeedKmh=0;resumeGate.reset();
         lastClock = now;motion.reset();
         startLocationTracking();
         rideNotification(true);
@@ -771,6 +813,25 @@ public class BmsMonitorService extends Service implements LocationListener {
         if(averagePauseGap){averages.record(0,0,0,false);averagePauseGap=false;}
         standingMs+=Math.max(0,now-tripPausedAt);tripPausedAt=0;pausedGpsSpeedKmh=0;resumeGate.reset();lastClock=now;activeSince=0;idleSince=0;motion.reset();
         setState("Fahrt nach Pause fortgesetzt");
+    }
+
+    private void pauseTripManually(){
+        if(recorder==null){controlMessage="Keine laufende Fahrt zum Pausieren";sendStatus();return;}
+        long now=System.currentTimeMillis();
+        if(tripPausedAt==0){
+            active=false;activeSince=0;idleSince=0;tripPausedAt=now;pausedGpsSpeedKmh=0;
+            pausedEnergyWh=energyWh;pausedMaxPowerW=maxPowerW;motion.reset();resumeGate.reset();emit(ACTION_IDLE);
+        }
+        manualTripPause=true;manualPauseStartedAt=now;active=false;activeSince=0;idleSince=0;
+        controlMessage="Fahrt manuell pausiert · bis zu 12 Stunden";
+        setState("Fahrt manuell pausiert – Wegfahrsperre kann eingeschaltet werden");
+    }
+
+    private void resumeTripManually(){
+        if(recorder==null||tripPausedAt==0||!manualTripPause){controlMessage="Keine manuell pausierte Fahrt";sendStatus();return;}
+        if(!dischargeEnabled){controlMessage="Lastausgang zuerst einschalten, dann die Fahrt fortsetzen";sendStatus();return;}
+        manualTripPause=false;manualPauseStartedAt=0;resumeTrip(System.currentTimeMillis());
+        controlMessage="Fahrt fortgesetzt";setState("Fahrt fortgesetzt – Aufzeichnung läuft weiter");
     }
 
     private void completeDeparture() {
@@ -798,10 +859,13 @@ public class BmsMonitorService extends Service implements LocationListener {
         if (recorder == null) return;
         stopLocationTracking();
         boolean excludePause=tripPausedAt>0&&endedAt==tripPausedAt;
-        if(tripPausedAt>0&&!excludePause){if(averagePauseGap)averages.record(0,0,0,false);tripPausedAt=0;}
+        if(tripPausedAt>0&&!excludePause){
+            if(manualTripPause)standingMs+=Math.max(0,endedAt-tripPausedAt);
+            if(averagePauseGap)averages.record(0,0,0,false);tripPausedAt=0;
+        }
         updateAverages(true);
         if(excludePause){energyWh=pausedEnergyWh;maxPowerW=pausedMaxPowerW;}
-        tripPausedAt=0;averagePauseGap=false;
+        tripPausedAt=0;manualPauseStartedAt=0;manualTripPause=false;averagePauseGap=false;
         double averageTemperature=temperatureSamples>0?temperatureSum/temperatureSamples:Double.NaN;
         double temp1=sensorSamples[0]>0?sensorSums[0]/sensorSamples[0]:Double.NaN,temp2=sensorSamples[1]>0?sensorSums[1]/sensorSamples[1]:Double.NaN;
         TripRecorder.Summary summary = recorder.finish(endedAt, distanceMeters,
@@ -933,7 +997,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         handler.removeCallbacks(readRssiRunnable);handler.removeCallbacks(optionalRead);
         handler.removeCallbacks(controlTimeout);handler.removeCallbacks(submitControl);
         if(controlPending)controlMessage="Verbindung abgebrochen – Zustand nicht bestätigt";
-        controlPending=false;controlAcknowledged=false;writeBusy=false;quietSince=0;
+        controlPending=false;controlAcknowledged=false;writeBusy=false;
         BluetoothGatt old = gatt;
         gatt = null;
         writeCharacteristic = null;
@@ -962,6 +1026,9 @@ public class BmsMonitorService extends Service implements LocationListener {
                 .putExtra("soc", soc)
                 .putExtra("voltage", voltage)
                 .putExtra("current", current)
+                .putExtra("current_resolution", currentResolution)
+                .putExtra("display_current_a",displayCurrentLearner.learnedAmps())
+                .putExtra("display_current_resolution_a",displayCurrentLearner.learnedResolution())
                 .putExtra("discharge_watts", dischargeWatts)
                 .putExtra("energy_wh", energyWh)
                 .putExtra("full_capacity_ah",fullAh)
@@ -998,6 +1065,7 @@ public class BmsMonitorService extends Service implements LocationListener {
                 .putExtra("range_km", rangeKm())
                 .putExtra("trip_active", recorder != null)
                 .putExtra("trip_paused", recorder != null && tripPausedAt>0)
+                .putExtra("trip_paused_manual",recorder!=null&&tripPausedAt>0&&manualTripPause)
                 .putExtra("timestamp", System.currentTimeMillis());
     }
 

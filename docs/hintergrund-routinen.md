@@ -19,6 +19,7 @@ Erreichbare BMS werden nacheinander verbunden und auf Stromentnahme geprüft. Be
 - **Verbindungsverlust in der Pause:** Die App sucht weiter. Ohne Wiederverbindung bis standardmäßig **120 Sekunden nach Pausenbeginn** wird die Pause als Fahrtende gespeichert. Dieses Zeitfenster ist von 0–7200 Sekunden einstellbar; das Limit für lange Pausen gilt weiterhin.
 - **Entfernung:** Bestätigter Verlust der BMS-Verbindung kann die Fahrt ebenfalls beenden. Schwacher Empfang allein genügt bei frischen BMS-Daten nicht.
 - **Fahrt beenden:** Manuell speichern; Bereitschaft bleibt aktiv. Erneuter Start erst nach Stromruhe, damit der Stop nicht sofort rückgängig gemacht wird.
+- **Manuell pausieren:** Die Fahrtkachel hält dieselbe Fahrt bis zu **12 Stunden** offen. Währenddessen kann die Wegfahrsperre eingeschaltet werden. Zum Fortsetzen zuerst den BMS-Lastausgang einschalten und danach **Fahrt fortsetzen** wählen. Die manuelle Pause löst nicht den automatischen 10-Minuten-Abschluss aus.
 - **Bereitschaft beenden:** Suche stoppen und laufende Fahrt speichern.
 
 Nach automatisch erkanntem Fahrtende bleibt ein erreichbares BMS verbunden. Ist es nicht verbunden, beginnt die Suche nach ungefähr 1 Sekunde wieder. Fehlende BMS werden mit kurzen Suchpausen weiter gesucht; die früher lange Wartezeit zwischen Fahrten entfällt. Android kann BLE-Suchvorgänge begrenzen; Empfang und tatsächliche Startlatenz am eigenen Handy prüfen.
@@ -31,7 +32,7 @@ Werte sind pro Scooter editierbar und gelten nach Neustart der Bereitschaft. Vor
 
 ## Gesperrtes Handy
 
-Die Bereitschaft wird aus der geöffneten App gestartet und bleibt als Vordergrunddienst aktiv. Bildschirm ausschalten und Handy einstecken beendet sie nicht. Die App hält einen begrenzten, erneuerten CPU-Wakelock. Android-/Samsung-Beschränkungen können trotzdem Bluetooth und GPS beeinflussen. Unter **Akkuoptimierung** Status prüfen, Ausnahme anfragen oder die App-Info öffnen. In Samsung-Einstellungen die App gegebenenfalls zu **Nie im Standby** hinzufügen.
+Die Bereitschaft wird aus der geöffneten App gestartet und bleibt als Vordergrunddienst aktiv. Solange das Cockpit bei aktiver Bereitschaft im Vordergrund steht, hält ScootPit auch das Telefondisplay eingeschaltet. Beim Verlassen der App wird diese Display-Sperre gelöst. Bildschirm manuell ausschalten oder Handy einstecken beendet den Dienst nicht. Die App hält einen begrenzten, erneuerten CPU-Wakelock. Android-/Samsung-Beschränkungen können trotzdem Bluetooth und GPS beeinflussen. Unter **Akkuoptimierung** Status prüfen, Ausnahme anfragen oder die App-Info öffnen. In Samsung-Einstellungen die App gegebenenfalls zu **Nie im Standby** hinzufügen.
 
 ## Routine-Nachrichten
 

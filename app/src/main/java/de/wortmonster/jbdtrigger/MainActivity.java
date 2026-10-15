@@ -48,6 +48,7 @@ public class MainActivity extends Activity {
     private TextView stateView, lastTripView, logView;
     private LinearLayout dashboard;
     private Switch dischargeSwitch;
+    private Button tripActionButton;
     private TextView dischargeNote;
     private boolean updatingDischarge;
     private static final int GREEN=0xff21c879, RED=0xffff535d;
@@ -238,7 +239,7 @@ public class MainActivity extends Activity {
             .setPositiveButton("Beenden",(d,w)->endReadiness()).setNegativeButton("Zurück",null).show();else endReadiness();
     }
     private void buildTiles(){
-        dashboard.removeAllViews();tileValues.clear();tileKeys.clear();tileNotes.clear();dischargeSwitch=null;dischargeNote=null;logView=null;
+        dashboard.removeAllViews();tileValues.clear();tileKeys.clear();tileNotes.clear();dischargeSwitch=null;dischargeNote=null;tripActionButton=null;logView=null;
         board=new CockpitBoard(this,boardTiles,editingBoard,()->{});dashboard.addView(board);
         for(int i=0;i<boardTiles.length();i++){
             JSONObject cell=boardTiles.optJSONObject(i);if(cell==null)continue;
@@ -248,10 +249,11 @@ public class MainActivity extends Activity {
             int text=color(cell.optBoolean("custom_colors",false)?cell.optString("text"):prefs.getString("tile_text",CockpitTheme.light(prefs)?"#172B40":"#FFFFFF"),foreground());
             if(key.equals("ready_start")||key.equals("ready_end")||key.equals("trip_end")){
                 Button action=button(cell.optString("caption",CockpitLayout.title(key)));
+                if(key.equals("trip_end"))tripActionButton=action;
                 if(!CockpitSymbols.title(cell))action.setText("");if(CockpitSymbols.icon(cell)){CockpitSymbols icon=new CockpitSymbols(key,iconColor(cell));icon.setBounds(0,0,dp(26),dp(26));action.setCompoundDrawables(null,icon,null,null);action.setCompoundDrawablePadding(dp(4));}action.setContentDescription(CockpitLayout.title(key));
                 action.setTextSize(Math.max(12,Math.min(30,cell.optInt("font",18))));action.setMaxLines(Math.max(1,Math.min(3,cell.optInt("lines",2))));action.setAutoSizeTextTypeUniformWithConfiguration(10,Math.max(12,Math.min(30,cell.optInt("font",18))),1,android.util.TypedValue.COMPLEX_UNIT_SP);
                 if(!key.equals("trip_end")){action.setBackgroundTintList(android.content.res.ColorStateList.valueOf(key.equals("ready_start")?GREEN:RED));action.setTextColor(Color.BLACK);}
-                action.setOnClickListener(v->{if(key.equals("ready_start"))startMonitoring();else if(key.equals("ready_end"))confirmEndReadiness();else if(BmsMonitorService.running && lastStatus!=null && lastStatus.getBooleanExtra("trip_active",false))startService(new Intent(this,BmsMonitorService.class).setAction(BmsMonitorService.ACTION_END_TRIP));else Toast.makeText(this,"Keine laufende Fahrt",Toast.LENGTH_SHORT).show();});
+                action.setOnClickListener(v->{if(key.equals("ready_start"))startMonitoring();else if(key.equals("ready_end"))confirmEndReadiness();else tripAction();});
                 box.addView(action,new LinearLayout.LayoutParams(-1,-1));
             }else if(key.equals("bms_output")){
                 dischargeSwitch=new Switch(this);personalHeading(box,cell,text);dischargeSwitch.setText("");dischargeSwitch.setContentDescription("BMS-Lastausgang");dischargeSwitch.setTextColor(muted());dischargeSwitch.setShowText(false);dischargeSwitch.setEnabled(false);
@@ -339,7 +341,7 @@ public class MainActivity extends Activity {
         EditText unitFont=hasUnit?field(l,"Einheit: Schriftgröße (8–80, leer = wie Wert)",cell.has("unit_font")?""+cell.optInt("unit_font"):""):new EditText(this);
         Spinner unitPosition=new Spinner(this);unitPosition.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"Neben dem Wert","Hochgestellt","Über dem Wert","Unter dem Wert / im Tacho"}));unitPosition.setSelection(Math.max(0,Math.min(3,cell.optInt("unit_position",0))));
         if(hasUnit){l.addView(label("Einheit: Position",12,muted()));l.addView(unitPosition);}
-        EditText x=field(l,"Spalte (0–23)",""+cell.optInt("x")),y=field(l,"Zeile im Raster (0–600)",""+cell.optInt("y"));
+        EditText x=field(l,"Spalte (0–23)",""+cell.optInt("x")),y=field(l,"Zeile im Raster (0–"+GridPacking.MAX_TILE_Y+")",""+cell.optInt("y"));
         EditText w=field(l,"Breite (1–24 Rasterspalten)",""+cell.optInt("w")),h=field(l,"Höhe (2–24, je 20 dp)",""+cell.optInt("h"));
         EditText bg=textField(l,"Hintergrund (#RRGGBB)",cell.optBoolean("custom_colors",false)?cell.optString("background"):prefs.getString("tile_background",CockpitTheme.light(prefs)?"#F3F7FC":"#141B22"));
         EditText instrument=personal?new EditText(this):textField(l,"Instrument / Balken: Farbe (#RRGGBB)",cell.optString("instrument_color",prefs.getString("accent_color","#FF9800")));
@@ -378,7 +380,7 @@ public class MainActivity extends Activity {
         AlertDialog dialog=new AlertDialog.Builder(this).setTitle(CockpitLayout.title(cell.optString("key"))).setView(content).create();
         tileDialog=dialog;
         back.setOnClickListener(v->dialog.dismiss());remove.setOnClickListener(v->{if(boardTiles.length()>1){boardTiles.remove(index);dialog.dismiss();rebuild();}});
-        apply.setOnClickListener(v->{boolean customUnit=hasUnit&&!unitFont.getText().toString().trim().isEmpty();Double uu=customUnit?valid(unitFont,8,80):null;Double ff=valid(font,12,80),xx=valid(x,0,23),yy=valid(y,0,600),ww=valid(w,1,24),hh=valid(h,2,24),angle=valid(sweepDegrees,90,270);Double ll=valid(lines,1,3),ss=valid(scale,.1,10000000);int gradientChoice=gradientMode.getSelectedItemPosition(),lowPct=lowFull.getProgress(),highPct=highFull.getProgress(),windowMeters=500;if(averageTile){try{windowMeters=Integer.parseInt(averageWindowField.getText().toString().trim());if(windowMeters<1||windowMeters>AverageTracker.MAX_WINDOW_METERS)throw new NumberFormatException();}catch(NumberFormatException e){averageWindowField.setError("Ganze Meter von 1 bis 100000 eingeben");return;}}if(angle!=null&&angle!=Math.rint(angle)){sweepDegrees.setError("Bitte eine ganze Gradzahl eingeben");angle=null;}if((customUnit&&uu==null)||ff==null||xx==null||yy==null||ww==null||hh==null||angle==null||ll==null||ss==null||!validColor(bg)||!validColor(fg)||!validColor(instrument)||!validColor(track)||!validColor(icon)||!validColor(borderColor)||(gradientChoice>0&&(!validColor(gradientEnd)||!validColor(gradientMiddle)||!validColor(gradientStart))))return;if(gradientChoice>0&&lowPct>=highPct){lowFullLabel.setError("Muss unter der hohen Schwelle liegen");highFullLabel.setError("Muss über der niedrigen Schwelle liegen");return;}
+        apply.setOnClickListener(v->{boolean customUnit=hasUnit&&!unitFont.getText().toString().trim().isEmpty();Double uu=customUnit?valid(unitFont,8,80):null;Double ff=valid(font,12,80),xx=valid(x,0,23),yy=valid(y,0,GridPacking.MAX_TILE_Y),ww=valid(w,1,24),hh=valid(h,2,24),angle=valid(sweepDegrees,90,270);Double ll=valid(lines,1,3),ss=valid(scale,.1,10000000);int gradientChoice=gradientMode.getSelectedItemPosition(),lowPct=lowFull.getProgress(),highPct=highFull.getProgress(),windowMeters=500;if(averageTile){try{windowMeters=Integer.parseInt(averageWindowField.getText().toString().trim());if(windowMeters<1||windowMeters>AverageTracker.MAX_WINDOW_METERS)throw new NumberFormatException();}catch(NumberFormatException e){averageWindowField.setError("Ganze Meter von 1 bis 100000 eingeben");return;}}if(angle!=null&&angle!=Math.rint(angle)){sweepDegrees.setError("Bitte eine ganze Gradzahl eingeben");angle=null;}if((customUnit&&uu==null)||ff==null||xx==null||yy==null||ww==null||hh==null||angle==null||ll==null||ss==null||!validColor(bg)||!validColor(fg)||!validColor(instrument)||!validColor(track)||!validColor(icon)||!validColor(borderColor)||(gradientChoice>0&&(!validColor(gradientEnd)||!validColor(gradientMiddle)||!validColor(gradientStart))))return;if(gradientChoice>0&&lowPct>=highPct){lowFullLabel.setError("Muss unter der hohen Schwelle liegen");highFullLabel.setError("Muss über der niedrigen Schwelle liegen");return;}
             JSONArray before;try{before=new JSONArray(boardTiles.toString());boolean oldOverlap=cell.optBoolean("allow_overlap",false);cell.put("allow_overlap",allowOverlap.isChecked()).put("x",xx.intValue()).put("y",yy.intValue()).put("w",ww.intValue()).put("h",hh.intValue());try{board.push(cell);CockpitBoard.validate(boardTiles);}catch(Exception e){for(int i=0;i<boardTiles.length();i++){JSONObject target=boardTiles.getJSONObject(i),original=before.getJSONObject(i);target.put("x",original.getInt("x")).put("y",original.getInt("y")).put("w",original.getInt("w")).put("h",original.getInt("h"));}cell.put("allow_overlap",oldOverlap);Toast.makeText(this,e.getMessage(),Toast.LENGTH_LONG).show();return;}
                 String nextCaption=caption.getText().toString();if(tileKey.equals("consumption_500m")&&(nextCaption.isEmpty()||nextCaption.matches("Verbrauch · letzte \\d+ m")||nextCaption.equals(CockpitLayout.title(tileKey))))nextCaption="Verbrauch";
                 cell.put("arrangement",arrangement.getSelectedItemPosition()).put("display",display.getSelectedItemPosition()).put("gauge_sweep",angle.intValue()).put("heading_mode",heading.getSelectedItemPosition()).put("show_title",heading.getSelectedItemPosition()==1||heading.getSelectedItemPosition()==2).put("show_note",showNote.isChecked()).put("lines",ll.intValue()).put("scale_max",ss).put("caption",nextCaption).put("font",ff.intValue()).put("background",alphaColor(bg.getText().toString(),bgAlpha.getProgress())).put("text",alphaColor(fg.getText().toString(),fgAlpha.getProgress())).put("custom_colors",true).put("instrument_color",instrument.getText().toString()).put("scale_color",track.getText().toString()).put("icon_color",icon.getText().toString()).put("border_color",borderColor.getText().toString()).put("border_enabled",borderEnabled.isChecked()).put("corner_radius",radius.getProgress()).put("content_inset",inset.getProgress()).put("scale_gradient_mode",gradientChoice).put("scale_reverse",reverseScale.isChecked());if(gradientChoice>0)cell.put("scale_gradient_high",gradientEnd.getText().toString()).put("scale_gradient_mid",gradientMiddle.getText().toString()).put("scale_gradient_low",gradientStart.getText().toString()).put("scale_gradient_low_full",lowPct).put("scale_gradient_high_full",highPct);if(averageTile){cell.put("average_mode",averageScopeSelector.getSelectedItemPosition()).put("average_window_m",windowMeters);if(!cell.has("average_id"))cell.put("average_id",java.util.UUID.randomUUID().toString());if(AverageMetrics.mode(cell)==2)AverageMetrics.reading(prefs,cell);}if(consumptionUnitSelector!=null)cell.put("consumption_display_unit",consumptionUnitSelector.getSelectedItemPosition());if(display.getSelectedItemPosition()==2){cell.put("gauge_sweep",angle.intValue()).put("gauge_rotation",rotation.getProgress()).put("gauge_value_visible",showGaugeValue.isChecked()).put("gauge_value_position",gaugeValuePosition.getSelectedItemPosition());}if(hasUnit){cell.put("unit_position",unitPosition.getSelectedItemPosition());if(customUnit)cell.put("unit_font",uu.intValue());else cell.remove("unit_font");}if(customText!=null)cell.put("free_text",customText.getText().toString());if(photoMode!=null)cell.put("image_mode",photoMode.getSelectedItemPosition());moveTileToLayer(index,layer.getSelectedItemPosition());dialog.dismiss();rebuild();
@@ -409,7 +411,13 @@ public class MainActivity extends Activity {
         boolean trip=intent.getBooleanExtra("trip_active",false),paused=intent.getBooleanExtra("trip_paused",false);
         stateView.setTextColor(foreground());updateStateDot();
         renderDischarge(intent);
-        stateView.setText(!BmsMonitorService.running?"Bereitschaft aus":trip?(paused?"Bereitschaft aktiv · Fahrt pausiert":"Bereitschaft aktiv · Fahrt läuft"):"Bereitschaft aktiv");
+        boolean outputOff=BmsMonitorService.running&&intent.getBooleanExtra("bms_connected",false)
+                &&intent.getLongExtra("bms_at",0)>0&&System.currentTimeMillis()-intent.getLongExtra("bms_at",0)<=8000
+                &&!intent.getBooleanExtra("discharge_enabled",false);
+        String readiness=!BmsMonitorService.running?"Bereitschaft aus":trip?(paused?"Bereitschaft aktiv · Fahrt pausiert":"Bereitschaft aktiv · Fahrt läuft"):"Bereitschaft aktiv";
+        stateView.setText(outputOff?readiness+" · BMS-Lastausgang aus – bitte einschalten":readiness);
+        updateTripAction(intent,trip,paused);
+        updateCockpitScreenAwake(BmsMonitorService.running);
         String detail=intent.getStringExtra("state");
         String storageError=prefs.getString("trip_storage_error",prefs.getString("settings_storage_error",""));
         if(!storageError.isEmpty())detail=storageError;
@@ -483,7 +491,34 @@ public class MainActivity extends Activity {
         dischargeSwitch.setTrackTintList(android.content.res.ColorStateList.valueOf(tint));
         dischargeSwitch.setEnabled(fresh && !pending);
         String message=intent.getStringExtra("control_message");
-        dischargeNote.setText(pending?"Schaltbefehl gesendet · Bestätigung wird geprüft":!fresh?"Bereitschaft starten / auf frische BMS-Daten warten":message==null||message.startsWith("Bereitschaft starten")?"Wegfahrsperre · nur im Stand schalten":message);
+        double learned=intent.getDoubleExtra("display_current_a",0);
+        String note=pending?"Schaltbefehl gesendet · Bestätigung wird geprüft":!fresh?"Bereitschaft starten / auf frische BMS-Daten warten":message!=null&&!message.startsWith("Bereitschaft starten")?message:learned<=0?"Standstrom-Referenz wird im Hintergrund ermittelt":on?"Standstrom-Referenz "+f(learned,"%.2f A")+" gelernt · Abschalten nur darunter":"Lastausgang aus · zum Einschalten tippen";
+        dischargeNote.setText(note);
+    }
+    private void updateCockpitScreenAwake(boolean awake){
+        if(awake)getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        else getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+    private void updateTripAction(Intent intent,boolean trip,boolean paused){
+        if(tripActionButton==null)return;
+        String text=!trip?"Fahrt beenden":paused?"Fahrt fortsetzen":"Fahrt pausieren";
+        tripActionButton.setText(text);tripActionButton.setContentDescription(text);
+    }
+    private void tripAction(){
+        if(!BmsMonitorService.running||lastStatus==null||!lastStatus.getBooleanExtra("trip_active",false)){
+            Toast.makeText(this,"Keine laufende Fahrt",Toast.LENGTH_SHORT).show();return;
+        }
+        boolean paused=lastStatus.getBooleanExtra("trip_paused",false);
+        boolean manual=lastStatus.getBooleanExtra("trip_paused_manual",false);
+        String title=paused?(manual?"Fahrt fortsetzen?":"Fahrtpause verlängern?"):"Fahrt manuell pausieren?";
+        String message=paused?(manual?"Zum Fortsetzen zuerst den BMS-Lastausgang einschalten. Die bisherige Fahrt wird danach fortgeführt.":"Die Fahrt bleibt bis zu 12 Stunden als dieselbe Fahrt erhalten. Die Wegfahrsperre kann währenddessen eingeschaltet werden."):
+                "Die Fahrt bleibt bis zu 12 Stunden als dieselbe Fahrt erhalten. Danach kann die Wegfahrsperre eingeschaltet werden. Zum Fortsetzen zuerst den Lastausgang einschalten.";
+        String primary=paused?(manual?"Fortsetzen":"Bis zu 12 Stunden pausieren"):"Pausieren";
+        String action=paused&&manual?BmsMonitorService.ACTION_RESUME_TRIP:BmsMonitorService.ACTION_PAUSE_TRIP;
+        new AlertDialog.Builder(this).setTitle(title).setMessage(message)
+                .setPositiveButton(primary,(d,w)->{if(BmsMonitorService.running)startService(new Intent(this,BmsMonitorService.class).setAction(action));})
+                .setNeutralButton("Fahrt beenden",(d,w)->{if(BmsMonitorService.running)startService(new Intent(this,BmsMonitorService.class).setAction(BmsMonitorService.ACTION_END_TRIP));})
+                .setNegativeButton("Zurück",null).show();
     }
     private void refreshTemperature(){
         if(!BmsMonitorService.running){Toast.makeText(this,"Bereitschaft starten, um aktuelle Temperaturwerte abzurufen",Toast.LENGTH_SHORT).show();return;}
@@ -536,7 +571,7 @@ public class MainActivity extends Activity {
     private void addTile(String key){
         if(boardTiles.length()>=100){Toast.makeText(this,"Maximal 100 Kacheln",Toast.LENGTH_LONG).show();return;}
         if(Arrays.asList("bms_output","log").contains(key))for(int i=0;i<boardTiles.length();i++)if(boardTiles.optJSONObject(i).optString("key").equals(key)){Toast.makeText(this,"Diese Kachel ist bereits vorhanden",Toast.LENGTH_SHORT).show();return;}
-        try{int y=Math.min(600,board==null?3:board.bottom());JSONObject tile=CockpitLayout.tile(key,boardTiles).put("heading_mode",2).put("show_title",true).put("x",0).put("y",y).put("w",6).put("h",3);boardTiles.put(tile);scrollAfterAddingTile=true;rebuild();}catch(Exception e){Toast.makeText(this,e.getMessage(),Toast.LENGTH_LONG).show();}
+        try{int y=board==null?3:board.bottom();if(y>GridPacking.MAX_TILE_Y){Toast.makeText(this,"Am unteren Rand ist kein Platz mehr. Verschiebe oder verkleinere zuerst eine Kachel.",Toast.LENGTH_LONG).show();return;}JSONObject tile=CockpitLayout.tile(key,boardTiles).put("heading_mode",2).put("show_title",true).put("x",0).put("y",y).put("w",6).put("h",3);boardTiles.put(tile);scrollAfterAddingTile=true;rebuild();}catch(Exception e){Toast.makeText(this,e.getMessage(),Toast.LENGTH_LONG).show();}
     }
     private void optionalTiles(){
         ArrayList<String> keys=new ArrayList<>();try{JSONArray available=new JSONArray(prefs.getString("bms_available","[]"));for(int i=0;i<available.length();i++){String key=available.getString(i);if(BmsExtras.known(key))keys.add(key);}}catch(Exception ignored){}
@@ -868,12 +903,13 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        updateCockpitScreenAwake(BmsMonitorService.running);
         IntentFilter filter=new IntentFilter(BmsMonitorService.ACTION_STATUS);
         ContextCompat.registerReceiver(this,statusReceiver,filter,ContextCompat.RECEIVER_NOT_EXPORTED);
         Intent status=BmsMonitorService.latestStatus;if(status!=null)renderStatus(status);
         else renderStatus(new Intent());
     }
-    @Override protected void onPause() {super.onPause();try{unregisterReceiver(statusReceiver);}catch(Exception ignored){}}
+    @Override protected void onPause() {updateCockpitScreenAwake(false);super.onPause();try{unregisterReceiver(statusReceiver);}catch(Exception ignored){}}
     @Override protected void onSaveInstanceState(Bundle state){
         super.onSaveInstanceState(state);state.putString("pending_image_tile",pendingImageTile);state.putString("pending_image_layout",pendingImageLayout);state.putBoolean("editor_from_settings",editorFromSettings);state.putBoolean("settings_open",settingsDialog!=null&&settingsDialog.isShowing());state.putBoolean("log_expanded",logExpanded);state.putBoolean("editing_board",editingBoard);
         if(editingBoard){
