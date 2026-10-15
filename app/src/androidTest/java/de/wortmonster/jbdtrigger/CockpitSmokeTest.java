@@ -624,12 +624,12 @@ public class CockpitSmokeTest extends Instrumentation {
         setMember(service,"manualTripPause",true);setMember(service,"manualPauseStartedAt",now-60000);
         RideResumeGate gate=(RideResumeGate)member(service,"resumeGate");
         setMember(gate,"candidateSince",now-3000);setMember(gate,"lastSample",now-500);
-        setMember(service,"dischargeEnabled",false);invoke(service,"evaluateCurrent",new Class[0]);
+        setMember(service,"dischargeEnabled",false);invoke(service,"evaluateCurrent",new Class[0],new Object[0]);
         if((Long)member(service,"tripPausedAt")==0||!(Boolean)member(service,"manualTripPause")||member(service,"recorder")!=recorder)
             throw new AssertionError("Turning load output off must keep a manual ride pause");
         now=System.currentTimeMillis();setMember(service,"gpsAt",now);setMember(service,"pausedGpsSpeedKmh",10.0);
         setMember(gate,"candidateSince",now-3000);setMember(gate,"lastSample",now-500);
-        setMember(service,"dischargeEnabled",true);invoke(service,"evaluateCurrent",new Class[0]);
+        setMember(service,"dischargeEnabled",true);invoke(service,"evaluateCurrent",new Class[0],new Object[0]);
         if((Long)member(service,"tripPausedAt")!=0||(Boolean)member(service,"manualTripPause")||!(Boolean)member(service,"active")||member(service,"recorder")!=recorder)
             throw new AssertionError("A manually paused trip must resume automatically after output and ride detection return");
         setMember(service,"current",0.0);
