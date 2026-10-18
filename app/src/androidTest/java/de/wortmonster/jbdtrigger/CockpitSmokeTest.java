@@ -421,13 +421,21 @@ public class CockpitSmokeTest extends Instrumentation {
         if(!document.getJSONObject("settings").getString("total_km").equals("123.45"))throw new AssertionError("SAF settings write");
         if(document.getInt("version")!=2||document.getJSONArray("profiles").length()!=2)throw new AssertionError("Multi-scooter backup");
         String savedLayout=document.getJSONObject("settings").getString("cockpit_board");CockpitBoard.validate(new org.json.JSONArray(savedLayout));
-        prefs.edit().putString("total_km","987.65").putString("cockpit_board","[]").commit();storage.importSettings(tree);
-        if(!prefs.getString("total_km","").equals("123.45"))throw new AssertionError("SAF import");
-        if(!prefs.getString("cockpit_board","").equals(savedLayout))throw new AssertionError("SAF layout import");
-        document.put("version",99);StorageFolders.write(getTargetContext(),uri,document.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        boolean rejected=false;try{storage.importSettings(tree);}catch(Exception e){rejected=true;}
-        if(!rejected||!prefs.getString("total_km","").equals("123.45"))throw new AssertionError("Invalid import should preserve settings");
-        StorageFolders.write(getTargetContext(),uri,storage.snapshot().toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        // Isolate deliberately invalid fixtures from the automatic settings backup.
+        // Otherwise an asynchronous save can overwrite the valid import source with "[]".
+        String settingsTree=prefs.getString(StorageFolders.SETTINGS,"");
+        prefs.edit().putString(StorageFolders.SETTINGS,"").commit();
+        ((android.os.Handler)member(storage,"main")).removeCallbacks((Runnable)member(storage,"saveTask"));
+        ((java.util.concurrent.ExecutorService)member(storage,"worker")).submit(()->{}).get(10,java.util.concurrent.TimeUnit.SECONDS);
+        try{
+            prefs.edit().putString("total_km","987.65").putString("cockpit_board","[]").commit();storage.importSettings(tree);
+            if(!prefs.getString("total_km","").equals("123.45"))throw new AssertionError("SAF import");
+            if(!prefs.getString("cockpit_board","").equals(savedLayout))throw new AssertionError("SAF layout import");
+            document.put("version",99);StorageFolders.write(getTargetContext(),uri,document.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            boolean rejected=false;try{storage.importSettings(tree);}catch(Exception e){rejected=true;}
+            if(!rejected||!prefs.getString("total_km","").equals("123.45"))throw new AssertionError("Invalid import should preserve settings");
+            StorageFolders.write(getTargetContext(),uri,storage.snapshot().toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }finally{prefs.edit().putString(StorageFolders.SETTINGS,settingsTree).commit();}
         File trip=new File(getTargetContext().getFilesDir(),"test-trip.csv");try(FileOutputStream output=new FileOutputStream(trip)){output.write("trip;980".getBytes(java.nio.charset.StandardCharsets.UTF_8));}
         String bad="content://de.wortmonster.jbdtrigger.test.documents/tree/readonly";
         storage.exportTrip(bad,trip);Thread.sleep(500);

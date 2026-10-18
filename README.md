@@ -22,7 +22,7 @@ Mehrere gespeicherte Scooter? Die App prüft erreichbare BMS nacheinander und ü
 
 Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch einer frei wählbaren Strecke und die aktuelle elektrische Leistung stehen im Mittelpunkt. Akku, Restreichweite, Kilometer und Temperaturen ergänzen die Übersicht; GPS-Geschwindigkeit bleibt als kleinere Anzeige verfügbar.
 
-### Aktuelles Cockpit · Version 1.6.9
+### Cockpitansicht
 
 ![ScootPit BMS 1.6.9 mit der neuen Cockpitanordnung und dem kontrastreichen Pausezeichen](docs/assets/screenshots/anleitung-cockpit-dunkel.png)
 
