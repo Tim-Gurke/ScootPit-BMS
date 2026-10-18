@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euxo pipefail
 api_level="$1"
-gradle installDebug installDebugAndroidTest
+gradle --no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx1536m installDebug installDebugAndroidTest
 adb shell pm grant de.wortmonster.jbdtrigger android.permission.ACCESS_COARSE_LOCATION
 adb shell pm grant de.wortmonster.jbdtrigger android.permission.ACCESS_FINE_LOCATION
 if [ "$api_level" -ge 31 ]; then
