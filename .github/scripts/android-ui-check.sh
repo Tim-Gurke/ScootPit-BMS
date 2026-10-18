@@ -12,6 +12,8 @@ if [ "$api_level" -ge 33 ]; then
   adb shell pm grant de.wortmonster.jbdtrigger android.permission.POST_NOTIFICATIONS
 fi
 if [ "$api_level" -eq 26 ]; then
+  adb root
+  adb wait-for-device
   adb shell settings put global airplane_mode_on 1
   adb shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true
 else
