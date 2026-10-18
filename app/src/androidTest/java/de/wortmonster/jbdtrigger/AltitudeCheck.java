@@ -69,8 +69,16 @@ final class AltitudeCheck {
                 if (!"MSL".equals(ride.metadata.optString("altitude_reference"))
                         || ride.points.size() != 3 || Math.abs(ride.points.get(0).altitude - height) > .01
                         || !Double.isNaN(ride.points.get(2).altitude))
-                    throw new AssertionError("Recording/import changed the height or lost its reference");
-                if (ride.metadata.optBoolean("imported")) imported++;
+                    throw new AssertionError("Recording/import mismatch: "+ride.csv.getName()+", datum="+ride.metadata.optString("altitude_reference")+", points="+ride.points.size()+", first="+(ride.points.isEmpty()?"missing":ride.points.get(0).altitude)+", expected="+height);
+                if (ride.metadata.optBoolean("imported")) {
+                    imported++;
+                    if (Double.isFinite(ride.energy)) {
+                        String[] importedFirst=Files.readAllLines(ride.csv.toPath(),StandardCharsets.UTF_8).get(1).split(";",-1);
+                        if(Math.abs(ride.averagePower-96)>.01||Math.abs(ride.points.get(0).speed-10.8)>.01
+                                ||TripJournal.number(importedFirst[15])!=100)
+                            throw new AssertionError("CSV import lost power, speed or raw altitude columns");
+                    }
+                }
             }
             if (imported != 2) throw new AssertionError("CSV and GPX round trips were not both checked");
         } finally {
