@@ -26,6 +26,10 @@ Die Ereignisse verwenden die Zeit seit dem Start dieser Bereitschaft:
 
 Die Standard-Erstverbindung benötigt mindestens drei ausreichend starke Messungen über **3 Sekunden**. Nach einem erfolglosen Suchfenster folgen je nach Empfang unterschiedliche Pausen. Diese Regeln helfen, einen Scooter in ausreichender Nähe zu bestätigen. Individuelle Werte lassen sich unter **BMS und Fahrt-Erkennung** ändern und gelten nach einem Neustart der Bereitschaft. Für einen Fehlerbericht die aktuellen Werte zunächst beibehalten.
 
+<img src="assets/screenshots/verbindungsdiagnose-1.6.10.png" width="360" alt="Verbindungsdiagnose in ScootPit BMS 1.6.10 mit relativen Zeiten und Teilen-Schaltfläche">
+
+*Echte Appaufnahme unter Android 13 im Emulator. Der angezeigte Ablauf ist ausdrücklich als Beispiel gekennzeichnet; es besteht keine echte BMS-Verbindung.*
+
 ## Welche Daten werden geteilt?
 
 Das Diagnoseprotokoll hält höchstens **80 Ereignisse im Arbeitsspeicher**. Es bleibt nach dem Beenden der Bereitschaft innerhalb desselben App-Prozesses abrufbar. Ein neuer Bereitschaftsstart setzt es zurück; nach einem Prozessneustart ist es leer.

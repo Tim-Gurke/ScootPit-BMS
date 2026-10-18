@@ -208,3 +208,7 @@ Für die Fehlersuche helfen Appversion, Handy/Android-Version, BMS-Modell und ei
 ## 13. Verbindungsaufbau untersuchen
 
 Nach einem auffällig langen Verbindungsversuch **Einstellungen → Verbindungsdiagnose** öffnen. **Aktualisieren** lädt den momentanen Stand; **Kopieren** und **Teilen** geben den angezeigten Bericht weiter. Er zeigt Suchpausen, Empfangsbestätigung, Bluetooth-Verbindung und die erste gültige BMS-Antwort mit relativen Zeiten. Geräteadresse, Profilname und Fahrtroute sind nicht enthalten. [Schritt-für-Schritt-Erklärung](verbindungsdiagnose.md) · [Bisherige Gerätemeldungen](geraetetests.md).
+
+<img src="assets/screenshots/verbindungsdiagnose-1.6.10.png" width="320" alt="Verbindungsdiagnose mit einem gekennzeichneten Beispielablauf unter Android 13">
+
+*Neue Verbindungsdiagnose in 1.6.10; echte Appaufnahme mit Beispielablauf im Emulator.*

@@ -11,8 +11,13 @@ fi
 if [ "$api_level" -ge 33 ]; then
   adb shell pm grant de.wortmonster.jbdtrigger android.permission.POST_NOTIFICATIONS
 fi
-adb shell svc wifi disable
-adb shell svc data disable
+if [ "$api_level" -eq 26 ]; then
+  adb shell settings put global airplane_mode_on 1
+  adb shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true
+else
+  adb shell svc wifi disable
+  adb shell svc data disable
+fi
 if [ "$api_level" -eq 26 ]; then
   adb shell am instrument -w -e mode altitude de.wortmonster.jbdtrigger.test/de.wortmonster.jbdtrigger.CockpitSmokeTest | tee altitude-result.txt
   grep 'Offline altitude conversion.*OK' altitude-result.txt

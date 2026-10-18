@@ -1,5 +1,9 @@
 # ScootPit BMS 1.6.10
 
+<img src="https://raw.githubusercontent.com/Tim-Gurke/ScootPit-BMS/v1.6.10/docs/assets/screenshots/verbindungsdiagnose-1.6.10.png" width="360" alt="Neue Verbindungsdiagnose mit gekennzeichnetem Beispielablauf">
+
+*Echte Appaufnahme aus dem Android-Emulator; der Ablauf ist ein gekennzeichnetes Beispiel.*
+
 - **Korrigierte Höhenwerte:** Neue Fahrten verwenden die Höhe über dem mittleren Meeresspiegel (MSL). Die standortabhängige Umrechnung aus der GPS-Ellipsoid-Höhe erfolgt vollständig auf dem Handy und funktioniert auch ohne Internet ab Android 8.
 - **Einheitlicher Höhenbezug:** Cockpit, neues Höhendiagramm, GPX und CSV nutzen denselben korrigierten Wert. CSV enthält zusätzlich den ursprünglichen GPS-Höhenwert und den Höhenbezug. Beim erneuten Import bleibt der Bezug erhalten; Werte werden nicht doppelt korrigiert. Fehlende Höhen bleiben leer.
 - **CSV-Import verbessert:** Spalten für Höhe, Geschwindigkeit, Leistung und Temperaturen werden auch mit den von ScootPit verwendeten Unterstrichen im Spaltennamen zuverlässig erkannt.
