@@ -20,6 +20,14 @@ Quelle: [Forenthread „Joyor T6e Pro Tracking & Cockpit“, Beiträge 12 und 14
 
 Der Android-Testlauf prüft die Offline-Höhenumrechnung unter Android **8, 13 und 15**, einschließlich fehlender Höhenwerte und erneutem Import von GPX und CSV. Unter Android 13/15 kommen Cockpit-, Menü-, Layout- und Hintergrunddienstprüfungen im Emulator hinzu. Die Ergebnisse stehen in den [GitHub-Actions-Läufen](https://github.com/Tim-Gurke/ScootPit-BMS/actions).
 
+Für **1.6.10** sind die automatischen Prüfungen erfolgreich abgeschlossen ([Prüflauf](https://github.com/Tim-Gurke/ScootPit-BMS/actions/runs/39121348866)):
+
+| Emuliertes Android | Erfolgreich geprüft |
+| --- | --- |
+| 8.0 / API 26 | Höhenumrechnung ohne Netz, fehlende Höhen und CSV-/GPX-Export mit erneutem Import |
+| 13 / API 33 | Dieselben Höhentests sowie Cockpit, Diagnosemenü, Einstellungen, Layouts und Hintergrunddienst |
+| 15 / API 35 | Dieselben Höhentests sowie Cockpit, Diagnosemenü, Einstellungen, Layouts und Hintergrunddienst |
+
 Eine echte BMS-Verbindung und GPS-Empfang am fahrenden Scooter lassen sich damit noch nicht bestätigen.
 
 ## Was hilft bei einer Rückmeldung?
