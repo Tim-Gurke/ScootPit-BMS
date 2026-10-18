@@ -78,7 +78,7 @@ final class JournalUi {
         if(s.contains("power"))l.addView(text("Mittlere elektrische Leistung: "+format(r.averagePower,"W")+"\nMaximale Leistung: "+format(r.maxPower,"W")));
         if(s.contains("altitude"))l.addView(text("Anstieg: "+format(r.ascent,"m")));
         if(s.contains("temperature"))l.addView(text("Ø Außentemperatur: "+format(r.temperature("outside_temperature_c"),"°C")+"\nØ "+prefs.getString("temp1_label","Temp1")+": "+format(r.temperature("temp1_c"),"°C")+"\nØ "+prefs.getString("temp2_label","Temp2")+": "+format(r.temperature("temp2_c"),"°C")));
-        String[] series={"speed_chart","power_chart","altitude_chart"},units={"km/h","W","m"},titles={"Geschwindigkeit","Elektrische Leistung","GPS-Höhe"};
+        String[] series={"speed_chart","power_chart","altitude_chart"},units={"km/h","W","m"},titles={"Geschwindigkeit","Elektrische Leistung",AltitudeReference.label(AltitudeReference.normalize(r.metadata.optString("altitude_reference",r.metadata.optBoolean("imported",false)?AltitudeReference.UNKNOWN:AltitudeReference.WGS84)))};
         for(int i=0;i<series.length;i++)if(s.contains(series[i])){List<double[]> data=new ArrayList<>();for(TripJournal.Point p:r.points)data.add(new double[]{Math.max(0,(p.time-r.start)/1000.0),i==0?p.speed:i==1?p.power:p.altitude});l.addView(text(titles[i]+" · Zeit seit Fahrtbeginn"));l.addView(new JournalChart(activity,data,units[i]),new LinearLayout.LayoutParams(-1,dp(180)));}
         if(s.isEmpty())l.addView(text("Wähle die Werte aus, die du sehen möchtest."));
         current[0]=dialog("Fahrtstatistiken",l);

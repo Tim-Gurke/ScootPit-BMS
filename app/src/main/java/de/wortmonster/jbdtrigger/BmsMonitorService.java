@@ -201,6 +201,14 @@ public class BmsMonitorService extends Service implements LocationListener {
     private double ascentMeters;
     private long tripStartedAt;
     private Location lastLocation;
+    private final java.util.concurrent.ExecutorService altitudeWorker = java.util.concurrent.Executors.newSingleThreadExecutor();
+    private boolean sawAdvertisement;
+    private long connectAttemptAt;
+    private int scanAttempts;
+
+    private void trace(String event) {
+        ConnectionDiagnostics.TRACE.note(android.os.SystemClock.elapsedRealtime(), event);
+    }
 
     @Override public void onCreate() {
         super.onCreate();
@@ -213,6 +221,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         averageConsumption = number(prefs.getString("learned_wh_km", "0"), 0);
         try{temperatureHistory=new org.json.JSONArray(prefs.getString("temperature_history","[]"));}catch(Exception ignored){}
         running = true;liveService=this;
+        ConnectionDiagnostics.TRACE.start(android.os.SystemClock.elapsedRealtime());
         locationManager = getSystemService(LocationManager.class);
         PowerManager power=getSystemService(PowerManager.class);
         wakeLock=power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"Joyor:Readiness");
@@ -255,6 +264,10 @@ public class BmsMonitorService extends Service implements LocationListener {
         SharedPreferences preferences = prefs;
         address = preferences.getString("device_address", "");
         loadProfileSettings();
+        trace(String.format(Locale.GERMANY,
+                "Erkennung: ab %d dBm, Bestätigung %.1f s; Suchpausen fehlen/schwach/gut: %.1f/%.1f/%.1f s",
+                connectRssi, connectConfirmMs / 1000.0, absentDelayMs / 1000.0,
+                weakDelayMs / 1000.0, goodDelayMs / 1000.0));
 
         handler.removeCallbacksAndMessages(null);
         stopScan();
@@ -321,17 +334,22 @@ public class BmsMonitorService extends Service implements LocationListener {
     private void scheduleScan(long delayMs) {
         handler.removeCallbacks(startScanRunnable);
         handler.postDelayed(startScanRunnable, delayMs);
+        if (delayMs > 0) trace("Suchpause: " + delayMs + " ms");
         setState(delayMs == 0 ? "Suche BMS" : "Nächste Suche in " + delayMs / 1000 + " s");
     }
 
     private final Runnable startScanRunnable = this::startScan;
 
     private void startScan() {
-        if (Build.VERSION.SDK_INT >= 31 && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) { scheduleScan(absentDelayMs); return; }
+        if (Build.VERSION.SDK_INT >= 31 && (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
+                || checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED)) {
+            trace("Suche blockiert: Bluetooth-Berechtigung fehlt");scheduleScan(absentDelayMs);return;
+        }
         if (scanRunning || gatt != null || (!autoSelection && address.isEmpty())) return;
         BluetoothManager manager = getSystemService(BluetoothManager.class);
         BluetoothAdapter adapter = manager == null ? null : manager.getAdapter();
         if (adapter == null || !adapter.isEnabled()) {
+            trace(adapter == null ? "Bluetooth nicht verfügbar" : "Bluetooth ausgeschaltet");
             scheduleScan(absentDelayMs);
             return;
         }
@@ -342,6 +360,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         }
 
         bestScanRssi = -127;
+        sawAdvertisement = false;
         initialSignal.reset();signals.clear();
         java.util.List<ScanFilter> filters=new java.util.ArrayList<>();
         if(autoSelection && recorder==null){knownBms=ScooterProfiles.knownBms(prefs);for(String mac:knownBms.keySet())filters.add(new ScanFilter.Builder().setDeviceAddress(mac).build());}
@@ -354,10 +373,12 @@ public class BmsMonitorService extends Service implements LocationListener {
         try {
             scanner.startScan(filters, settings, scanCallback);
             scanRunning = true;
+            trace("Suche " + (++scanAttempts) + " gestartet (gespeicherte BMS)");
             handler.postDelayed(finishScanRunnable,
                     departureMode ? DEPARTURE_SCAN_MS : Math.max(SCAN_WINDOW_MS,connectConfirmMs+5000));
             setState(departureMode ? "Prüfe Entfernung" : "Suche BMS");
         } catch (SecurityException ignored) {
+            trace("Suche blockiert: Android verweigert Bluetooth-Zugriff");
             scheduleScan(absentDelayMs);
         }
     }
@@ -367,6 +388,8 @@ public class BmsMonitorService extends Service implements LocationListener {
     private void finishScan() {
         if (!scanRunning) return;
         stopScan();
+        trace(bestScanRssi == -127 ? "Suchfenster beendet: kein bekanntes BMS empfangen"
+                : "Suchfenster beendet: bester Empfang " + bestScanRssi + " dBm; Verbindungsbedingung nicht erfüllt");
 
         if (departureMode) {
             if (missingSince == 0) missingSince = System.currentTimeMillis();
@@ -404,6 +427,10 @@ public class BmsMonitorService extends Service implements LocationListener {
             long scanNow=android.os.SystemClock.elapsedRealtime();
             if(autoSelection&&recorder==null&&scanNow-tried.getOrDefault(mac,-30000L)<10000)return;
             int value = result.getRssi();
+            if (!sawAdvertisement) {
+                sawAdvertisement = true;
+                trace("Bekanntes BMS erstmals empfangen: " + value + " dBm");
+            }
             bestScanRssi = Math.max(bestScanRssi, value);
             rssi = value;
             sendStatus();
@@ -417,6 +444,7 @@ public class BmsMonitorService extends Service implements LocationListener {
             boolean accepted = recorder != null ? value >= departureRssi
                     : signals.computeIfAbsent(mac,k->new ConnectionPolicy.InitialSignal()).accept(scanNow,value,candidateRssi,candidateConfirm);
             if (accepted && gatt == null) {
+                trace("Empfang bestätigt: " + value + " dBm (Schwelle " + candidateRssi + " dBm)");
                 if(autoSelection && recorder==null){
                     String id=knownBms.get(mac);
                     try{if(!id.equals(prefs.getString(ScooterProfiles.ACTIVE,""))){
@@ -440,17 +468,26 @@ public class BmsMonitorService extends Service implements LocationListener {
 
         @Override public void onScanFailed(int errorCode) {
             scanRunning = false;
+            trace("Android-Suchfehler: Code " + errorCode);
             scheduleScan(absentDelayMs);
         }
     };
 
     private void connect(BluetoothDevice device) {
         setState("Verbinde mit BMS");
+        connectAttemptAt = android.os.SystemClock.elapsedRealtime();
+        trace("Bluetooth-Verbindungsaufbau gestartet");
         try {
             gatt = device.connectGatt(this, false, gattCallback, BluetoothDevice.TRANSPORT_LE);
+            if (gatt == null) {
+                trace("Android konnte keinen Verbindungsversuch starten");
+                scheduleScan(goodDelayMs);
+                return;
+            }
             BluetoothGatt attempt=gatt;
-            handler.postDelayed(()->{if(gatt==attempt && lastPacket==0)handleDisconnected();},15_000);
+            handler.postDelayed(()->{if(gatt==attempt && lastPacket==0){trace("Zeitüberschreitung: 15 s ohne gültige BMS-Daten");handleDisconnected();}},15_000);
         } catch (SecurityException ignored) {
+            trace("Verbindungsaufbau blockiert: Berechtigung fehlt");
             gatt = null;
             scheduleScan(goodDelayMs);
         }
@@ -460,9 +497,12 @@ public class BmsMonitorService extends Service implements LocationListener {
         @Override public void onConnectionStateChange(BluetoothGatt bluetoothGatt, int status, int newState) {
             handler.post(() -> {
             if (gatt != bluetoothGatt || !running) return;
+            trace("Bluetooth-Rückmeldung: Status " + status + ", Zustand " + newState);
+            if (status != BluetoothGatt.GATT_SUCCESS) { handleDisconnected(); return; }
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 setState("BMS verbunden");
-                try { bluetoothGatt.discoverServices(); }
+                trace("Bluetooth verbunden nach " + (android.os.SystemClock.elapsedRealtime() - connectAttemptAt) + " ms; BMS-Dienste werden gesucht");
+                try { if (!bluetoothGatt.discoverServices()) { trace("Android konnte Dienstsuche nicht starten");handleDisconnected(); } }
                 catch (SecurityException ignored) { handleDisconnected(); }
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 if (gatt == bluetoothGatt) handleDisconnected();
@@ -476,21 +516,25 @@ public class BmsMonitorService extends Service implements LocationListener {
             handler.post(() -> {
             if (gatt != bluetoothGatt || !running) return;
             if (status != BluetoothGatt.GATT_SUCCESS) {
+                trace("BMS-Dienstsuche fehlgeschlagen: Status " + status);
                 handleDisconnected();
                 return;
             }
             BluetoothGattService service = bluetoothGatt.getService(SERVICE_UUID);
             if (service == null) {
+                trace("Erforderlicher JBD-Dienst fehlt");
                 handleDisconnected();
                 return;
             }
             BluetoothGattCharacteristic notify = service.getCharacteristic(NOTIFY_UUID);
             writeCharacteristic = service.getCharacteristic(WRITE_UUID);
             if (notify == null || writeCharacteristic == null) {
+                trace("Erforderliche JBD-Datenkanäle fehlen");
                 handleDisconnected();
                 return;
             }
             enableNotifications(bluetoothGatt, notify);
+            trace("JBD-Datenkanäle gefunden; warte auf gültige Antwort");
             monitorStartedAt = System.currentTimeMillis();
             startLocationTracking();
             activeSince = 0;
@@ -686,6 +730,8 @@ public class BmsMonitorService extends Service implements LocationListener {
 
     private void acceptPacket(BmsPacket packet) {
         long now = System.currentTimeMillis();
+        if (lastPacket == 0) trace("Erste gültige BMS-Daten nach "
+                + Math.max(0, android.os.SystemClock.elapsedRealtime() - connectAttemptAt) + " ms ab Verbindungsversuch");
         if (recorder != null && lastPowerAt > 0 && now > lastPowerAt && now - lastPowerAt <= 8000) {
             energyWh += dischargeWatts * (now - lastPowerAt) / 3_600_000.0;
         }
@@ -911,6 +957,18 @@ public class BmsMonitorService extends Service implements LocationListener {
     }
 
     @Override public void onLocationChanged(Location location) {
+        if (recorder == null || location == null || altitudeWorker.isShutdown()) return;
+        Location copy = new Location(location);
+        TripRecorder expectedRecorder = recorder;
+        altitudeWorker.execute(() -> {
+            AltitudeReference.prepare(this, copy);
+            handler.post(() -> {
+                if (running && recorder == expectedRecorder) acceptLocation(copy);
+            });
+        });
+    }
+
+    private void acceptLocation(Location location) {
         if (recorder == null || location == null) return;
         long now = System.currentTimeMillis();
         if(!LocationManager.GPS_PROVIDER.equals(location.getProvider()) && now-gpsAt<5000)return;
@@ -946,8 +1004,9 @@ public class BmsMonitorService extends Service implements LocationListener {
                     distanceMeters += delta;
                     DistanceCounters.add(prefs,delta,location.getTime());
                 }
-                if (location.hasAltitude() && lastLocation.hasAltitude()) {
-                    double climb = location.getAltitude() - lastLocation.getAltitude();
+                double height = AltitudeReference.meters(location), previousHeight = AltitudeReference.meters(lastLocation);
+                if (Double.isFinite(height) && Double.isFinite(previousHeight)) {
+                    double climb = height - previousHeight;
                     if (climb > 2.0 && climb < 30) ascentMeters += climb;
                 }
             }
@@ -962,7 +1021,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         }
         currentSpeedKmh = Math.max(0, speedKmh);
         maxSpeedKmh = Math.max(maxSpeedKmh, currentSpeedKmh);
-        if (location.hasAltitude()) altitudeMeters = location.getAltitude();
+        altitudeMeters = AltitudeReference.meters(location);
         lastLocation = new Location(location);
         if(lastPacket>0 && System.currentTimeMillis()-lastPacket<=8000)recentConsumption.add(distanceMeters,energyWh);
         if(prefs.getBoolean("weather_enabled",true)&&Double.isFinite(outsideTemperature)&&weatherAt>0&&System.currentTimeMillis()-weatherAt<=1800000){temperatureSum+=outsideTemperature;temperatureSamples++;}
@@ -1000,6 +1059,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         idleSince = 0;
         packetBuffer.reset();
         if (old != null) {
+            trace("Bluetooth-Verbindung geschlossen");
             try { old.disconnect(); } catch (SecurityException ignored) {}
             try { old.close(); } catch (SecurityException ignored) {}
         }
@@ -1146,6 +1206,8 @@ public class BmsMonitorService extends Service implements LocationListener {
     }
 
     @Override public void onDestroy() {
+        trace("Bereitschaft beendet");
+        altitudeWorker.shutdownNow();
         updateAverages(true);
         running = false;liveService=null;
         if(wakeLock!=null && wakeLock.isHeld())wakeLock.release();

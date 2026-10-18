@@ -70,7 +70,7 @@ public class MainActivity extends Activity {
             if(BmsMonitorService.ACTION_STATUS.equals(intent.getAction()))renderStatus(intent);
         }
     };
-    private AlertDialog tileDialog, settingsDialog, batteryDialog, batteryConfigDialog, colorDialog, tourDialog, storageDialog;
+    private AlertDialog tileDialog, settingsDialog, batteryDialog, batteryConfigDialog, colorDialog, tourDialog, storageDialog, diagnosticsDialog;
     private boolean editorFromSettings;
     private String displayedProfile="";
     private JournalUi journalAfterImport;
@@ -466,7 +466,7 @@ public class MainActivity extends Activity {
                 case "standing":value=formatDuration(intent.getLongExtra("standing_ms",0));break;
                 case "average":value=f(AverageMetrics.available(prefs)?AverageMetrics.reading(prefs,metric.config).speedKmh():AverageMetrics.mode(metric.config)==AverageTracker.TRIP?intent.getDoubleExtra("average_speed_kmh",Double.NaN):Double.NaN,"%.1f km/h");note=AverageMetrics.note(metric.config,prefs);break;
                 case "maximum":value=f(intent.getDoubleExtra("max_speed_kmh",0),"%.1f km/h");break;
-                case "altitude":value=f(intent.getDoubleExtra("altitude_m",0),"%.0f m");break;
+                case "altitude":value=f(intent.getDoubleExtra("altitude_m",Double.NaN),"%.0f m");note="über Meeresspiegel (MSL)";break;
                 case "ascent":value=f(intent.getDoubleExtra("ascent_m",0),"%.0f m");break;
                 case "temp1":case "temp2":double[] ts=intent.getDoubleArrayExtra("temperatures");int sensor=key.equals("temp1")?0:1;if(ts!=null && ts.length>sensor)value=f(ts[sensor],"%.1f °C");break;
                 case "max_power":value=f(intent.getDoubleExtra("max_power_w",0),"%.0f W");note="elektrisch · BMS-Messwerte";break;
@@ -549,7 +549,7 @@ public class MainActivity extends Activity {
             .setNegativeButton("Zurück",null).show();
     }
     private void showSettings(){
-        String[] items={"Cockpit bearbeiten","App-Farben","Gesamtkilometer korrigieren","BMS und Fahrt-Erkennung","Akku und Restreichweite","Benachrichtigungen","Außentemperatur","Letzte Fahrt / Export","Akkuoptimierung","Speicherorte","Scooter-Profile","Temperatur-Beschriftungen","Fahrtenbuch","Tourenzähler zurücksetzen","Routine-Nachrichten bearbeiten"};
+        String[] items={"Cockpit bearbeiten","App-Farben","Gesamtkilometer korrigieren","BMS und Fahrt-Erkennung","Akku und Restreichweite","Benachrichtigungen","Außentemperatur","Letzte Fahrt / Export","Akkuoptimierung","Speicherorte","Scooter-Profile","Temperatur-Beschriftungen","Fahrtenbuch","Tourenzähler zurücksetzen","Routine-Nachrichten bearbeiten","Verbindungsdiagnose"};
         if(settingsDialog!=null&&settingsDialog.isShowing())return;
         settingsDialog=new AlertDialog.Builder(this).setTitle("Einstellungen").setItems(items,null).setNegativeButton("Schließen",null).create();
         settingsDialog.show();
@@ -557,10 +557,35 @@ public class MainActivity extends Activity {
         settingsDialog.getListView().setOnItemClickListener((parent,view,w,id)->{
             switch(w){case 0:editorFromSettings=true;settingsDialog.dismiss();editLayout();break;case 1:editColors();break;case 2:editOdometer();break;
                 case 3:editBms();break;case 4:editBattery();break;case 5:notificationSettings();break;
-                case 6:weatherSettings();break;case 7:tripDialog();break;case 8:requestBatteryExemption();break;case 9:storageSettings();break;case 10:profileMenu();break;case 11:editTemperatures();break;case 12:journalAfterImport=new JournalUi(this,prefs);journalAfterImport.show();break;case 13:resetTour();break;case 14:editRoutineMessages();break;}
+                case 6:weatherSettings();break;case 7:tripDialog();break;case 8:requestBatteryExemption();break;case 9:storageSettings();break;case 10:profileMenu();break;case 11:editTemperatures();break;case 12:journalAfterImport=new JournalUi(this,prefs);journalAfterImport.show();break;case 13:resetTour();break;case 14:editRoutineMessages();break;case 15:connectionDiagnostics();break;}
         });
     }
     private void returnAfterEditor(){if(!draftCacheFile.isEmpty()){new File(getCacheDir(),draftCacheFile).delete();draftCacheFile="";}if(editorFromSettings){editorFromSettings=false;showSettings();}}
+    private void connectionDiagnostics() {
+        LinearLayout content = column();
+        TextView report = label(ConnectionDiagnostics.report(this), 13, foreground());
+        report.setTextIsSelectable(true);
+        content.addView(report);
+        Button refresh = button("Aktualisieren");
+        refresh.setOnClickListener(v -> report.setText(ConnectionDiagnostics.report(this)));
+        content.addView(refresh);
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Verbindungsdiagnose")
+                .setView(scrollMenu(content)).setNegativeButton("Schließen", null)
+                .setNeutralButton("Kopieren", (d,w) -> {
+                    android.content.ClipboardManager clipboard = getSystemService(android.content.ClipboardManager.class);
+                    if (clipboard != null) clipboard.setPrimaryClip(android.content.ClipData.newPlainText("ScootPit-Verbindungsdiagnose", report.getText()));
+                })
+                .setPositiveButton("Teilen", (d,w) -> {
+                    Intent send = new Intent(Intent.ACTION_SEND).setType("text/plain")
+                            .putExtra(Intent.EXTRA_SUBJECT, "ScootPit-Verbindungsdiagnose")
+                            .putExtra(Intent.EXTRA_TEXT, report.getText().toString());
+                    startActivity(Intent.createChooser(send, "Verbindungsdiagnose teilen"));
+                }).create();
+        diagnosticsDialog=dialog;
+        dialog.show();
+        limitDialogHeight(dialog, .86f);
+    }
+
     private void changedProfile(){lastStatus=null;log.clear();lastLogState="";logExpanded=false;boardTiles=loadBoard();rebuild();StorageFolders.install(this).saveNow();}
     private void profileMenu(){
         try{JSONArray profiles=ScooterProfiles.export(prefs);String[] names=new String[profiles.length()];for(int i=0;i<names.length;i++)names[i]=profiles.getJSONObject(i).getString("name")+(profiles.getJSONObject(i).getString("id").equals(prefs.getString(ScooterProfiles.ACTIVE,""))?" ✓":"");

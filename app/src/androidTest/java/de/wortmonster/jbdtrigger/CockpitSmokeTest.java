@@ -16,13 +16,19 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /** Device smoke check: fresh launch, actual rendered measurements, persistence and editors. */
 public class CockpitSmokeTest extends Instrumentation {
-    private boolean guideOnly;
-    @Override public void onCreate(Bundle arguments) { guideOnly=arguments!=null&&"guide".equals(arguments.getString("mode"));super.onCreate(arguments);start(); }
+    private boolean guideOnly, altitudeOnly;
+    @Override public void onCreate(Bundle arguments) { guideOnly=arguments!=null&&"guide".equals(arguments.getString("mode"));altitudeOnly=arguments!=null&&"altitude".equals(arguments.getString("mode"));super.onCreate(arguments);start(); }
     @Override public void onStart() {
         if(guideOnly){new GuideScreenshots(this).capture();return;}
         Bundle result = new Bundle();
         try {
             SharedPreferences prefs=getTargetContext().getSharedPreferences("settings",0);
+            if(altitudeOnly){
+                ScooterProfiles.install(prefs);
+                AltitudeCheck.run(getTargetContext(),prefs);
+                result.putString("stream","Offline altitude conversion, missing heights and GPX/CSV round trips: OK\n");
+                finish(Activity.RESULT_OK,result);return;
+            }
             prefs.edit().clear().putString("total_km","123.45").commit();
             prefs.edit().putString("app_background","#F7FAFD").putBoolean("background_gradient_enabled",true)
                     .putString("background_gradient_start","#FFFFFF").putString("background_gradient_end","#DCECF5").commit();
@@ -32,6 +38,8 @@ public class CockpitSmokeTest extends Instrumentation {
                 throw new AssertionError("White values on a dark custom tile must remain white");
             Activity activity=startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             waitForIdleSync();
+            AltitudeCheck.run(getTargetContext(),prefs);
+            connectionDiagnosticsCheck(activity);
             checked(()->systemInsetsCheck(activity));
             checked(()->{
                 if(!contains(activity.getWindow().getDecorView(),"ScootPit BMS"))throw new AssertionError("App name");
@@ -589,9 +597,9 @@ public class CockpitSmokeTest extends Instrumentation {
                 setMember(service,"recorder",recorder);setMember(service,"tripStartedAt",start);setMember(service,"lastPacket",start);
                 setMember(service,"active",false);setMember(service,"current",0.0);setMember(service,"lastLocation",null);
                 android.location.Location one=new android.location.Location("gps");one.setLatitude(49);one.setLongitude(8);one.setAccuracy(3);one.setSpeed(3);one.setSpeedAccuracyMetersPerSecond(.3f);one.setTime(start);one.setElapsedRealtimeNanos(android.os.SystemClock.elapsedRealtimeNanos());
-                service.onLocationChanged(one);
+                invoke(service,"acceptLocation",new Class[]{android.location.Location.class},new Object[]{one});
                 android.location.Location two=new android.location.Location(one);two.setLatitude(49.000025);two.setSpeed(2);two.setTime(start+1000);two.setElapsedRealtimeNanos(one.getElapsedRealtimeNanos()+1000000000L);
-                service.onLocationChanged(two);
+                invoke(service,"acceptLocation",new Class[]{android.location.Location.class},new Object[]{two});
                 Intent status=BmsMonitorService.latestStatus;
                 if(Math.abs(status.getDoubleExtra("speed_kmh",0)-7.2)>.01||status.getDoubleExtra("distance_m",0)<2)throw new AssertionError("Coasting lost speed/distance without current");
                 RideMotion motion=(RideMotion)member(service,"motion");long now=android.os.SystemClock.elapsedRealtime();motion.reset();for(long at=now-45000;at<=now;at+=1000)motion.fix(at,0,true);
@@ -644,6 +652,34 @@ public class CockpitSmokeTest extends Instrumentation {
             (android.graphics.Color.blue(foreground)*alpha+android.graphics.Color.blue(background)*inverse+127)/255);
     }
     private static void setMember(Object target,String name,Object value)throws Exception{java.lang.reflect.Field f=target.getClass().getDeclaredField(name);f.setAccessible(true);f.set(target,value);}
+    private void connectionDiagnosticsCheck(Activity activity)throws Throwable {
+        long now=android.os.SystemClock.elapsedRealtime();
+        ConnectionDiagnostics.TRACE.start(Math.max(0,now-5200));
+        ConnectionDiagnostics.TRACE.note(now-4700,"Beispielablauf – keine echte BMS-Verbindung");
+        ConnectionDiagnostics.TRACE.note(now-4000,"Bekanntes BMS erstmals empfangen: -61 dBm");
+        ConnectionDiagnostics.TRACE.note(now-1000,"Empfang bestätigt: -60 dBm (Schwelle -75 dBm)");
+        ConnectionDiagnostics.TRACE.note(now,"Erste gültige BMS-Daten nach 820 ms ab Verbindungsversuch");
+        String report=ConnectionDiagnostics.report(activity);
+        if(!report.contains("API "+android.os.Build.VERSION.SDK_INT)||!report.contains("+5,2 s")
+                ||report.matches("(?s).*(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}.*"))
+            throw new AssertionError("Connection report is missing device/timing information or exposes an address");
+        checked(()->{
+            invoke(activity,"connectionDiagnostics",new Class[0],new Object[0]);
+            android.app.AlertDialog dialog=(android.app.AlertDialog)member(activity,"diagnosticsDialog");
+            if(dialog==null||!dialog.isShowing()||!contains(dialog.getWindow().getDecorView(),"Verbindungsdiagnose")
+                    ||!contains(dialog.getWindow().getDecorView(),"Aktualisieren")
+                    ||dialog.getButton(-1)==null||dialog.getButton(-3)==null)
+                throw new AssertionError("Connection report cannot be opened, refreshed, copied and shared");
+        });
+        waitForIdleSync();
+        android.graphics.Bitmap screenshot=getUiAutomation().takeScreenshot();
+        File directory=new File(getTargetContext().getExternalFilesDir(null),"screenshots");directory.mkdirs();
+        try(java.io.FileOutputStream output=new java.io.FileOutputStream(new File(directory,"verbindungsdiagnose.png"))){
+            screenshot.compress(android.graphics.Bitmap.CompressFormat.PNG,100,output);
+        }finally{screenshot.recycle();}
+        checked(()->((android.app.AlertDialog)member(activity,"diagnosticsDialog")).dismiss());
+    }
+
     private void officialVersionCheck(Activity activity,SharedPreferences prefs)throws Throwable {
         SharedPreferences test=getTargetContext().getSharedPreferences("v100-test",0);test.edit().clear().commit();
         checked(()->{
@@ -674,7 +710,7 @@ public class CockpitSmokeTest extends Instrumentation {
                 if(found.points.size()!=2||found.moving!=2000||Math.abs(found.averagePower-96)>.01)throw new AssertionError("Journal statistics");
                 summary.gpxFile.delete();summary.csvFile.delete();summary.metadataFile.delete();
                 String version=activity.getPackageManager().getPackageInfo(activity.getPackageName(),0).versionName;
-                if(!"1.6.9".equals(version))throw new AssertionError("Official version");
+                if(!"1.6.10".equals(version))throw new AssertionError("Official version");
                 int portraitMap=JournalUi.routeMapHeight(2400,3),landscapeMap=JournalUi.routeMapHeight(1080,3);
                 if(portraitMap<=0||landscapeMap<=0||portraitMap>1080||landscapeMap>1080)throw new AssertionError("Route map must have a visible bounded height in both orientations");
             }catch(Exception e){throw new RuntimeException(e);}
