@@ -2,11 +2,11 @@
 
 [← Zur Übersicht](../README.md) · [Aktuelle APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)
 
-**Stand: Version 1.6.9.** Diese Anleitung führt von der Einrichtung bis zum eigenen Cockpit. Die hier gezeigten Menü- und Cockpitbilder sind echte Aufnahmen der App im Android-Emulator. **Ihre Messwerte und das Profil „Beispiel-Scooter“ dienen der Erklärung.** Die Aufnahmen aus dem Fahrtenbuch stammen aus früheren Appversionen; ihre Funktionen sind weiterhin erreichbar.
+**Stand: Version 1.6.10.** Diese Anleitung führt von der Einrichtung bis zum eigenen Cockpit. Die vorhandenen Menü- und Cockpitbilder zeigen Version 1.6.9 und stammen direkt aus der App im Android-Emulator. Die Bedienwege gelten weiterhin. **Ihre Messwerte und das Profil „Beispiel-Scooter“ dienen der Erklärung.** Die Aufnahmen aus dem Fahrtenbuch stammen aus früheren Appversionen; ihre Funktionen sind weiterhin erreichbar.
 
 ## 1. Einrichten und die erste Fahrt aufzeichnen
 
-1. Die signierte **ScootPit-BMS-v1.6.9.apk** aus dem Release herunterladen und auf dem Handy öffnen. Bei einem Update über die vorhandene App installieren.
+1. Die signierte **ScootPit-BMS-v1.6.10.apk** aus dem Release herunterladen und auf dem Handy öffnen. Bei einem Update über die vorhandene App installieren.
 2. Die angefragten Berechtigungen für **Geräte in der Nähe/Bluetooth**, **präzisen Standort** und **Benachrichtigungen** erlauben. Bluetooth und Standort am Handy einschalten.
 3. Den Profilnamen im Appkopf antippen. Das Profil bei Bedarf umbenennen oder ein eigenes anlegen.
 4. Über **BMS auswählen** beziehungsweise **Einstellungen → BMS und Fahrt-Erkennung → BMS auswählen → Suche starten** das eigene BMS auswählen. Die App startet ohne fest hinterlegtes Gerät. [BMS-Kompatibilität](bms.md).
@@ -165,6 +165,8 @@ Unter **Akku und Restreichweite** Kapazität, Nennspannung, Reserve und Verbrauc
 
 *Vorhandene Appaufnahmen: Fahrtkarte und Einzelstatistik.*
 
+Neue Höhenwerte sind ab 1.6.10 auf den mittleren Meeresspiegel (MSL) bezogen. Die Umrechnung funktioniert offline; ältere Fahrten zeigen ihren bisherigen Höhenbezug an. [Höhenwerte im Detail](fahrtenbuch.md#höhe-und-höhenbezug-ab-1610).
+
 Die Route lässt sich verschieben und zoomen; **Route** passt die ganze Strecke ein. OpenStreetMap-Hintergrundkacheln benötigen für neue Kartenausschnitte Internet. Die Aufzeichnung und ihre Statistiken bleiben lokal. Für eingeschaltete Wetterdaten erfolgt ebenfalls ein Onlineabruf; ein Benutzerkonto oder eine Cloudspeicherung der Fahrt ist nicht nötig.
 
 Über **Einzelne Fahrt aus CSV oder GPX importieren** eine Datei hinzufügen. Für einen vollständigen Bestand **Komplettes Fahrtenbuch aus Ordner importieren** wählen und den Scooter-Fahrtenordner einschließlich Unterordnern auswählen. Importiert wird in das **aktive Profil**. Erkannte Duplikate werden übersprungen; ältere Fahrten unter **Alle** suchen. [Fahrtenbuch im Detail](fahrtenbuch.md).
@@ -192,7 +194,7 @@ Vor dem Losfahren den Lastausgang wieder einschalten. Eine manuelle Fahrtpause u
 
 | Beobachtung | Wo weiter? |
 | --- | --- |
-| Kein BMS verbunden | Bluetooth, BMS-Auswahl und Berechtigungen prüfen; **BMS und Fahrt-Erkennung** öffnen |
+| Kein BMS verbunden oder lange Wartezeit | **Einstellungen → Verbindungsdiagnose → Aktualisieren**; Bluetooth, BMS-Auswahl und Berechtigungen prüfen |
 | Messwert „–“ oder gedimmt | Auf aktuelle BMS-/GPS-Daten beziehungsweise ein vollständiges Durchschnittsfenster warten |
 | Pausezeichen reagiert nicht | Das Menü ist nur während einer offenen Fahrt verfügbar; zuerst Statuszeile prüfen |
 | Neue Kachel nicht im sichtbaren Bereich | Im Cockpiteditor bis hinter die letzte Kachel scrollen; Ebene und Überlappung prüfen |
@@ -202,3 +204,7 @@ Vor dem Losfahren den Lastausgang wieder einschalten. Eine manuelle Fahrtpause u
 | BMS-Schalter gesperrt | Frische Daten, Stillstand und gelernte Standstrom-Referenz abwarten; Hinweistext beachten |
 
 Für die Fehlersuche helfen Appversion, Handy/Android-Version, BMS-Modell und eine kurze Beschreibung des Ablaufs. Im Cockpit lässt sich **Statusdetails / Log** aufklappen.
+
+## 13. Verbindungsaufbau untersuchen
+
+Nach einem auffällig langen Verbindungsversuch **Einstellungen → Verbindungsdiagnose** öffnen. **Aktualisieren** lädt den momentanen Stand; **Kopieren** und **Teilen** geben den angezeigten Bericht weiter. Er zeigt Suchpausen, Empfangsbestätigung, Bluetooth-Verbindung und die erste gültige BMS-Antwort mit relativen Zeiten. Geräteadresse, Profilname und Fahrtroute sind nicht enthalten. [Schritt-für-Schritt-Erklärung](verbindungsdiagnose.md) · [Bisherige Gerätemeldungen](geraetetests.md).

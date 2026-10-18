@@ -1,0 +1,1 @@
+Offline mean-sea-level (MSL) heights for new rides, dashboard and exports. CSV also retains the original GPS altitude. Imports preserve the height reference; existing recordings remain unchanged and labelled. New local, shareable Bluetooth connection diagnostics without device addresses or routes. Updated German guide and device reports.

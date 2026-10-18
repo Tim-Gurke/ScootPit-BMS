@@ -1,0 +1,1 @@
+Offline-Höhenkorrektur auf Meeresspiegel (MSL) für neue Fahrten, Cockpit und Export. CSV bewahrt die ursprüngliche GPS-Höhe. Höhenbezug bleibt beim Import erhalten; alte Fahrten bleiben unverändert und gekennzeichnet. Neue lokale, teilbare Bluetooth-Verbindungsdiagnose ohne Geräteadresse oder Fahrtroute. Anleitung und Gerätetests ergänzt.

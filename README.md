@@ -10,7 +10,7 @@ ScootPit BMS wurde mit dem **Joyor T6E Pro und dem JBD SP14S004** entwickelt. Di
 
 **ScootPit – für alle, die ihren Roller überwachen wollen, ohne selbst überwacht zu werden.**
 
-**Version 1.6.9 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
+**Version 1.6.10 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
 
 **[Bedienungsanleitung mit Bildern: Was finde ich wo und wie funktioniert es?](docs/anleitung.md)**
 
@@ -90,6 +90,12 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 <p><img src="docs/assets/screenshots/fahrtenbuch-ordnerimport.jpg" width="260" alt="Fahrtenbuch mit Zeitraumwahl sowie Import des kompletten Ordners oder einzelner Fahrten"></p>
 <em>Im Fahrtenbuch kannst du einen Zeitraum wählen und den gesamten Scooter-Fahrtenordner oder einzelne CSV-/GPX-Fahrten importieren.</em>
 
+
+## Neu in 1.6.10
+
+Neue Fahrten verwenden **Höhe über dem mittleren Meeresspiegel (MSL)**. Die standortabhängige GPS-Höhenkorrektur funktioniert offline ab Android 8; Cockpit, Höhendiagramm und Export nutzen denselben Bezug. CSV bewahrt zusätzlich die ursprüngliche Ellipsoid-Höhe. Alte Fahrtdateien bleiben erhalten und erhalten im Diagramm einen erkennbaren Hinweis auf ihren bisherigen Höhenbezug. [Höhenangaben und Grenzen](docs/fahrtenbuch.md#höhe-und-höhenbezug-ab-1610).
+
+Unter **Einstellungen → Verbindungsdiagnose** lassen sich Suchpausen, Empfang und Verbindungsphasen nachvollziehen. Der lokale Bericht enthält keine Geräteadresse oder Fahrtroute und kann bewusst kopiert oder geteilt werden. [Diagnose verwenden](docs/verbindungsdiagnose.md) · [Bisherige Gerätetests und Praxismeldungen](docs/geraetetests.md).
 
 ## Neu in 1.6.9
 
@@ -210,6 +216,8 @@ Vorhandene Profile, Kilometer, Layouts und Fahrten bleiben bei einem kompatiblen
 - [BMS, optionale Daten, Kompatibilität und Lastausgang](docs/bms.md)
 - [Cockpit, Kilometerzähler und Messwerte](docs/cockpit.md)
 - [Fahrtenbuch, Karten, Statistiken und Diagramme](docs/fahrtenbuch.md)
+- [Bluetooth-Verbindungsdiagnose](docs/verbindungsdiagnose.md)
+- [Gerätetests und öffentliche Rückmeldungen](docs/geraetetests.md)
 - [Restreichweite und Temperaturlernen](docs/reichweite.md)
 - [Automatik, Fahrtende und Samsung-Routinen](docs/hintergrund-routinen.md)
 - [Entwicklung und APK-Signierung](docs/entwicklung.md)

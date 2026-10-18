@@ -37,6 +37,20 @@ Die Diagramme zeigen Geschwindigkeit, elektrische Leistung und GPS-Höhe über d
 ![Fahrtstatistik mit Strecke, Fahr- und Standzeit, Verbrauch, Leistung und Temperaturen](assets/screenshots/fahrtenbuch-statistik.jpg)
 
 <em>Die Einzelansicht fasst die aufgezeichneten Kennwerte der Fahrt zusammen.</em>
+## Höhe und Höhenbezug ab 1.6.10
+
+Neue Fahrten speichern **Höhe über dem mittleren Meeresspiegel (MSL)**. Androids ursprüngliche GPS-Höhe ist auf ein mathematisches Referenzellipsoid bezogen und kann deshalb auch im flachen Küstenland mehrere Dutzend Meter anzeigen. ScootPit rechnet standortabhängig mit dem lokalen Geoidmodell der Android-/AndroidX-Höhenbibliothek um. Dafür werden weder Koordinaten übertragen noch ein Konto oder Internet benötigt. Die Umrechnung wird im Hintergrund ausgeführt.
+
+Cockpit, Höhendiagramm, GPX-Höhe (`ele`) und die CSV-Spalte `Hoehe_m` verwenden denselben MSL-Wert. CSV ergänzt `GPS_Ellipsoidhoehe_m` für den Originalwert und `Hoehenbezug` mit `MSL`. GPX trägt den Bezug in einer ScootPit-Metadatenerweiterung. Fehlt eine verlässliche Höhe beziehungsweise ist die Umrechnung nicht verfügbar, bleibt die Höhe leer; die Streckenaufzeichnung läuft weiter.
+
+Beim Import neuer ScootPit-Dateien bleiben Höhenbezug und vorhandener Rohwert erhalten. Ein schon korrigierter Wert wird nicht erneut umgerechnet. Bei Dateien fremder Herkunft ohne Höhenbezug bleibt dieser als unbekannt gekennzeichnet.
+
+**Vorhandene Originaldateien werden nicht umgeschrieben.** Eigene ältere Fahrten zeigen im Diagramm **GPS-Höhe (WGS84-Ellipsoid, ältere Fahrt)**. Sie enthalten weiterhin ihre ursprünglichen Höhenwerte; exportiert werden die vorhandenen Dateien. Importierte ältere Dateien ohne eindeutige Referenz erhalten **Höhenbezug unbekannt**.
+
+Höhe und Anstieg bleiben GPS-Schätzungen. MSL aus dem globalen Modell entspricht keinem amtlich vermessenen NHN-Höhenanschluss. Schwankungen durch den GPS-Empfang und geringe Unterschiede zum örtlichen Höhenbezug bleiben möglich.
+
+Technische Grundlage: [AndroidX AltitudeConverterCompat](https://developer.android.com/reference/androidx/core/location/altitude/AltitudeConverterCompat), [Android-GPS-Höhe](https://developer.android.com/reference/android/location/Location#getAltitude()).
+
 ## Zeitraum auswerten
 
 **Zeitraum auswerten / Fahrten vergleichen** zeigt Anzahl, Summen und passende ausgewählte Kennwerte. Kilometer pro Tag werden mit Balken visualisiert. Einzelne Fahrten sind darunter mit Strecke, Dauer und – je nach Auswahl – Verbrauch und Höchstgeschwindigkeit vergleichbar. Anklicken öffnet wieder die Fahrtansicht. Statistiken funktionieren ohne Internet.
