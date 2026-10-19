@@ -10,7 +10,7 @@ ScootPit BMS wurde mit dem **Joyor T6E Pro und dem JBD SP14S004** entwickelt. Di
 
 **ScootPit – für alle, die ihren Roller überwachen wollen, ohne selbst überwacht zu werden.**
 
-**Version 1.6.11 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
+**Version 1.6.12 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
 
 **[Bedienungsanleitung mit Bildern: Was finde ich wo und wie funktioniert es?](docs/anleitung.md)**
 
@@ -91,9 +91,13 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 <em>Im Fahrtenbuch kannst du einen Zeitraum wählen und den gesamten Scooter-Fahrtenordner oder einzelne CSV-/GPX-Fahrten importieren.</em>
 
 
+## Neu in 1.6.12
+
+**Sperren ohne Anlernen:** Die gelernte Standstrom-Referenz ist vollständig aus der Freigabe entfernt. Stattdessen prüft ScootPit direkt, ob mindestens fünf Sekunden geringe Stromaufnahme unter 0,15 A vorliegt; die Messauflösung wird berücksichtigt. Eine vorherige Fahrt und GPS-Empfang zum Lernen sind nicht erforderlich. Im Cockpit steht der aktuelle Sperrgrund; ein gescheiterter Versuch zeigt weiterhin einen eigenen Dialog. [Sperrfunktion bedienen](docs/anleitung.md#11-bms-lastausgang-und-optionale-wegfahrsperre).
+
 ## Neu in 1.6.11
 
-Die Standstrom-Erkennung übernimmt keine Restwerte mehr, die sich mit der BMS-Auflösung nicht sicher von null unterscheiden lassen. Eine dadurch unbrauchbare gespeicherte Referenz wird neu ermittelt; eine gültige Referenz bleibt erhalten. Scheitert das Sperren oder Freigeben nach der Bestätigung, zeigt die App den Grund in einem eigenen Dialog. [Sperrfunktion und erneutes Lernen](docs/anleitung.md#11-bms-lastausgang-und-optionale-wegfahrsperre).
+1.6.11 korrigierte Restwerte beim Lernen und ergänzte einen eigenen Dialog für gescheiterte Schaltversuche. Die damals weiterhin erforderliche Referenz entfällt ab 1.6.12 vollständig. [Aktuelle Sperrfunktion](docs/anleitung.md#11-bms-lastausgang-und-optionale-wegfahrsperre).
 
 ## Neu in 1.6.10
 

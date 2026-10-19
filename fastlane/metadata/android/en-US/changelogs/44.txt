@@ -1,0 +1,1 @@
+Immobilizer without calibration: Removed the learned idle-current requirement. Switching now uses five seconds of low current below 0.15 A, accounting for measurement resolution. The cockpit shows the current blocking reason. BMS acknowledgment, standstill and charge-MOS checks remain. Profiles and rides are preserved.

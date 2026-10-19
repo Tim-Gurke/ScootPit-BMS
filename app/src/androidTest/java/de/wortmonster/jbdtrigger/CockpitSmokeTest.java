@@ -670,8 +670,12 @@ public class CockpitSmokeTest extends Instrumentation {
             output.performClick();
             android.app.AlertDialog confirm=(android.app.AlertDialog)member(activity,"dischargeConfirmDialog");
             if(confirm==null||!confirm.isShowing())throw new AssertionError("Output control confirmation did not open");
-            confirm.getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick();
+            TextView explanation=confirm.findViewById(android.R.id.message);
+            if(explanation==null||!explanation.getText().toString().contains("0,15 A")||explanation.getText().toString().contains("Referenz"))
+                throw new AssertionError("Lock confirmation must describe the direct current check without calibration");
         });
+        screenshot("bms-sperren-1.6.12.png");
+        checked(()->((android.app.AlertDialog)member(activity,"dischargeConfirmDialog")).getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick());
         waitForIdleSync();
         checked(()->{
             android.app.AlertDialog result=(android.app.AlertDialog)member(activity,"dischargeResultDialog");
@@ -687,14 +691,14 @@ public class CockpitSmokeTest extends Instrumentation {
             if((Long)member(activity,"pendingDischargeRequestId")!=12345L||result.isShowing())throw new AssertionError("Unrelated result consumed a pending command");
             Bundle saved=new Bundle();invoke(activity,"onSaveInstanceState",new Class[]{Bundle.class},new Object[]{saved});
             if(saved.getLong("pending_discharge_request_id")!=12345L)throw new AssertionError("Pending command not saved across rotation");
-            String reason=JbdControl.rejection(true,false,false,true,false,0,0.01,6000,0,0,0);
+            String reason=JbdControl.rejection(true,false,false,true,false,0,0.01,1000,0);
             Intent missing=new Intent().putExtra("control_result_id",12345L).putExtra("control_result_message",reason);
             invoke(activity,"renderDischarge",new Class[]{Intent.class},new Object[]{missing});
-            android.app.AlertDialog calibration=(android.app.AlertDialog)member(activity,"dischargeResultDialog");
-            if(!calibration.isShowing()||!contains(calibration.getWindow().getDecorView(),reason))
-                throw new AssertionError("A missing reference must provide readable learning instructions");
+            android.app.AlertDialog waiting=(android.app.AlertDialog)member(activity,"dischargeResultDialog");
+            if(reason==null||!waiting.isShowing()||!contains(waiting.getWindow().getDecorView(),reason)||reason.contains("Referenz"))
+                throw new AssertionError("The low-load waiting hint must be visible without requesting calibration");
         });
-        screenshot("bms-sperrhinweis-1.6.11.png");
+        screenshot("bms-sperrhinweis-1.6.12.png");
         checked(()->{
             android.app.AlertDialog result=(android.app.AlertDialog)member(activity,"dischargeResultDialog");result.dismiss();
             try{setMember(activity,"pendingDischargeRequestId",12346L);}catch(Exception e){throw new RuntimeException(e);}
@@ -702,6 +706,11 @@ public class CockpitSmokeTest extends Instrumentation {
                     .putExtra("control_result_id",12346L).putExtra("control_result_success",true)
                     .putExtra("control_result_message","Schaltvorgang vom BMS bestätigt")});
             if((Long)member(activity,"pendingDischargeRequestId")!=0||result.isShowing())throw new AssertionError("Successful result handled as a failure");
+            invoke(activity,"renderDischarge",new Class[]{Intent.class},new Object[]{new Intent()
+                    .putExtra("bms_connected",true).putExtra("bms_at",System.currentTimeMillis()).putExtra("discharge_enabled",true)
+                    .putExtra("display_current_a",0.0).putExtra("display_current_resolution_a",0.0)});
+            TextView note=(TextView)member(activity,"dischargeNote");
+            if(!note.getText().toString().equals("Lastausgang ein · zum Sperren tippen"))throw new AssertionError("Old missing-reference state still blocks the output UI");
         });
     }
     private void connectionDiagnosticsCheck(Activity activity)throws Throwable {
@@ -762,7 +771,7 @@ public class CockpitSmokeTest extends Instrumentation {
                 if(found.points.size()!=2||found.moving!=2000||Math.abs(found.averagePower-96)>.01)throw new AssertionError("Journal statistics");
                 summary.gpxFile.delete();summary.csvFile.delete();summary.metadataFile.delete();
                 String version=activity.getPackageManager().getPackageInfo(activity.getPackageName(),0).versionName;
-                if(!"1.6.11".equals(version))throw new AssertionError("Official version");
+                if(!"1.6.12".equals(version))throw new AssertionError("Official version");
                 int portraitMap=JournalUi.routeMapHeight(2400,3),landscapeMap=JournalUi.routeMapHeight(1080,3);
                 if(portraitMap<=0||landscapeMap<=0||portraitMap>1080||landscapeMap>1080)throw new AssertionError("Route map must have a visible bounded height in both orientations");
             }catch(Exception e){throw new RuntimeException(e);}

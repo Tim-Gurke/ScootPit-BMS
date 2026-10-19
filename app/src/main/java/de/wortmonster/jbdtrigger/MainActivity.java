@@ -500,9 +500,8 @@ public class MainActivity extends Activity {
         dischargeSwitch.setTextColor(tint);dischargeSwitch.setThumbTintList(android.content.res.ColorStateList.valueOf(tint));
         dischargeSwitch.setTrackTintList(android.content.res.ColorStateList.valueOf(tint));
         dischargeSwitch.setEnabled(fresh && !pending);
-        String message=intent.getStringExtra("control_message");
-        double learned=intent.getDoubleExtra("display_current_a",0);
-        String note=pending?"Schaltvorgang läuft · BMS-Bestätigung wird geprüft":!fresh?"Bereitschaft starten / auf frische BMS-Daten warten":message!=null&&!message.startsWith("Bereitschaft starten")?message:learned<=0?"Standstrom-Referenz wird im Hintergrund ermittelt":on?"Standstrom-Referenz "+f(learned,"%.2f A")+" gelernt · Abschalten nur darunter":"Lastausgang aus · zum Einschalten tippen";
+        String reason=intent.getStringExtra("control_block_reason");
+        String note=pending?"Schaltvorgang läuft · BMS-Bestätigung wird geprüft":!fresh?"Bereitschaft starten / auf frische BMS-Daten warten":reason!=null&&!reason.isEmpty()?reason:on?"Lastausgang ein · zum Sperren tippen":"Lastausgang aus · zum Einschalten tippen";
         dischargeNote.setText(note);
     }
     private void renderDischargeResult(Intent intent){
@@ -564,7 +563,7 @@ public class MainActivity extends Activity {
     private void requestDischarge(boolean on){
         if(!BmsMonitorService.running)return;
         dischargeConfirmDialog=new AlertDialog.Builder(this).setTitle(on?"Lastausgang einschalten?":"Wegfahrsperre einschalten?")
-            .setMessage(on?"Der BMS-Lastausgang wird freigegeben. Nur am stehenden Roller schalten.":"Nur im Stand: Fahrt pausieren oder beenden, Roller ausschalten und mindestens 5 Sekunden sicher unter der gelernten Standstrom-Referenz warten. Die Sperre blockiert die Akkuentladung. Die App prüft die BMS-Bestätigung und den tatsächlichen Zustand.")
+            .setMessage(on?"Der BMS-Lastausgang wird freigegeben. Nur am stehenden Roller schalten.":"Nur im Stand: Fahrt pausieren oder beenden und Roller ausschalten. Die App benötigt mindestens 5 Sekunden geringe Stromaufnahme (unter 0,15 A). Die Sperre blockiert die Akkuentladung. Die App prüft die BMS-Bestätigung und den tatsächlichen Zustand.")
             .setPositiveButton(on?"Freigeben":"Sperren",(d,w)->{
                 if(!BmsMonitorService.running){new AlertDialog.Builder(this).setMessage("Bereitschaft starten und auf frische BMS-Daten warten.").setPositiveButton("Verstanden",null).show();return;}
                 pendingDischargeRequestId=android.os.SystemClock.elapsedRealtimeNanos();pendingDischargeEnabled=on;

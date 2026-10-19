@@ -1,0 +1,1 @@
+Wegfahrsperre ohne Anlernen: Die Standstrom-Referenz ist aus der Freigabe entfernt. Stattdessen prüft die App fünf Sekunden geringe Stromaufnahme unter 0,15 A mit Berücksichtigung der Messauflösung. Das Cockpit zeigt den aktuellen Sperrgrund. BMS-Bestätigung, Stillstands- und Lade-MOS-Prüfung bleiben erhalten. Profile und Fahrten bleiben erhalten.

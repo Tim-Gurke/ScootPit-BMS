@@ -51,7 +51,7 @@ public class BmsMonitorService extends Service implements LocationListener {
     public static final String ACTION_REFRESH_TEMPERATURE = "de.wortmonster.jbdtrigger.REFRESH_TEMPERATURE";
     public static final String ACTION_SET_DISCHARGE = "de.wortmonster.jbdtrigger.SET_DISCHARGE";
     private PowerManager.WakeLock wakeLock;
-    private long wakeRenewed, belowDisplayCurrentSince;
+    private long wakeRenewed, lowLoadSince;
     private boolean chargeEnabled, dischargeEnabled, controlPending, controlAcknowledged, desiredDischarge, writeBusy;
     private String controlMessage = "Bereitschaft starten, um den BMS-Lastausgang zu lesen";
     private long controlRequestId, controlResultId;
@@ -71,9 +71,7 @@ public class BmsMonitorService extends Service implements LocationListener {
     private long tripPausedAt;
     private long manualPauseStartedAt;
     private boolean manualTripPause;
-    private long lastHighLoadAt;
     private double currentResolution = 0.01;
-    private DisplayCurrentLearner displayCurrentLearner = new DisplayCurrentLearner(0, 0);
     private long pauseEndMs=600_000, disconnectedPauseGraceMs=120_000, slowUnpoweredStopMs=15_000;
     private static final long MAX_MANUAL_PAUSE_MS = 12L * 60 * 60 * 1000;
     private double pausedGpsSpeedKmh;
@@ -312,10 +310,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         disconnectedPauseGraceMs=(long)(setting("pause_disconnect_seconds",120,0,7200)*1000);
         gpsMaxKmh=setting("gps_max_kmh",45,10,150);
         averageConsumption=number(prefs.getString("learned_wh_km","0"),0);
-        displayCurrentLearner=new DisplayCurrentLearner(
-                number(prefs.getString("display_current_a","0"),0),
-                number(prefs.getString("display_current_resolution_a","0"),0));
-        lastHighLoadAt=0;
+        lowLoadSince=0;
         outsideTemperature=number(prefs.getString("outside_temperature","NaN"),Double.NaN);weatherAt=prefs.getLong("weather_at",0);
         try{temperatureHistory=new org.json.JSONArray(prefs.getString("temperature_history","[]"));}catch(Exception e){temperatureHistory=new org.json.JSONArray();}
     }
@@ -698,8 +693,7 @@ public class BmsMonitorService extends Service implements LocationListener {
     private String dischargeRejection(boolean enabled,long now){
         return JbdControl.rejection(gatt!=null&&writeCharacteristic!=null&&lastPacket>0&&now-lastPacket<4000,
                 recorder!=null,manualTripPause,chargeEnabled,enabled,current,currentResolution,
-                belowDisplayCurrentSince>0?now-belowDisplayCurrentSince:0,currentSpeedKmh,
-                displayCurrentLearner.learnedAmps(),displayCurrentLearner.learnedResolution());
+                lowLoadSince>0?now-lowLoadSince:0,currentSpeedKmh);
     }
     private final Runnable controlTimeout=()->controlFinished("Keine Bestätigung – Lastausgang prüfen, erneut verbinden");
     private void controlFinished(String message){
@@ -760,32 +754,17 @@ public class BmsMonitorService extends Service implements LocationListener {
         soc = packet.soc;
         dischargeWatts = current < 0 ? -current * voltage : 0;
         if(recorder!=null){maxPowerW=Math.max(maxPowerW,dischargeWatts);recentConsumption.add(distanceMeters,energyWh);}
-        if(lastPacket==0 || now-lastPacket>4000)belowDisplayCurrentSince=0;
+        if(lastPacket==0 || now-lastPacket>4000)lowLoadSince=0;
         chargeEnabled=packet.chargeEnabled;dischargeEnabled=packet.dischargeEnabled;
         lastPacket = now;
         missingSince = 0;
-        if(dischargeEnabled&&current<0&&-current>=activeAmps)lastHighLoadAt=now;
-        learnDisplayCurrent(now);
-        if(DisplayCurrentLearner.safelyBelow(current,currentResolution,
-                displayCurrentLearner.learnedAmps(),displayCurrentLearner.learnedResolution())){
-            if(belowDisplayCurrentSince==0)belowDisplayCurrentSince=now;
-        }else belowDisplayCurrentSince=0;
+        if(JbdControl.lowLoad(current,currentResolution)){
+            if(lowLoadSince==0)lowLoadSince=now;
+        }else lowLoadSince=0;
         if(controlPending && controlAcknowledged && dischargeEnabled==desiredDischarge)
             controlFinished(true,"Schaltvorgang vom BMS bestätigt");
         evaluateCurrent();
         sendStatus();
-    }
-
-    private void learnDisplayCurrent(long now){
-        boolean recentPoweredRide=lastHighLoadAt>0&&now-lastHighLoadAt<=30L*60*1000;
-        boolean stationaryGps=gpsAt>0&&now-gpsAt<=10_000&&currentSpeedKmh<1.0;
-        boolean changed=displayCurrentLearner.observe(current,currentResolution,
-                dischargeEnabled&&!controlPending&&recentPoweredRide&&stationaryGps);
-        if(changed)prefs.edit()
-                .putString("display_current_a",Double.toString(displayCurrentLearner.learnedAmps()))
-                .putString("display_current_resolution_a",Double.toString(displayCurrentLearner.learnedResolution()))
-                .apply();
-        if(changed)controlMessage="";
     }
 
     private void evaluateCurrent() {
@@ -1069,6 +1048,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         optionalPoll=0;
         monitorStartedAt = 0;
         lastPacket = 0;
+        lowLoadSince = 0;
         activeSince = 0;
         idleSince = 0;
         packetBuffer.reset();
@@ -1093,8 +1073,6 @@ public class BmsMonitorService extends Service implements LocationListener {
                 .putExtra("voltage", voltage)
                 .putExtra("current", current)
                 .putExtra("current_resolution", currentResolution)
-                .putExtra("display_current_a",displayCurrentLearner.learnedAmps())
-                .putExtra("display_current_resolution_a",displayCurrentLearner.learnedResolution())
                 .putExtra("discharge_watts", dischargeWatts)
                 .putExtra("energy_wh", energyWh)
                 .putExtra("full_capacity_ah",fullAh)
@@ -1111,6 +1089,7 @@ public class BmsMonitorService extends Service implements LocationListener {
                 .putExtra("discharge_enabled",dischargeEnabled)
                 .putExtra("control_pending",controlPending)
                 .putExtra("control_message",controlMessage)
+                .putExtra("control_block_reason",dischargeRejection(!dischargeEnabled,System.currentTimeMillis()))
                 .putExtra("control_result_id",controlResultId)
                 .putExtra("control_result_success",controlResultSuccess)
                 .putExtra("control_result_message",controlResultMessage)
