@@ -30,6 +30,8 @@ Für **1.6.10** sind die automatischen Prüfungen erfolgreich abgeschlossen ([Pr
 
 Eine echte BMS-Verbindung und GPS-Empfang am fahrenden Scooter lassen sich damit noch nicht bestätigen.
 
+**Zusätzliche Prüfung in 1.6.11:** [Prüflauf zur Sperrfunktion](https://github.com/Tim-Gurke/ScootPit-BMS/actions/runs/39271313706). Der Java-Regressionstest stellt eine durch Reststrom unbrauchbar gewordene Standstrom-Referenz nach und prüft die Korrektur sowie das erneute Lernen alter unbrauchbarer Werte. Unter Android 13/15 wird ein Sperrversuch im echten Bestätigungsdialog ausgelöst und die Ablehnung durch den Dienst ohne frische BMS-Verbindung sichtbar geprüft. Weitere Fälle sind fehlende Referenz, fremde/erneute Statusmeldungen und das Speichern einer ausstehenden Anfrage für einen Orientierungswechsel. Das ist keine Bestätigung eines realen MOS-Schaltvorgangs am Fahrzeug.
+
 ## Was hilft bei einer Rückmeldung?
 
 - Appversion, genaues Handymodell und Androidversion aus den Systemeinstellungen

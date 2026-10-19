@@ -190,6 +190,10 @@ Zum Sperren die Fahrt im Stillstand pausieren oder beenden und den Roller aussch
 
 **Wenn nach „Sperren“ scheinbar nichts passiert:** Ab 1.6.11 erscheint bei einer Ablehnung ein eigener Dialog mit dem Grund. Die Antwort gehört zu genau diesem Schaltversuch und wird nicht bei jeder Statusaktualisierung erneut angezeigt. Eine erfolgreiche Freigabe oder Sperre wird erst nach der BMS-Antwort und dem passenden ausgelesenen MOS-Zustand bestätigt.
 
+<img src="assets/screenshots/bms-sperrhinweis-1.6.11.png" width="320" alt="Hinweis bei fehlender Standstrom-Referenz in ScootPit BMS 1.6.11">
+
+*1.6.11 unter Android 15 im Emulator, mit einem Beispiel für eine fehlende Referenz. Kein reales BMS verbunden.*
+
 **Standstrom erneut lernen:** Frühere Versionen konnten einen winzigen Reststrom als Referenz speichern, bei dem selbst null Ampere nicht sicher darunter lagen. 1.6.11 verwirft solche unbrauchbaren Referenzen und verhindert neues Einlernen solcher Restwerte. Eine gültige bestehende Referenz bleibt erhalten. Fehlt die Referenz: Nach einer kurzen Fahrt bei laufender Bereitschaft und GPS-Empfang den **eingeschalteten** Roller im Stand lassen, bis die Referenz gelernt ist (mindestens zwölf stabile BMS-Messungen, normalerweise etwa zwölf Sekunden). Danach die Fahrt pausieren oder beenden, den Roller ausschalten und mindestens fünf Sekunden bis zum Sperrversuch warten. Ohne ausreichend genaue, frische BMS-Werte wird kein Abschaltbefehl gesendet.
 
 Vor dem Losfahren den Lastausgang wieder einschalten. Eine manuelle Fahrtpause und ihre automatische Fortsetzung funktionieren auch, wenn die Wegfahrsperre überhaupt nicht benutzt wurde.
