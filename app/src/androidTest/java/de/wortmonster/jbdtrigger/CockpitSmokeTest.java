@@ -691,7 +691,7 @@ public class CockpitSmokeTest extends Instrumentation {
             Intent missing=new Intent().putExtra("control_result_id",12345L).putExtra("control_result_message",reason);
             invoke(activity,"renderDischarge",new Class[]{Intent.class},new Object[]{missing});
             android.app.AlertDialog calibration=(android.app.AlertDialog)member(activity,"dischargeResultDialog");
-            if(!calibration.isShowing()||!contains(calibration.getWindow().getDecorView(),"Standstrom-Referenz fehlt."))
+            if(!calibration.isShowing()||!contains(calibration.getWindow().getDecorView(),reason))
                 throw new AssertionError("A missing reference must provide readable learning instructions");
         });
         screenshot("bms-sperrhinweis-1.6.11.png");
