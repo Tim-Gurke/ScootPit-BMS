@@ -34,6 +34,8 @@ Eine echte BMS-Verbindung und GPS-Empfang am fahrenden Scooter lassen sich damit
 
 ## Was hilft bei einer Rückmeldung?
 
+**Prüfung der 1.6.12:** [Android-Prüflauf ohne Referenzpflicht](https://github.com/Tim-Gurke/ScootPit-BMS/actions/runs/39278246436). Der Java-Test prüft die Freigabe ohne gelernte Referenz oder vorherige Fahrt nach fünf Sekunden geringer Stromaufnahme, kleine Restströme, Messauflösung und die verbleibenden Sperrbedingungen. Unter Android 13/15 werden der neue Bestätigungsdialog, die verständliche Warteerklärung und das Cockpit mit alten leeren Referenzwerten geprüft. Eine Prüfung des realen Schaltverhaltens des Fahrzeugcontrollers ist darin nicht enthalten.
+
 - Appversion, genaues Handymodell und Androidversion aus den Systemeinstellungen
 - Scooter- und BMS-Modell, soweit bekannt
 - Ergebnis von Verbindungsaufbau, GPS-Route und Aufzeichnung bei gesperrtem Bildschirm

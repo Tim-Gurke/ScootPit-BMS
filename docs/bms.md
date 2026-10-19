@@ -55,3 +55,5 @@ Beide Schaltrichtungen benötigen frische BMS-Daten und keine gemeldete GPS-Bewe
 
 E1 betrifft Lade- und Entladesperre gemeinsam. Bei ausgeschaltetem Lade-MOS werden Befehle abgelehnt, damit eine vorhandene Ladesperre erhalten bleibt. Steuerfunktion, BMS-Neustartverhalten und Bluetooth-Erreichbarkeit müssen am konkreten BMS getestet werden. Die App entsperrt niemals automatisch.
 
+Die [SP14S004-Spezifikation von JBD](https://cdn-files.myshopline.com/file/store/1777805905342/jbd-SP14S004-7s-14s-20a-50a-nmc-smart-bms-datasheet.pdf) beschreibt das elektronische Abschalten des Entlade-MOS. Das ist keine Freigabe des gesamten Joyor-Controllers für beliebiges Abschalten im Betrieb. Die 0,15-A-Grenze ist eine zusätzliche Bedingung der App und kein Nachweis dafür, dass der Roller ausgeschaltet ist. Den Roller vor dem Sperren selbst ausschalten.
+

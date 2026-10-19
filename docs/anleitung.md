@@ -194,6 +194,14 @@ Zum Sperren den Roller anhalten, eine offene Fahrt pausieren oder beenden und de
 
 Der Text unter dem Schalter nennt den **aktuellen** Sperrgrund. Ist die Stromaufnahme noch zu hoch, den ausgeschalteten Roller weiter stehen lassen. Fehlen BMS-Daten, zunächst die Verbindung wiederherstellen. Eine Aufforderung zum Lernen einer Referenz gibt es in diesem Ablauf nicht mehr. Die Stromprüfung allein erkennt nicht sicher, ob ein Display ausgeschaltet ist; den Roller vor dem Sperren selbst ausschalten.
 
+<img src="assets/screenshots/bms-sperren-1.6.12.png" width="320" alt="Sperrbestätigung ohne gelernte Standstrom-Referenz">
+
+*1.6.12 unter Android 13 im Emulator. Der Dialog erklärt die direkte Stromprüfung; im Beispiel ist kein reales BMS verbunden.*
+
+<img src="assets/screenshots/bms-sperrhinweis-1.6.12.png" width="320" alt="Hinweis, dass die fünf Sekunden geringe Stromaufnahme noch nicht erreicht sind">
+
+*Beispiel für die noch ausstehende Fünf-Sekunden-Frist. Ein Anlernen wird nicht mehr verlangt.*
+
 Vor dem Losfahren den Lastausgang wieder einschalten. Eine manuelle Fahrtpause und ihre automatische Fortsetzung funktionieren auch, wenn die Wegfahrsperre überhaupt nicht benutzt wurde.
 
 ## 12. Wenn etwas nicht wie erwartet aussieht
