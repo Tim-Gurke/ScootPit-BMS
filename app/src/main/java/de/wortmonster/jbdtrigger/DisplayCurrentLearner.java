@@ -12,8 +12,9 @@ final class DisplayCurrentLearner {
     private double sampleResolution;
 
     DisplayCurrentLearner(double learnedAmps, double learnedResolution) {
-        if (Double.isFinite(learnedAmps) && learnedAmps > 0
-                && Double.isFinite(learnedResolution) && learnedResolution > 0) {
+        // Older versions could save a residual reading for which even zero could never
+        // satisfy the cutoff margin. Ignore that unusable reference and learn afresh.
+        if (safelyBelow(0, learnedResolution, learnedAmps, learnedResolution)) {
             this.learnedAmps = learnedAmps;
             this.learnedResolution = learnedResolution;
         }
@@ -22,7 +23,8 @@ final class DisplayCurrentLearner {
     boolean observe(double signedCurrent, double resolution, boolean eligible) {
         if (!eligible || !Double.isFinite(signedCurrent) || signedCurrent >= 0
                 || !Double.isFinite(resolution) || resolution <= 0
-                || -signedCurrent < resolution / 2.0 || -signedCurrent > MAX_LEARNABLE_AMPS) {
+                || -signedCurrent > MAX_LEARNABLE_AMPS
+                || !safelyBelow(0, resolution, -signedCurrent, resolution)) {
             samples.clear();
             sampleResolution = 0;
             return false;
@@ -40,6 +42,7 @@ final class DisplayCurrentLearner {
         // Keep the lowest stable powered-at-rest observation. This errs toward waiting longer
         // before allowing a cutoff when the scooter's standing load varies.
         double candidate = min(samples, Double.POSITIVE_INFINITY);
+        if (!safelyBelow(0, sampleResolution, candidate, sampleResolution)) return false;
         if (learnedAmps > 0 && candidate >= learnedAmps) return false;
         learnedAmps = candidate;
         learnedResolution = sampleResolution;

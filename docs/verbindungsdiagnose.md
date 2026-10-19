@@ -4,6 +4,8 @@
 
 Ab Version **1.6.10** lässt sich unter **Einstellungen → Verbindungsdiagnose** nachvollziehen, an welcher Stelle der Verbindungsaufbau Zeit benötigt.
 
+Ab **1.6.11** enthält der Ablauf außerdem Versuche zum Sperren/Freigeben: angefordert, abgelehnt oder an Bluetooth übergeben, vom BMS angenommen und durch den tatsächlichen MOS-Zustand bestätigt. Auch ein Timeout oder Verbindungsabbruch erscheint mit seinem festen Hinweistext. Der Bericht enthält weiterhin keine elektrischen Fahrtmesswerte.
+
 ## Einen Verbindungsversuch prüfen
 
 1. Bluetooth einschalten, das gespeicherte Scooter-Profil prüfen und die **Bereitschaft starten**.

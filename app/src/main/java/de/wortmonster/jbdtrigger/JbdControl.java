@@ -20,7 +20,7 @@ final class JbdControl {
         if(!chargeOn)return "Lade-MOS ist aus: Schalten gesperrt, damit der Ladezustand unverändert bleibt";
         if(trip&&!manuallyPaused)return "Fahrt zuerst manuell pausieren";
         if(speed>=2)return "Nur bei stehendem Roller schalten";
-        if(!enabled && displayCurrent<=0)return "Standstrom-Referenz wird noch ermittelt; Lastausgang bleibt eingeschaltet";
+        if(!enabled && displayCurrent<=0)return "Standstrom-Referenz fehlt. Nach einer Fahrt den eingeschalteten Roller mit GPS-Empfang stehen lassen, bis die Referenz gelernt ist. Danach den Roller ausschalten und erneut sperren.";
         if(!enabled && !DisplayCurrentLearner.safelyBelow(current,currentResolution,displayCurrent,displayResolution))return "Standstrom liegt noch an – zum Sperren muss der Strom sicher unter die Standstrom-Referenz fallen";
         if(!enabled && quietMs<5000)return "Strom muss mindestens 5 Sekunden sicher unter der Standstrom-Referenz bleiben";
         return null;

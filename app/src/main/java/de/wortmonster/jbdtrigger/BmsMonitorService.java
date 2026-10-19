@@ -54,6 +54,9 @@ public class BmsMonitorService extends Service implements LocationListener {
     private long wakeRenewed, belowDisplayCurrentSince;
     private boolean chargeEnabled, dischargeEnabled, controlPending, controlAcknowledged, desiredDischarge, writeBusy;
     private String controlMessage = "Bereitschaft starten, um den BMS-Lastausgang zu lesen";
+    private long controlRequestId, controlResultId;
+    private String controlResultMessage = "";
+    private boolean controlResultSuccess;
     static volatile Intent latestStatus;
     static volatile boolean running;
     static volatile BmsMonitorService liveService;
@@ -244,7 +247,7 @@ public class BmsMonitorService extends Service implements LocationListener {
             sendStatus();return START_STICKY;
         }
         if(intent!=null && ACTION_SET_DISCHARGE.equals(intent.getAction())){
-            setDischarge(intent.getBooleanExtra("enabled",true));return START_STICKY;
+            setDischarge(intent.getBooleanExtra("enabled",true),intent.getLongExtra("request_id",0));return START_STICKY;
         }
         if(intent!=null && ACTION_PAUSE_TRIP.equals(intent.getAction())){
             pauseTripManually();return START_STICKY;
@@ -668,14 +671,16 @@ public class BmsMonitorService extends Service implements LocationListener {
         sendStatus();
     }
     private void requestBasicInfo(){write(BASIC_INFO);}
-    private void setDischarge(boolean enabled){
-        if(controlPending)return;
+    private void setDischarge(boolean enabled,long requestId){
+        if(controlPending){recordControlResult(requestId,false,"Ein Schaltvorgang läuft bereits. Bitte die BMS-Bestätigung abwarten.");sendStatus();return;}
+        controlRequestId=requestId;
+        trace(enabled?"Lastausgang: Freigeben angefordert":"Lastausgang: Sperren angefordert");
         long now=System.currentTimeMillis();
         String error=dischargeRejection(enabled,now);
-        if(error!=null){controlMessage=error;sendStatus();return;}
+        if(error!=null){controlMessage=error;recordControlResult(controlRequestId,false,error);sendStatus();return;}
         desiredDischarge=enabled;controlPending=true;controlAcknowledged=false;
         controlMessage="BMS-Bestätigung wird geprüft …";sendStatus();
-        handler.removeCallbacks(pollRunnable);handler.removeCallbacks(readRssiRunnable);
+        handler.removeCallbacks(pollRunnable);handler.removeCallbacks(readRssiRunnable);handler.removeCallbacks(optionalRead);
         handler.postDelayed(controlTimeout,10000);
         // Let any preceding read write/RSSI operation finish; retry only BEFORE submission.
         handler.postDelayed(submitControl,800);
@@ -687,6 +692,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         if(error!=null){controlFinished(error);return;}
         if(writeBusy){handler.postDelayed(this,100);return;}
         if(!write(JbdControl.discharge(desiredDischarge))){controlFinished("BMS-Befehl konnte nicht gesendet werden");return;}
+        trace("Lastausgang: Schaltbefehl an Bluetooth übergeben; warte auf BMS-Antwort");
         handler.postDelayed(pollRunnable,BMS_POLL_MS);
     }};
     private String dischargeRejection(boolean enabled,long now){
@@ -697,10 +703,18 @@ public class BmsMonitorService extends Service implements LocationListener {
     }
     private final Runnable controlTimeout=()->controlFinished("Keine Bestätigung – Lastausgang prüfen, erneut verbinden");
     private void controlFinished(String message){
+        controlFinished(false,message);
+    }
+    private void controlFinished(boolean success,String message){
         controlPending=false;controlAcknowledged=false;controlMessage=message;
+        recordControlResult(controlRequestId,success,message);
         handler.removeCallbacks(controlTimeout);handler.removeCallbacks(submitControl);
         handler.removeCallbacks(pollRunnable);if(gatt!=null)handler.postDelayed(pollRunnable,500);
         sendStatus();
+    }
+    private void recordControlResult(long requestId,boolean success,String message){
+        controlResultId=requestId;controlResultSuccess=success;controlResultMessage=message;
+        trace("Lastausgang: "+message);
     }
 
     private void parse(byte[] fragment) {
@@ -716,7 +730,7 @@ public class BmsMonitorService extends Service implements LocationListener {
             byte[] frame = java.util.Arrays.copyOfRange(pending, cursor, cursor + size);
             if(!JbdControl.validReply(frame)){cursor++;continue;}
             if((frame[1]&255)==0xe1 && controlPending && frame[3]==0){
-                if(frame[2]==0){controlAcknowledged=true;handler.removeCallbacks(pollRunnable);handler.postDelayed(pollRunnable,250);}
+                if(frame[2]==0){controlAcknowledged=true;trace("Lastausgang: BMS hat den Befehl angenommen; prüfe tatsächlichen MOS-Zustand");handler.removeCallbacks(pollRunnable);handler.postDelayed(pollRunnable,250);}
                 else controlFinished("BMS hat den Schaltbefehl abgelehnt ("+(frame[2]&255)+")");
             }
             BmsPacket packet = BmsPacket.decode(frame);
@@ -757,7 +771,7 @@ public class BmsMonitorService extends Service implements LocationListener {
             if(belowDisplayCurrentSince==0)belowDisplayCurrentSince=now;
         }else belowDisplayCurrentSince=0;
         if(controlPending && controlAcknowledged && dischargeEnabled==desiredDischarge)
-            controlFinished("Schaltvorgang vom BMS bestätigt");
+            controlFinished(true,"Schaltvorgang vom BMS bestätigt");
         evaluateCurrent();
         sendStatus();
     }
@@ -766,7 +780,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         boolean recentPoweredRide=lastHighLoadAt>0&&now-lastHighLoadAt<=30L*60*1000;
         boolean stationaryGps=gpsAt>0&&now-gpsAt<=10_000&&currentSpeedKmh<1.0;
         boolean changed=displayCurrentLearner.observe(current,currentResolution,
-                dischargeEnabled&&recentPoweredRide&&stationaryGps);
+                dischargeEnabled&&!controlPending&&recentPoweredRide&&stationaryGps);
         if(changed)prefs.edit()
                 .putString("display_current_a",Double.toString(displayCurrentLearner.learnedAmps()))
                 .putString("display_current_resolution_a",Double.toString(displayCurrentLearner.learnedResolution()))
@@ -1047,7 +1061,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         handler.removeCallbacks(pollRunnable);
         handler.removeCallbacks(readRssiRunnable);handler.removeCallbacks(optionalRead);
         handler.removeCallbacks(controlTimeout);handler.removeCallbacks(submitControl);
-        if(controlPending)controlMessage="Verbindung abgebrochen – Zustand nicht bestätigt";
+        if(controlPending){controlMessage="Verbindung abgebrochen – Zustand nicht bestätigt";recordControlResult(controlRequestId,false,controlMessage);}
         controlPending=false;controlAcknowledged=false;writeBusy=false;
         BluetoothGatt old = gatt;
         gatt = null;
@@ -1097,6 +1111,9 @@ public class BmsMonitorService extends Service implements LocationListener {
                 .putExtra("discharge_enabled",dischargeEnabled)
                 .putExtra("control_pending",controlPending)
                 .putExtra("control_message",controlMessage)
+                .putExtra("control_result_id",controlResultId)
+                .putExtra("control_result_success",controlResultSuccess)
+                .putExtra("control_result_message",controlResultMessage)
                 .putExtra("bms_at", lastPacket)
                 .putExtra("bms_connected", gatt != null && writeCharacteristic != null)
                 .putExtra("temperatures", temperatures)

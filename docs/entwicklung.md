@@ -17,7 +17,7 @@ Base64 ist lediglich ein Transportformat. Der Workflow schreibt den Keystore nur
 
 ## Offizielle Version
 
-Die öffentliche Version heißt **1.6.10**. Android verwendet intern **versionCode 42**, damit das Update über bereits installierte Versionen funktioniert. Die Versionsbezeichnung kann öffentlich neu beginnen; der interne Code muss bei jedem Update weiter steigen. App-ID und Signierschlüssel bleiben erhalten.
+Die öffentliche Version heißt **1.6.11**. Android verwendet intern **versionCode 43**, damit das Update über bereits installierte Versionen funktioniert. Die Versionsbezeichnung kann öffentlich neu beginnen; der interne Code muss bei jedem Update weiter steigen. App-ID und Signierschlüssel bleiben erhalten.
 
 Build: Java 17, Gradle 8.9, Android SDK 35. Die Java-Tests decken Protokoll, Strom-Skalierung und sichere Lastausgangssteuerung, Standstrom-Lernen, manuelle Fahrtpause mit automatischer Fortsetzung, Reichweite, Raster, Empfang, bestätigten Stillstand, Skalenfarbverläufe, Kontrast inaktiver Skalen im dunklen Design, umgekehrte Skalenrichtung, die Verbrauchsumrechnung pro 10 km, Durchschnittsfenster bis 100000 m, aktuelle Fahrt, unabhängige persistente Reset-Zähler und BMS-Messlücken, Statusposition im Querformatkopf, übernommene Layouts und scrollbare Untermenüs ab; Android Lint und Emulatorprüfungen unter Android 13/15 ergänzen die Prüfung. Die Offline-Höhenkorrektur wird zusätzlich unter Android 8 geprüft. Reales BLE/GPS und Samsung-Routinen müssen am eigenen Roller geprüft werden.
 
@@ -34,3 +34,9 @@ Der UI-Workflow erzeugt über den Modus `guide` des Android-Testläufers und die
 Aufzeichnungsdateien tragen ihren Höhenbezug; Import erhält ihn. `AltitudeCheck` prüft mit deaktiviertem Netzwerk positive und negative Geoidkorrekturen, fehlende Höhen, unveränderte Rohwerte und beide Export-/Importwege. Bestandsdateien bleiben erhalten. `ConnectionTraceTest` prüft die begrenzte Ereigniszahl, relative monotone Zeiten und das Zurücksetzen der Sitzung. Die Android-Prüfung öffnet außerdem den Diagnose-Dialog und erstellt eine Aufnahme mit einem ausdrücklich markierten Beispielablauf.
 
 Release-Zweige werden vor der Übernahme nach `main` gebaut und geprüft. Nur `main` veröffentlicht ein Release; es bleiben die drei zuletzt veröffentlichten Releases verfügbar.
+
+## Sperrfunktion in 1.6.11
+
+`DisplayCurrentLearnerTest` reproduziert die Folge „gültige Referenz 0,18 A, dann stabiler Reststrom 0,01 A bei 0,01-A-Auflösung“. Zuvor wurde die Referenz auf 0,01 A abgesenkt und selbst 0 A konnte den Abschaltvergleich nicht mehr bestehen. Beim Lernen und Laden wird jetzt mit derselben unveränderten Vergleichsmarge geprüft, ob null überhaupt sicher unter der Referenz liegen könnte. Unbrauchbare Altwerte werden ignoriert und neu gelernt; gültige Werte bleiben erhalten. Während eines laufenden Schaltversuchs wird keine neue Referenz ermittelt.
+
+Jeder Schaltversuch trägt eine Anforderungs-ID. Ablehnung, BLE-Fehler, BMS-Ablehnung, Timeout oder Verbindungsabbruch liefern ein zugeordnetes Ergebnis an die Oberfläche. Diese zeigt Fehler einmalig als Dialog und bestätigt Erfolg weiterhin erst nach BMS-ACK und passendem MOS-Readback. Die ausstehende ID übersteht einen Orientierungswechsel. Der Android-Test bestätigt einen Sperrversuch im Dialog und prüft die tatsächliche Ablehnung durch den Dienst ohne frische BLE-Verbindung, die einmalige Fehleranzeige, fremde Ergebnis-IDs, das Speichern einer ausstehenden Anfrage und die sichtbare Anleitung bei fehlender Referenz. Reales Schalten am BMS bleibt ein Gerätetest.

@@ -2,11 +2,11 @@
 
 [← Zur Übersicht](../README.md) · [Aktuelle APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)
 
-**Stand: Version 1.6.10.** Diese Anleitung führt von der Einrichtung bis zum eigenen Cockpit. Die vorhandenen Menü- und Cockpitbilder zeigen Version 1.6.9 und stammen direkt aus der App im Android-Emulator. Die Bedienwege gelten weiterhin. **Ihre Messwerte und das Profil „Beispiel-Scooter“ dienen der Erklärung.** Die Aufnahmen aus dem Fahrtenbuch stammen aus früheren Appversionen; ihre Funktionen sind weiterhin erreichbar.
+**Stand: Version 1.6.11.** Diese Anleitung führt von der Einrichtung bis zum eigenen Cockpit. Die vorhandenen Menü- und Cockpitbilder zeigen Version 1.6.9 und stammen direkt aus der App im Android-Emulator. Die Bedienwege gelten weiterhin. **Ihre Messwerte und das Profil „Beispiel-Scooter“ dienen der Erklärung.** Die Aufnahmen aus dem Fahrtenbuch stammen aus früheren Appversionen; ihre Funktionen sind weiterhin erreichbar.
 
 ## 1. Einrichten und die erste Fahrt aufzeichnen
 
-1. Die signierte **ScootPit-BMS-v1.6.10.apk** aus dem Release herunterladen und auf dem Handy öffnen. Bei einem Update über die vorhandene App installieren.
+1. Die signierte **ScootPit-BMS-v1.6.11.apk** aus dem Release herunterladen und auf dem Handy öffnen. Bei einem Update über die vorhandene App installieren.
 2. Die angefragten Berechtigungen für **Geräte in der Nähe/Bluetooth**, **präzisen Standort** und **Benachrichtigungen** erlauben. Bluetooth und Standort am Handy einschalten.
 3. Den Profilnamen im Appkopf antippen. Das Profil bei Bedarf umbenennen oder ein eigenes anlegen.
 4. Über **BMS auswählen** beziehungsweise **Einstellungen → BMS und Fahrt-Erkennung → BMS auswählen → Suche starten** das eigene BMS auswählen. Die App startet ohne fest hinterlegtes Gerät. [BMS-Kompatibilität](bms.md).
@@ -187,6 +187,10 @@ Bei fehlgeschlagenen Kopien **Speichern / ausstehende Kopien erneut versuchen** 
 Der Schalter im Cockpit steuert den Entladeausgang eines kompatiblen BMS. Ein eingeschalteter Lastausgang gibt die Versorgung frei; ein ausgeschalteter blockiert die Akkuentladung. Ein Schaltvorgang benötigt frische Daten und eine Bestätigung des BMS.
 
 Zum Sperren die Fahrt im Stillstand pausieren oder beenden und den Roller ausschalten. Die App muss zuvor einen belastbaren Standstrom des eingeschalteten Rollers gelernt haben. Der gemessene Strom muss mindestens 5 Sekunden sicher **darunter** liegen. Fehlt der Referenzwert oder ist die Messauflösung zu grob, bleibt Abschalten gesperrt. Das Lernen geschieht im Hintergrund pro Scooter und misst den Gesamtstrom, nicht den Displayverbrauch allein.
+
+**Wenn nach „Sperren“ scheinbar nichts passiert:** Ab 1.6.11 erscheint bei einer Ablehnung ein eigener Dialog mit dem Grund. Die Antwort gehört zu genau diesem Schaltversuch und wird nicht bei jeder Statusaktualisierung erneut angezeigt. Eine erfolgreiche Freigabe oder Sperre wird erst nach der BMS-Antwort und dem passenden ausgelesenen MOS-Zustand bestätigt.
+
+**Standstrom erneut lernen:** Frühere Versionen konnten einen winzigen Reststrom als Referenz speichern, bei dem selbst null Ampere nicht sicher darunter lagen. 1.6.11 verwirft solche unbrauchbaren Referenzen und verhindert neues Einlernen solcher Restwerte. Eine gültige bestehende Referenz bleibt erhalten. Fehlt die Referenz: Nach einer kurzen Fahrt bei laufender Bereitschaft und GPS-Empfang den **eingeschalteten** Roller im Stand lassen, bis die Referenz gelernt ist (mindestens zwölf stabile BMS-Messungen, normalerweise etwa zwölf Sekunden). Danach die Fahrt pausieren oder beenden, den Roller ausschalten und mindestens fünf Sekunden bis zum Sperrversuch warten. Ohne ausreichend genaue, frische BMS-Werte wird kein Abschaltbefehl gesendet.
 
 Vor dem Losfahren den Lastausgang wieder einschalten. Eine manuelle Fahrtpause und ihre automatische Fortsetzung funktionieren auch, wenn die Wegfahrsperre überhaupt nicht benutzt wurde.
 

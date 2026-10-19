@@ -223,6 +223,7 @@ public class CockpitSmokeTest extends Instrumentation {
             Thread.sleep(1200);
             if(!BmsMonitorService.running || BmsMonitorService.latestStatus==null)throw new AssertionError("Readiness service");
             coastingAndStopCheck(prefs);
+            dischargeFeedbackCheck(activity);
             long stamp=BmsMonitorService.latestStatus.getLongExtra("timestamp",0);
             getUiAutomation().executeShellCommand("input keyevent 223").close();
             Thread.sleep(6200);
@@ -660,6 +661,49 @@ public class CockpitSmokeTest extends Instrumentation {
             (android.graphics.Color.blue(foreground)*alpha+android.graphics.Color.blue(background)*inverse+127)/255);
     }
     private static void setMember(Object target,String name,Object value)throws Exception{java.lang.reflect.Field f=target.getClass().getDeclaredField(name);f.setAccessible(true);f.set(target,value);}
+    private void dischargeFeedbackCheck(Activity activity)throws Throwable {
+        checked(()->{
+            invoke(activity,"renderDischarge",new Class[]{Intent.class},new Object[]{new Intent()
+                    .putExtra("bms_connected",true).putExtra("bms_at",System.currentTimeMillis()).putExtra("discharge_enabled",true)});
+            android.widget.Switch output=(android.widget.Switch)member(activity,"dischargeSwitch");
+            if(!output.isEnabled()||!output.isChecked())throw new AssertionError("Output control test fixture");
+            output.performClick();
+            android.app.AlertDialog confirm=(android.app.AlertDialog)member(activity,"dischargeConfirmDialog");
+            if(confirm==null||!confirm.isShowing())throw new AssertionError("Output control confirmation did not open");
+            confirm.getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick();
+        });
+        waitForIdleSync();
+        checked(()->{
+            android.app.AlertDialog result=(android.app.AlertDialog)member(activity,"dischargeResultDialog");
+            if(result==null||!result.isShowing()||!contains(result.getWindow().getDecorView(),"Frische BMS-Verbindung erforderlich"))
+                throw new AssertionError("A rejected lock must show its reason after the user confirms");
+            if((Long)member(activity,"pendingDischargeRequestId")!=0)throw new AssertionError("Completed request was not consumed");
+            result.dismiss();
+            invoke(activity,"renderDischarge",new Class[]{Intent.class},new Object[]{BmsMonitorService.latestStatus});
+            if(result.isShowing())throw new AssertionError("A repeated status reopened an already handled result");
+            try{setMember(activity,"pendingDischargeRequestId",12345L);setMember(activity,"pendingDischargeEnabled",false);}catch(Exception e){throw new RuntimeException(e);}
+            Intent other=new Intent().putExtra("control_result_id",12344L).putExtra("control_result_message","Unrelated result");
+            invoke(activity,"renderDischarge",new Class[]{Intent.class},new Object[]{other});
+            if((Long)member(activity,"pendingDischargeRequestId")!=12345L||result.isShowing())throw new AssertionError("Unrelated result consumed a pending command");
+            Bundle saved=new Bundle();invoke(activity,"onSaveInstanceState",new Class[]{Bundle.class},new Object[]{saved});
+            if(saved.getLong("pending_discharge_request_id")!=12345L)throw new AssertionError("Pending command not saved across rotation");
+            String reason=JbdControl.rejection(true,false,false,true,false,0,0.01,6000,0,0,0);
+            Intent missing=new Intent().putExtra("control_result_id",12345L).putExtra("control_result_message",reason);
+            invoke(activity,"renderDischarge",new Class[]{Intent.class},new Object[]{missing});
+            android.app.AlertDialog calibration=(android.app.AlertDialog)member(activity,"dischargeResultDialog");
+            if(!calibration.isShowing()||!contains(calibration.getWindow().getDecorView(),"Standstrom-Referenz fehlt."))
+                throw new AssertionError("A missing reference must provide readable learning instructions");
+        });
+        screenshot("bms-sperrhinweis-1.6.11.png");
+        checked(()->{
+            android.app.AlertDialog result=(android.app.AlertDialog)member(activity,"dischargeResultDialog");result.dismiss();
+            try{setMember(activity,"pendingDischargeRequestId",12346L);}catch(Exception e){throw new RuntimeException(e);}
+            invoke(activity,"renderDischarge",new Class[]{Intent.class},new Object[]{new Intent()
+                    .putExtra("control_result_id",12346L).putExtra("control_result_success",true)
+                    .putExtra("control_result_message","Schaltvorgang vom BMS bestätigt")});
+            if((Long)member(activity,"pendingDischargeRequestId")!=0||result.isShowing())throw new AssertionError("Successful result handled as a failure");
+        });
+    }
     private void connectionDiagnosticsCheck(Activity activity)throws Throwable {
         long now=android.os.SystemClock.elapsedRealtime();
         ConnectionDiagnostics.TRACE.start(Math.max(0,now-5200));
@@ -718,7 +762,7 @@ public class CockpitSmokeTest extends Instrumentation {
                 if(found.points.size()!=2||found.moving!=2000||Math.abs(found.averagePower-96)>.01)throw new AssertionError("Journal statistics");
                 summary.gpxFile.delete();summary.csvFile.delete();summary.metadataFile.delete();
                 String version=activity.getPackageManager().getPackageInfo(activity.getPackageName(),0).versionName;
-                if(!"1.6.10".equals(version))throw new AssertionError("Official version");
+                if(!"1.6.11".equals(version))throw new AssertionError("Official version");
                 int portraitMap=JournalUi.routeMapHeight(2400,3),landscapeMap=JournalUi.routeMapHeight(1080,3);
                 if(portraitMap<=0||landscapeMap<=0||portraitMap>1080||landscapeMap>1080)throw new AssertionError("Route map must have a visible bounded height in both orientations");
             }catch(Exception e){throw new RuntimeException(e);}

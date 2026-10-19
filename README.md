@@ -10,7 +10,7 @@ ScootPit BMS wurde mit dem **Joyor T6E Pro und dem JBD SP14S004** entwickelt. Di
 
 **ScootPit – für alle, die ihren Roller überwachen wollen, ohne selbst überwacht zu werden.**
 
-**Version 1.6.10 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
+**Version 1.6.11 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
 
 **[Bedienungsanleitung mit Bildern: Was finde ich wo und wie funktioniert es?](docs/anleitung.md)**
 
@@ -90,6 +90,10 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 <p><img src="docs/assets/screenshots/fahrtenbuch-ordnerimport.jpg" width="260" alt="Fahrtenbuch mit Zeitraumwahl sowie Import des kompletten Ordners oder einzelner Fahrten"></p>
 <em>Im Fahrtenbuch kannst du einen Zeitraum wählen und den gesamten Scooter-Fahrtenordner oder einzelne CSV-/GPX-Fahrten importieren.</em>
 
+
+## Neu in 1.6.11
+
+Die Standstrom-Erkennung übernimmt keine Restwerte mehr, die sich mit der BMS-Auflösung nicht sicher von null unterscheiden lassen. Eine dadurch unbrauchbare gespeicherte Referenz wird neu ermittelt; eine gültige Referenz bleibt erhalten. Scheitert das Sperren oder Freigeben nach der Bestätigung, zeigt die App den Grund in einem eigenen Dialog. [Sperrfunktion und erneutes Lernen](docs/anleitung.md#11-bms-lastausgang-und-optionale-wegfahrsperre).
 
 ## Neu in 1.6.10
 

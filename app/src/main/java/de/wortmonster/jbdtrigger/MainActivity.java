@@ -52,6 +52,9 @@ public class MainActivity extends Activity {
     private boolean tripActionShowsTitle;
     private TextView dischargeNote;
     private boolean updatingDischarge;
+    private long pendingDischargeRequestId;
+    private boolean pendingDischargeEnabled;
+    private AlertDialog dischargeConfirmDialog, dischargeResultDialog;
     private static final int GREEN=0xff21c879, RED=0xffff535d;
     private JSONArray boardTiles;
     private boolean editingBoard;
@@ -90,6 +93,8 @@ public class MainActivity extends Activity {
         CockpitStyles.migrate(this,prefs);
         boardTiles=loadBoard();displayedProfile=prefs.getString(ScooterProfiles.ACTIVE,"");
         if(state!=null){
+            pendingDischargeRequestId=state.getLong("pending_discharge_request_id",0);
+            pendingDischargeEnabled=state.getBoolean("pending_discharge_enabled",false);
             pendingImageTile=state.getString("pending_image_tile","");pendingImageLayout=state.getString("pending_image_layout","");editorFromSettings=state.getBoolean("editor_from_settings",false);
             logExpanded=state.getBoolean("log_expanded",false);
             String cache=state.getString("editor_cache","");
@@ -485,6 +490,7 @@ public class MainActivity extends Activity {
         }
     }
     private void renderDischarge(Intent intent){
+        renderDischargeResult(intent);
         if(dischargeSwitch==null)return;
         long at=intent.getLongExtra("bms_at",0);
         boolean fresh=BmsMonitorService.running && intent.getBooleanExtra("bms_connected",false) && at>0 && System.currentTimeMillis()-at<4000;
@@ -496,8 +502,23 @@ public class MainActivity extends Activity {
         dischargeSwitch.setEnabled(fresh && !pending);
         String message=intent.getStringExtra("control_message");
         double learned=intent.getDoubleExtra("display_current_a",0);
-        String note=pending?"Schaltbefehl gesendet · Bestätigung wird geprüft":!fresh?"Bereitschaft starten / auf frische BMS-Daten warten":message!=null&&!message.startsWith("Bereitschaft starten")?message:learned<=0?"Standstrom-Referenz wird im Hintergrund ermittelt":on?"Standstrom-Referenz "+f(learned,"%.2f A")+" gelernt · Abschalten nur darunter":"Lastausgang aus · zum Einschalten tippen";
+        String note=pending?"Schaltvorgang läuft · BMS-Bestätigung wird geprüft":!fresh?"Bereitschaft starten / auf frische BMS-Daten warten":message!=null&&!message.startsWith("Bereitschaft starten")?message:learned<=0?"Standstrom-Referenz wird im Hintergrund ermittelt":on?"Standstrom-Referenz "+f(learned,"%.2f A")+" gelernt · Abschalten nur darunter":"Lastausgang aus · zum Einschalten tippen";
         dischargeNote.setText(note);
+    }
+    private void renderDischargeResult(Intent intent){
+        long resultId=intent.getLongExtra("control_result_id",0);
+        if(pendingDischargeRequestId==0||resultId!=pendingDischargeRequestId)return;
+        String message=intent.getStringExtra("control_result_message");
+        if(message==null||message.isEmpty())return;
+        pendingDischargeRequestId=0;
+        if(intent.getBooleanExtra("control_result_success",false)){
+            Toast.makeText(this,message,Toast.LENGTH_LONG).show();return;
+        }
+        if(isFinishing()||isDestroyed())return;
+        if(dischargeResultDialog!=null)dischargeResultDialog.dismiss();
+        dischargeResultDialog=new AlertDialog.Builder(this)
+                .setTitle(pendingDischargeEnabled?"Lastausgang nicht freigegeben":"Wegfahrsperre nicht eingeschaltet")
+                .setMessage(message).setPositiveButton("Verstanden",null).show();
     }
     private void updateCockpitScreenAwake(boolean awake){
         if(awake)getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -542,10 +563,13 @@ public class MainActivity extends Activity {
     }
     private void requestDischarge(boolean on){
         if(!BmsMonitorService.running)return;
-        new AlertDialog.Builder(this).setTitle(on?"Lastausgang einschalten?":"Wegfahrsperre einschalten?")
-            .setMessage(on?"Der BMS-Lastausgang wird freigegeben. Nur am stehenden Roller schalten.":"Nur im Stand: Roller ausschalten, Fahrt beenden und mindestens 5 Sekunden ohne Last warten. Die Sperre blockiert die Akkuentladung. Die App wartet auf die BMS-Bestätigung.")
+        dischargeConfirmDialog=new AlertDialog.Builder(this).setTitle(on?"Lastausgang einschalten?":"Wegfahrsperre einschalten?")
+            .setMessage(on?"Der BMS-Lastausgang wird freigegeben. Nur am stehenden Roller schalten.":"Nur im Stand: Fahrt pausieren oder beenden, Roller ausschalten und mindestens 5 Sekunden sicher unter der gelernten Standstrom-Referenz warten. Die Sperre blockiert die Akkuentladung. Die App prüft die BMS-Bestätigung und den tatsächlichen Zustand.")
             .setPositiveButton(on?"Freigeben":"Sperren",(d,w)->{
-                if(BmsMonitorService.running)startService(new Intent(this,BmsMonitorService.class).setAction(BmsMonitorService.ACTION_SET_DISCHARGE).putExtra("enabled",on));})
+                if(!BmsMonitorService.running){new AlertDialog.Builder(this).setMessage("Bereitschaft starten und auf frische BMS-Daten warten.").setPositiveButton("Verstanden",null).show();return;}
+                pendingDischargeRequestId=android.os.SystemClock.elapsedRealtimeNanos();pendingDischargeEnabled=on;
+                startService(new Intent(this,BmsMonitorService.class).setAction(BmsMonitorService.ACTION_SET_DISCHARGE)
+                        .putExtra("enabled",on).putExtra("request_id",pendingDischargeRequestId));})
             .setNegativeButton("Zurück",null).show();
     }
     private void showSettings(){
@@ -951,6 +975,8 @@ public class MainActivity extends Activity {
     }
     @Override protected void onPause() {updateCockpitScreenAwake(false);super.onPause();try{unregisterReceiver(statusReceiver);}catch(Exception ignored){}}
     @Override protected void onSaveInstanceState(Bundle state){
+        state.putLong("pending_discharge_request_id",pendingDischargeRequestId);
+        state.putBoolean("pending_discharge_enabled",pendingDischargeEnabled);
         super.onSaveInstanceState(state);state.putString("pending_image_tile",pendingImageTile);state.putString("pending_image_layout",pendingImageLayout);state.putBoolean("editor_from_settings",editorFromSettings);state.putBoolean("settings_open",settingsDialog!=null&&settingsDialog.isShowing());state.putBoolean("log_expanded",logExpanded);state.putBoolean("editing_board",editingBoard);
         if(editingBoard){
             orientationDrafts.put(boardKey(),boardTiles.toString());orientationSaved.put(boardKey(),savedBoard.toString());
@@ -962,7 +988,7 @@ public class MainActivity extends Activity {
         }
     }
     @Override public void onBackPressed(){if(editingBoard){new AlertDialog.Builder(this).setMessage("Ungespeicherten Layoutentwurf verwerfen?").setPositiveButton("Verwerfen",(d,w)->{boardTiles=savedBoard;editingBoard=false;orientationDrafts.clear();orientationSaved.clear();rebuild();returnAfterEditor();}).setNegativeButton("Weiter bearbeiten",null).show();}else super.onBackPressed();}
-    @Override protected void onDestroy() {super.onDestroy();handler.removeCallbacksAndMessages(null);if(picker!=null)picker.close();}
+    @Override protected void onDestroy() {if(dischargeConfirmDialog!=null)dischargeConfirmDialog.dismiss();if(dischargeResultDialog!=null)dischargeResultDialog.dismiss();super.onDestroy();handler.removeCallbacksAndMessages(null);if(picker!=null)picker.close();}
 }
 
 
