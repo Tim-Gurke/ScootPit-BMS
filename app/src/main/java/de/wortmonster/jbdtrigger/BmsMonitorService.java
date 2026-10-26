@@ -84,12 +84,11 @@ public class BmsMonitorService extends Service implements LocationListener {
     private String averagesProfile="";
     private double averageLastDistance,averageLastEnergy;
     private long averageLastMoving,averageSavedAt;
-    private boolean averagePauseGap;
     String averageProfile(){return averagesProfile;}
     AverageTracker averageTracker(){updateAverages(false);return averages;}
     private void loadAverages(){
         averages=AverageTracker.restore(prefs.getString(AverageMetrics.STATE,""));averagesProfile=prefs.getString(ScooterProfiles.ACTIVE,"");AverageMetrics.initialize(averages,prefs);
-        averageLastDistance=distanceMeters;averageLastMoving=movingMs;averageLastEnergy=energyWh;averageSavedAt=0;averagePauseGap=false;
+        averageLastDistance=distanceMeters;averageLastMoving=movingMs;averageLastEnergy=energyWh;averageSavedAt=0;
     }
     private void updateAverages(boolean force){
         if(averages==null)loadAverages();
@@ -97,8 +96,7 @@ public class BmsMonitorService extends Service implements LocationListener {
             double targetEnergy=tripPausedAt>0?pausedEnergyWh:energyWh;
             double meters=Math.max(0,distanceMeters-averageLastDistance),moving=Math.max(0,movingMs-averageLastMoving),wh=Math.max(0,targetEnergy-averageLastEnergy);
             boolean fresh=lastPacket>0&&System.currentTimeMillis()-lastPacket<=8000;
-            if(tripPausedAt>0&&!fresh)averagePauseGap=true;
-            averages.record(meters,moving,wh,fresh||(tripPausedAt>0&&meters==0&&moving==0&&wh==0));
+            averages.recordRideDelta(meters,moving,wh,fresh,tripPausedAt>0);
             averageLastDistance=distanceMeters;averageLastMoving=movingMs;averageLastEnergy=targetEnergy;
         }
         long now=android.os.SystemClock.elapsedRealtime();
@@ -844,7 +842,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         lastPowerAt = now;
         lastLocation = null;
         movingMs = standingMs = 0;
-        averageLastDistance=averageLastEnergy=0;averageLastMoving=0;averagePauseGap=false;averages.beginTrip();
+        averageLastDistance=averageLastEnergy=0;averageLastMoving=0;averages.beginTrip();
         tripPausedAt=0;manualPauseStartedAt=0;manualTripPause=false;pausedGpsSpeedKmh=0;resumeGate.reset();
         lastClock = now;motion.reset();
         startLocationTracking();
@@ -853,7 +851,6 @@ public class BmsMonitorService extends Service implements LocationListener {
 
     private void resumeTrip(long now){
         if(recorder==null||tripPausedAt==0)return;
-        if(averagePauseGap){averages.record(0,0,0,false);averagePauseGap=false;}
         standingMs+=Math.max(0,now-tripPausedAt);tripPausedAt=0;pausedGpsSpeedKmh=0;resumeGate.reset();lastClock=now;activeSince=0;idleSince=0;motion.reset();
         setState("Fahrt nach Pause fortgesetzt");
     }
@@ -897,11 +894,10 @@ public class BmsMonitorService extends Service implements LocationListener {
         boolean excludePause=tripPausedAt>0&&endedAt==tripPausedAt;
         if(tripPausedAt>0&&!excludePause){
             if(manualTripPause)standingMs+=Math.max(0,endedAt-tripPausedAt);
-            if(averagePauseGap)averages.record(0,0,0,false);tripPausedAt=0;
         }
         updateAverages(true);
         if(excludePause){energyWh=pausedEnergyWh;maxPowerW=pausedMaxPowerW;}
-        tripPausedAt=0;manualPauseStartedAt=0;manualTripPause=false;averagePauseGap=false;
+        tripPausedAt=0;manualPauseStartedAt=0;manualTripPause=false;
         double averageTemperature=temperatureSamples>0?temperatureSum/temperatureSamples:Double.NaN;
         double temp1=sensorSamples[0]>0?sensorSums[0]/sensorSamples[0]:Double.NaN,temp2=sensorSamples[1]>0?sensorSums[1]/sensorSamples[1]:Double.NaN;
         TripRecorder.Summary summary = recorder.finish(endedAt, distanceMeters,

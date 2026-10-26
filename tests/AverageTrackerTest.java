@@ -28,7 +28,19 @@ public final class AverageTrackerTest {
         missing(stationary.reading(1,100,"energy").whPerKm());missing(stationary.reading(2,100,"energy").whPerKm());
         stationary=AverageTracker.decode(stationary.encode());stationary.record(100,10000,3,true);stationary.record(100,10000,3,true);
         close(30,stationary.reading(0,100,"energy").whPerKm());
+        AverageTracker paused=new AverageTracker();paused.beginTrip();paused.reset("energy");paused.recordRideDelta(1000,100000,20,true,false);
+        // Excluded pause: BMS may disappear, but no travel delta is created.
+        for(int i=0;i<100;i++)paused.recordRideDelta(0,0,0,false,true);
+        paused=AverageTracker.decode(paused.encode());paused.recordRideDelta(1000,100000,30,true,false);
+        close(25,paused.reading(2,500,"energy").whPerKm());
+        // Finishing while still paused must preserve the same reset result.
+        paused.recordRideDelta(0,0,0,false,true);close(25,paused.reading(2,500,"energy").whPerKm());
+        // Actual unobserved travel remains incomplete, but the recorded-data ratio is readable.
+        paused.recordRideDelta(500,50000,0,false,false);AverageTracker.Reading incomplete=paused.reading(2,500,"energy");
+        missing(incomplete.whPerKm());close(20,incomplete.recordedWhPerKm());if(!incomplete.energyIncomplete())throw new AssertionError("A real gap was hidden");
+        paused=AverageTracker.decode(paused.encode());close(20,paused.reading(2,500,"energy").recordedWhPerKm());
         boolean rejected=false;try{AverageTracker.decode("invalid");}catch(java.io.IOException expected){rejected=true;}if(!rejected)throw new AssertionError("Invalid persisted state accepted");
         System.out.println("AverageTracker: windows, interpolation, rides, separate resets, persistence and missing BMS coverage OK");
     }
 }
+

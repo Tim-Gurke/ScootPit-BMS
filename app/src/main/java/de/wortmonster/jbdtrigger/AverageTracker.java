@@ -13,6 +13,10 @@ final class AverageTracker {
 
     AverageTracker(){samples.add(total.clone());}
     void beginTrip(){trip=total.clone();}
+    void recordRideDelta(double meters,double movingMilliseconds,double wattHours,boolean fresh,boolean paused){
+        // An excluded stationary pause contributes no travel or energy, even with the BMS off.
+        record(meters,movingMilliseconds,wattHours,fresh||(paused&&meters==0&&movingMilliseconds==0&&wattHours==0));
+    }
     void record(double meters,double movingMilliseconds,double wattHours,boolean energyReliable){
         if(!finite(meters)||!finite(movingMilliseconds)||!finite(wattHours))return;
         total[0]+=meters;total[1]+=movingMilliseconds;total[2]+=wattHours;
@@ -61,6 +65,8 @@ final class AverageTracker {
         Reading(double meters,double movingMs,double wh,double missingEnergyMeters){this.meters=meters;this.movingMs=movingMs;this.wh=wh;this.missingEnergyMeters=missingEnergyMeters;}
         static Reading empty(){return new Reading(0,0,0,0);}
         double speedKmh(){return meters>0&&movingMs>0?meters/movingMs*3600:Double.NaN;}
+        boolean energyIncomplete(){return missingEnergyMeters>=1e-6;}
+        double recordedWhPerKm(){return meters>0?wh/meters*1000:Double.NaN;}
         double whPerKm(){return meters>0&&missingEnergyMeters<1e-6?wh/meters*1000:Double.NaN;}
     }
     String encode(){
@@ -90,3 +96,4 @@ final class AverageTracker {
     private static double[] readPoint(DataInputStream in)throws IOException{double[] result=new double[4];for(int i=0;i<4;i++){result[i]=in.readDouble();if(!finite(result[i]))throw new IOException("Invalid average value");}return result;}
     private static void within(double[] before,double[] after)throws IOException{for(int i=0;i<4;i++)if(before[i]>after[i]+1e-6)throw new IOException("Invalid average baseline");}
 }
+

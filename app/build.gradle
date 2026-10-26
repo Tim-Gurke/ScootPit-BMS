@@ -10,8 +10,8 @@ android {
         applicationId 'de.wortmonster.jbdtrigger'
         minSdk 26
         targetSdk 35
-        versionCode 45
-        versionName '1.6.13-test.1'
+        versionCode 46
+        versionName '1.6.13-test.2'
         testInstrumentationRunner 'de.wortmonster.jbdtrigger.CockpitSmokeTest'
     }
     def signingFile = System.getenv('APP_KEYSTORE_FILE')

@@ -464,8 +464,10 @@ public class MainActivity extends Activity {
                 case "energy":value=f(intent.getDoubleExtra("energy_wh",0),"%.1f Wh");break;
                 case "consumption":case "consumption_500m":{
                     boolean stored=AverageMetrics.available(prefs);int mode=AverageMetrics.mode(metric.config);boolean window=mode==AverageTracker.WINDOW;
-                    double whKm=stored?AverageMetrics.reading(prefs,metric.config).whPerKm():mode==AverageTracker.RESET?Double.NaN:intent.getDoubleExtra(window?"wh_500m":"wh_km",Double.NaN);
-                    if(metric.config.optInt("consumption_display_unit",0)==1){double capacity=intent.getDoubleExtra("full_capacity_ah",0);if(capacity<=0)capacity=number("capacity_ah",26);double percent=stored?ConsumptionUnit.percentPer10Km(whKm,capacity,number("nominal_voltage",48)):intent.getDoubleExtra(window?"wh_500m_percent_10km":"wh_km_percent_10km",Double.NaN);value=f(percent,"%.1f %% / 10 km");progressOverride=ConsumptionUnit.normalizedProgress(whKm,metric.config.optDouble("scale_max",100));}else value=f(whKm,"%.1f Wh/km");note=AverageMetrics.note(metric.config,prefs);break;}
+                    AverageTracker.Reading averageReading=stored?AverageMetrics.reading(prefs,metric.config):null;
+                    boolean incomplete=mode==AverageTracker.RESET&&averageReading!=null&&averageReading.energyIncomplete();
+                    double whKm=averageReading!=null?(incomplete?averageReading.recordedWhPerKm():averageReading.whPerKm()):mode==AverageTracker.RESET?Double.NaN:intent.getDoubleExtra(window?"wh_500m":"wh_km",Double.NaN);
+                    if(metric.config.optInt("consumption_display_unit",0)==1){double capacity=intent.getDoubleExtra("full_capacity_ah",0);if(capacity<=0)capacity=number("capacity_ah",26);double percent=stored?ConsumptionUnit.percentPer10Km(whKm,capacity,number("nominal_voltage",48)):intent.getDoubleExtra(window?"wh_500m_percent_10km":"wh_km_percent_10km",Double.NaN);value=f(percent,"%.1f %% / 10 km");progressOverride=ConsumptionUnit.normalizedProgress(whKm,metric.config.optDouble("scale_max",100));}else value=f(whKm,"%.1f Wh/km");note=AverageMetrics.note(metric.config,prefs);if(incomplete){if(Double.isFinite(whKm))value="≈ "+value;note+=" · unvollständig: erfasste Energie / aufgezeichnete Strecke; BMS-Messlücken";}break;}
                 case "trip_time":value=formatDuration(intent.getLongExtra("trip_time_ms",intent.getLongExtra("moving_ms",0)+intent.getLongExtra("standing_ms",0)));note="Fahrzeit + Standzeit";break;
                 case "moving":value=formatDuration(intent.getLongExtra("moving_ms",0));break;
                 case "standing":value=formatDuration(intent.getLongExtra("standing_ms",0));break;
@@ -644,7 +646,7 @@ public class MainActivity extends Activity {
         new AlertDialog.Builder(this).setTitle("Erkannte BMS-Daten dieses Scooters").setItems(names,(d,i)->addTile(keys.get(i))).setNegativeButton("Zurück",null).show();
     }
 
-    private void resetAverage(JSONObject tile){String profile=prefs.getString(ScooterProfiles.ACTIVE,"");tourDialog=new AlertDialog.Builder(this).setTitle("Durchschnitt zurücksetzen?").setMessage(CockpitLayout.title(tile.optString("key"))+" für "+ScooterProfiles.name(prefs)+" wird ab jetzt neu berechnet.")
+    private void resetAverage(JSONObject tile){String profile=prefs.getString(ScooterProfiles.ACTIVE,"");tourDialog=new AlertDialog.Builder(this).setTitle("Durchschnitt zurücksetzen?").setMessage(CockpitLayout.title(tile.optString("key"))+" für "+ScooterProfiles.name(prefs)+" wird ab jetzt neu berechnet."+(tile.optString("key").startsWith("consumption")&&AverageMetrics.reading(prefs,tile).energyIncomplete()?"\n\n≈ kennzeichnet einen unvollständigen Wert: erfasste Energie geteilt durch aufgezeichnete Strecke. Fehlende BMS-Energie wurde nicht ergänzt. Bereits gespeicherte Messlücken können nicht sicher als reine Fahrtpause rekonstruiert werden.":""))
         .setPositiveButton("Zurücksetzen",(d,w)->{if(!profile.equals(prefs.getString(ScooterProfiles.ACTIVE,"")))return;AverageMetrics.reset(prefs,tile);if(lastStatus!=null)renderStatus(lastStatus);else buildTiles();}).setNegativeButton("Zurück",null).show();}
     private void resetTour(){String profile=prefs.getString(ScooterProfiles.ACTIVE,"");tourDialog=new AlertDialog.Builder(this).setTitle("Tourenzähler zurücksetzen?").setMessage("Nur der Tourenzähler für "+ScooterProfiles.name(prefs)+" wird auf 0 gesetzt. Tages- und Gesamtkilometer bleiben erhalten.")
         .setPositiveButton("Zurücksetzen",(d,w)->{if(!profile.equals(prefs.getString(ScooterProfiles.ACTIVE,""))){Toast.makeText(this,"Scooter wurde gewechselt. Tourenzähler erneut öffnen.",Toast.LENGTH_LONG).show();return;}prefs.edit().putString("tour_km","0").apply();if(lastStatus!=null)renderStatus(lastStatus);else buildTiles();}).setNegativeButton("Zurück",null).show();}
@@ -989,6 +991,7 @@ public class MainActivity extends Activity {
     @Override public void onBackPressed(){if(editingBoard){new AlertDialog.Builder(this).setMessage("Ungespeicherten Layoutentwurf verwerfen?").setPositiveButton("Verwerfen",(d,w)->{boardTiles=savedBoard;editingBoard=false;orientationDrafts.clear();orientationSaved.clear();rebuild();returnAfterEditor();}).setNegativeButton("Weiter bearbeiten",null).show();}else super.onBackPressed();}
     @Override protected void onDestroy() {if(dischargeConfirmDialog!=null)dischargeConfirmDialog.dismiss();if(dischargeResultDialog!=null)dischargeResultDialog.dismiss();super.onDestroy();handler.removeCallbacksAndMessages(null);if(picker!=null)picker.close();}
 }
+
 
 
 
