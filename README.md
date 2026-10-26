@@ -24,9 +24,9 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 
 ### Cockpitansicht
 
-![ScootPit BMS 1.6.9 mit der neuen Cockpitanordnung und dem kontrastreichen Pausezeichen](docs/assets/screenshots/anleitung-cockpit-dunkel.png)
+![ScootPit BMS 1.6.13 mit Versionsnummer im Appkopf und Beispieldaten](docs/assets/screenshots/cockpit-version-1.6.13.png)
 
-<em>Version 1.6.9 im Android-Emulator mit gekennzeichneten Beispielwerten. Die neue Anordnung und Werteinstellungen gelten auch für das helle Design. Verbrauch: letzte 300 m, Skala bis 40; Durchschnittsgeschwindigkeit: aktuelle Fahrt; Durchschnittsverbrauch: ab Reset.</em>
+<em>Version 1.6.13 unter Android 13 im Emulator mit dem Profil „Beispiel-Scooter“ und Beispielwerten. Die Versionsnummer steht neben dem Appnamen. Verbrauch: letzte 300 m, Skala bis 40; Durchschnittsgeschwindigkeit: aktuelle Fahrt; Durchschnittsverbrauch: ab Reset. Diese Aufnahme bestätigt keinen realen BMS- oder Fahrtablauf.</em>
 
 ### BMS-Lastausgang ausgeschaltet
 

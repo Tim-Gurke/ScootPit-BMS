@@ -69,7 +69,7 @@ final class GuideScreenshots {
                 prefs.edit().putString(AverageMetrics.STATE,incomplete.encode()).commit();
                 invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{sample(false)});
             });
-            screenshot("verbrauch-reset-1.6.13.png");
+            screenshot("anleitung-verbrauch-reset-1.6.13.png");
             runner.runOnMainSync(()->prefs.edit().putString(AverageMetrics.STATE,beforeIncomplete).commit());
             runner.runOnMainSync(()->{
                 try{CockpitTheme.apply(prefs,false,true);set(activity,"boardTiles",CockpitBoard.load(prefs));invoke(activity,"rebuild",new Class[0],new Object[0]);invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{sample(false)});invoke(activity,"tripAction",new Class[0],new Object[0]);}catch(Exception e){throw new RuntimeException(e);}

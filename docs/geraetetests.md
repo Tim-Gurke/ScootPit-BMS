@@ -8,6 +8,8 @@
 
 Die Version übernimmt die lokale Watt’n’Pit-Kopplung und die Korrektur für Verbrauch ab Reset aus den Testständen. Pause, zeitweiliger BMS-Ausfall, Fortsetzen und die Bluetooth-Übergabe zwischen beiden Apps sind am realen Roller noch zu prüfen. [Testabläufe zur Kopplung](watt-n-pit.md#am-roller-prüfen) · [Verbrauch bei Fahrtpausen](cockpit.md#durchschnittswerte-bei-fahrtpausen-ab-1613).
 
+Die automatischen Prüfungen des Release-Stands sind erfolgreich: [Java-Tests, Android Lint, Release-Build und Update-Signatur](https://github.com/Tim-Gurke/ScootPit-BMS/actions/runs/40391218681) sowie [Android 8/13/15](https://github.com/Tim-Gurke/ScootPit-BMS/actions/runs/40391218748). Unter Android 13/15 wurden die vorhandenen Cockpit-, Menü-, Layout- und Hintergrundprüfungen durchlaufen und aktuelle Appaufnahmen erstellt. Die Java-Tests prüfen zusätzlich den Verbindungsvorrang zwischen den Apps und erhaltene Reset-Summen über eine ausgeschlossene Pause; das ersetzt den Hardwaretest nicht.
+
 Zur BMS-Sperre liegt die Rückmeldung vor, dass das Sperren nach der lastarmen Wartefrist funktioniert, aber auch bei eingeschaltetem Roller möglich ist. Ein beobachteter Nullstrom im Stand liefert dafür kein verlässliches Ein-/Aus-Signal. Die Schaltlogik wurde für 1.6.13 nicht verändert; vor dem Sperren den Roller selbst ausschalten. Dieser Befund ersetzt keine allgemeine Prüfung weiterer BMS- und Controllerkombinationen.
 
 ## Öffentliche Praxismeldungen

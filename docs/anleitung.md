@@ -2,7 +2,7 @@
 
 [← Zur Übersicht](../README.md) · [Aktuelle APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)
 
-**Stand: Version 1.6.13.** Diese Anleitung führt von der Einrichtung bis zum eigenen Cockpit. Die vorhandenen Menü- und Cockpitbilder zeigen Version 1.6.9 und stammen direkt aus der App im Android-Emulator. Die Bedienwege gelten weiterhin. **Ihre Messwerte und das Profil „Beispiel-Scooter“ dienen der Erklärung.** Die Aufnahmen aus dem Fahrtenbuch stammen aus früheren Appversionen; ihre Funktionen sind weiterhin erreichbar.
+**Stand: Version 1.6.13.** Diese Anleitung führt von der Einrichtung bis zum eigenen Cockpit. Die aktuelle Cockpit- und Appinfoaufnahme zeigt 1.6.13; weitere Menü- und Cockpitbeispiele stammen aus 1.6.9, die Sperrhinweise aus 1.6.12. Sie entstehen direkt aus der App im Android-Emulator. Die Bedienwege gelten weiterhin. **Ihre Messwerte und das Profil „Beispiel-Scooter“ dienen der Erklärung.** Die Aufnahmen aus dem Fahrtenbuch stammen aus früheren Appversionen; ihre Funktionen sind weiterhin erreichbar.
 
 ## 1. Einrichten und die erste Fahrt aufzeichnen
 
@@ -19,7 +19,7 @@ Für Aufzeichnungen mit gesperrtem Handy unter **Einstellungen → Akkuoptimieru
 
 ## 2. Was finde ich wo?
 
-<img src="assets/screenshots/anleitung-cockpit-dunkel.png" width="320" alt="Cockpit 1.6.9 im dunklen Design mit Beispielwerten und Pausezeichen zwischen den Instrumenten">
+<img src="assets/screenshots/cockpit-version-1.6.13.png" width="320" alt="Cockpit 1.6.13 mit Versionsnummer im Appkopf, Beispielwerten und Pausezeichen zwischen den Instrumenten">
 
 *Dunkles Standardcockpit 1.6.9; Beispielwerte.*
 
@@ -154,6 +154,10 @@ Für manuelle Profilwechsel die Bereitschaft vorher beenden. Die automatische Sc
 Unter **Akku und Restreichweite** Kapazität, Nennspannung, Reserve und Verbrauchsstartwert einstellen. **Außentemperatur** schaltet den Wetterabruf. **Temperatur-Beschriftungen** passt BAT/BMS an die tatsächlichen Sensoren an. [BMS-Werte und Grenzen](bms.md) · [Reichweitenschätzung](reichweite.md).
 
 Die installierte Versionsnummer steht direkt neben **ScootPit BMS** im Appkopf. Am Ende der scrollbaren Einstellungen stehen zusätzlich Appversion und **© 2026 Tim Weißbach und Mitwirkende**.
+
+<img src="assets/screenshots/anleitung-ueber-1.6.13.png" width="320" alt="Ende der Einstellungen mit Version 1.6.13 und Copyright-Vermerk">
+
+*1.6.13 unter Android 13 im Emulator: Die Appinfo steht am Ende der scrollbaren Einstellungen.*
 
 Ab **1.6.13** können ScootPit und die offizielle Watt’n’Pit-App auf demselben Handy passende BMS-Grunddaten lokal gemeinsam nutzen. [Beide Apps einrichten und die Übergabe prüfen](watt-n-pit.md).
 
