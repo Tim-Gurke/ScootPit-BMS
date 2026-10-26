@@ -62,6 +62,15 @@ final class GuideScreenshots {
                 });
                 screenshot(light?"anleitung-cockpit-hell.png":"anleitung-cockpit-dunkel.png");
             }
+            final String beforeIncomplete=prefs.getString(AverageMetrics.STATE,"");
+            runner.runOnMainSync(()->{
+                AverageTracker incomplete=AverageTracker.restore(beforeIncomplete);
+                incomplete.record(0,0,0,false);
+                prefs.edit().putString(AverageMetrics.STATE,incomplete.encode()).commit();
+                invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{sample(false)});
+            });
+            screenshot("verbrauch-reset-1.6.13.png");
+            runner.runOnMainSync(()->prefs.edit().putString(AverageMetrics.STATE,beforeIncomplete).commit());
             runner.runOnMainSync(()->{
                 try{CockpitTheme.apply(prefs,false,true);set(activity,"boardTiles",CockpitBoard.load(prefs));invoke(activity,"rebuild",new Class[0],new Object[0]);invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{sample(false)});invoke(activity,"tripAction",new Class[0],new Object[0]);}catch(Exception e){throw new RuntimeException(e);}
             });
@@ -76,6 +85,10 @@ final class GuideScreenshots {
             runner.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK);runner.waitForIdleSync();
             runner.runOnMainSync(()->invoke(activity,"showSettings",new Class[0],new Object[0]));
             screenshot("anleitung-einstellungen.png");
+            runner.runOnMainSync(()->{
+                try{android.widget.ListView list=((AlertDialog)get(activity,"settingsDialog")).getListView();list.setSelection(list.getCount()-1);}catch(Exception e){throw new RuntimeException(e);}
+            });
+            screenshot("anleitung-ueber-1.6.13.png");
             runner.runOnMainSync(()->{try{((AlertDialog)get(activity,"settingsDialog")).dismiss();BmsMonitorService.running=false;invoke(activity,"editLayout",new Class[0],new Object[0]);}catch(Exception e){throw new RuntimeException(e);}});
             screenshot("anleitung-cockpit-bearbeiten.png");
             runner.runOnMainSync(()->{

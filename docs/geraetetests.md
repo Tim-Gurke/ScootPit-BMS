@@ -2,7 +2,13 @@
 
 [← Übersicht](../README.md) · [BMS-Kompatibilität](bms.md)
 
-**Stand: 18. Oktober 2026.** Die Entwicklungsbasis ist der Joyor T6E Pro mit JBD SP14S004. Ein erfolgreich gestartetes Programm bestätigt zunächst Installation und Start. Für den Einsatz müssen außerdem BMS-Verbindung, GPS-Aufzeichnung und Betrieb bei gesperrtem Bildschirm in der jeweiligen Gerätekombination geprüft werden.
+**Stand: 26. Oktober 2026.** Die Entwicklungsbasis ist der Joyor T6E Pro mit JBD SP14S004. Ein erfolgreich gestartetes Programm bestätigt zunächst Installation und Start. Für den Einsatz müssen außerdem BMS-Verbindung, GPS-Aufzeichnung und Betrieb bei gesperrtem Bildschirm in der jeweiligen Gerätekombination geprüft werden.
+
+## 1.6.13: nächste Praxistests
+
+Die Version übernimmt die lokale Watt’n’Pit-Kopplung und die Korrektur für Verbrauch ab Reset aus den Testständen. Pause, zeitweiliger BMS-Ausfall, Fortsetzen und die Bluetooth-Übergabe zwischen beiden Apps sind am realen Roller noch zu prüfen. [Testabläufe zur Kopplung](watt-n-pit.md#am-roller-prüfen) · [Verbrauch bei Fahrtpausen](cockpit.md#durchschnittswerte-bei-fahrtpausen-ab-1613).
+
+Zur BMS-Sperre liegt die Rückmeldung vor, dass das Sperren nach der lastarmen Wartefrist funktioniert, aber auch bei eingeschaltetem Roller möglich ist. Ein beobachteter Nullstrom im Stand liefert dafür kein verlässliches Ein-/Aus-Signal. Die Schaltlogik wurde für 1.6.13 nicht verändert; vor dem Sperren den Roller selbst ausschalten. Dieser Befund ersetzt keine allgemeine Prüfung weiterer BMS- und Controllerkombinationen.
 
 ## Öffentliche Praxismeldungen
 

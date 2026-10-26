@@ -2,6 +2,16 @@
 
 [← Übersicht](../README.md)
 
+## Stand 1.6.13
+
+`versionName` ist **1.6.13**, `versionCode` **47**. Die Versionsanzeige im Appkopf und am Ende der Einstellungen liest die installierte Paketversion aus. Die vorhandene App-ID und Release-Signatur werden für Updates weiterverwendet.
+
+`AverageTracker.recordRideDelta` behandelt eine ausgeschlossene Pause ohne Zuwachs als vollständig, auch wenn das BMS gerade nicht erreichbar ist. Fortsetzen ergänzt keinen künstlichen Lückenmarker; Beenden aus der Pause wertet zuerst den eingefrorenen Stand aus. Alte Rohsummen bleiben erhalten. `energyIncomplete` und `recordedWhPerKm` erlauben die mit **≈** gekennzeichnete Anzeige erfasster Energie je Strecke. Der Java-Regressionstest deckt Pause, Persistenz, Fortsetzen, Beenden aus Pause und eine echte Messlücke ab.
+
+`BmsShareProvider` stellt gültige Basisframes ausschließlich der lokalen offiziellen Watt’n’Pit-App bereit; Paketname und Signatur werden geprüft. Der Provider bietet keine MOS-Schaltmethode. `BmsLinkLease` koordiniert den BLE-Besitz mit ScootPit-Vorrang, Trennpausen und Ablauf einer verwaisten Fremdbelegung. Gerätekennung und Zeitstempel dienen der Zuordnung und Aktualitätsprüfung. GPS und Fahrtdateien sind nicht Teil des Protokolls. `BmsLinkLeaseTest` prüft Besitzwechsel, Fristen, Token und Interesse am passenden Gerät. [Bedienung und Hardware-Prüfung](watt-n-pit.md).
+
+Der Screenshot-Modus erzeugt zusätzlich ein Cockpit mit einer ausdrücklich simulierten alten Messlücke sowie die Appinfo am Ende der Einstellungen. Diese Beispiele entstehen im Test-APK. Ein Emulator bestätigt weder reale Bluetooth-Übergabe noch den MOS-Schaltvorgang am Roller.
+
 ## Dauerhafte APK-Signatur
 
 Für dieses Projekt ist ein dauerhafter Release-Schlüssel eingerichtet. Die private Schlüsselsicherung separat und sicher aufbewahren. Für alle kommenden Updates denselben Schlüssel verwenden; ein neuer Schlüssel würde die Installation als Update verhindern. Niemals Keystore oder Passwörter ins Repository oder als öffentliches Build-Artefakt legen. Unter **Settings → Secrets and variables → Actions** sind vier Repository-Secrets hinterlegt:

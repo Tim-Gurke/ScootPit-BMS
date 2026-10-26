@@ -184,7 +184,9 @@ public class MainActivity extends Activity {
         LinearLayout header=new LinearLayout(this);header.setTag("cockpit_header");header.setGravity(Gravity.CENTER_VERTICAL);header.setPadding(0,dp(landscape?0:3),0,dp(landscape?0:7));
         ImageView logo=new ImageView(this);logo.setImageResource(R.drawable.app_logo);logo.setContentDescription("ScootPit BMS Logo");header.addView(logo,new LinearLayout.LayoutParams(dp(landscape?36:42),dp(landscape?38:48)));
         LinearLayout identity=column();identity.setPadding(dp(landscape?6:8),0,dp(4),0);
-        TextView title=label("ScootPit BMS",landscape?20:22,color(prefs.getString("header_color",prefs.getString("accent_color","#FF9800")),accent()));title.setTypeface(null,Typeface.BOLD);title.setPadding(0,0,0,0);title.setSingleLine(true);title.setAutoSizeTextTypeUniformWithConfiguration(14,landscape?20:22,1,android.util.TypedValue.COMPLEX_UNIT_SP);identity.addView(title,new LinearLayout.LayoutParams(-1,dp(landscape?24:28)));
+        LinearLayout titleRow=new LinearLayout(this);titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView title=label("ScootPit BMS",landscape?20:22,color(prefs.getString("header_color",prefs.getString("accent_color","#FF9800")),accent()));title.setTypeface(null,Typeface.BOLD);title.setPadding(0,0,0,0);title.setSingleLine(true);title.setAutoSizeTextTypeUniformWithConfiguration(14,landscape?20:22,1,android.util.TypedValue.COMPLEX_UNIT_SP);titleRow.addView(title,new LinearLayout.LayoutParams(0,dp(landscape?24:28),1));
+        TextView version=label(appVersion(),11,muted());version.setContentDescription("App-Version "+appVersion());version.setPadding(dp(5),0,0,0);version.setSingleLine(true);titleRow.addView(version,new LinearLayout.LayoutParams(-2,-2));identity.addView(titleRow,new LinearLayout.LayoutParams(-1,dp(landscape?24:28)));
         LinearLayout profileRow=new LinearLayout(this);profileRow.setGravity(Gravity.CENTER_VERTICAL);profileRow.setMinimumHeight(dp(landscape?30:40));profileRow.setContentDescription("Scooter-Profil auswählen: "+ScooterProfiles.name(prefs));profileRow.setEnabled(!editingBoard);profileRow.setOnClickListener(v->profileMenu());
         TextView profile=label(ScooterProfiles.name(prefs),landscape?13:14,foreground());profile.setSingleLine(true);profile.setEllipsize(android.text.TextUtils.TruncateAt.END);profileRow.addView(profile,new LinearLayout.LayoutParams(0,-2,1));TextView arrow=label("⌄",landscape?16:18,accent());arrow.setPadding(dp(5),0,0,0);profileRow.addView(arrow);identity.addView(profileRow);
         header.addView(identity,new LinearLayout.LayoutParams(0,-2,1));
@@ -573,12 +575,18 @@ public class MainActivity extends Activity {
                         .putExtra("enabled",on).putExtra("request_id",pendingDischargeRequestId));})
             .setNegativeButton("Zurück",null).show();
     }
+    private String appVersion(){
+        try{return getPackageManager().getPackageInfo(getPackageName(),0).versionName;}catch(android.content.pm.PackageManager.NameNotFoundException ignored){return "–";}
+    }
     private void showSettings(){
         String[] items={"Cockpit bearbeiten","App-Farben","Gesamtkilometer korrigieren","BMS und Fahrt-Erkennung","Akku und Restreichweite","Benachrichtigungen","Außentemperatur","Letzte Fahrt / Export","Akkuoptimierung","Speicherorte","Scooter-Profile","Temperatur-Beschriftungen","Fahrtenbuch","Tourenzähler zurücksetzen","Routine-Nachrichten bearbeiten","Verbindungsdiagnose"};
         if(settingsDialog!=null&&settingsDialog.isShowing())return;
         settingsDialog=new AlertDialog.Builder(this).setTitle("Einstellungen").setItems(items,null).setNegativeButton("Schließen",null).create();
         settingsDialog.show();
         settingsDialog.getListView().setVerticalScrollBarEnabled(true);
+        TextView about=label("Version "+appVersion()+"\n© 2026 Tim Weißbach und Mitwirkende",12,muted());
+        about.setGravity(Gravity.CENTER_HORIZONTAL);
+        settingsDialog.getListView().addFooterView(about,null,false);
         settingsDialog.getListView().setOnItemClickListener((parent,view,w,id)->{
             switch(w){case 0:editorFromSettings=true;settingsDialog.dismiss();editLayout();break;case 1:editColors();break;case 2:editOdometer();break;
                 case 3:editBms();break;case 4:editBattery();break;case 5:notificationSettings();break;

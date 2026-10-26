@@ -1,0 +1,1 @@
+Reset consumption remains usable across excluded ride pauses. Existing or actual telemetry gaps are marked ≈ instead of a dash; missing energy is not filled in. Local BMS sharing with Watt’n’Pit 1.5.0 or later on the same phone. Version in the app header, copyright at the bottom of Settings. Test Bluetooth handover and pause/resume on your scooter.

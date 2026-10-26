@@ -2,11 +2,11 @@
 
 [← Zur Übersicht](../README.md) · [Aktuelle APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)
 
-**Stand: Version 1.6.12.** Diese Anleitung führt von der Einrichtung bis zum eigenen Cockpit. Die vorhandenen Menü- und Cockpitbilder zeigen Version 1.6.9 und stammen direkt aus der App im Android-Emulator. Die Bedienwege gelten weiterhin. **Ihre Messwerte und das Profil „Beispiel-Scooter“ dienen der Erklärung.** Die Aufnahmen aus dem Fahrtenbuch stammen aus früheren Appversionen; ihre Funktionen sind weiterhin erreichbar.
+**Stand: Version 1.6.13.** Diese Anleitung führt von der Einrichtung bis zum eigenen Cockpit. Die vorhandenen Menü- und Cockpitbilder zeigen Version 1.6.9 und stammen direkt aus der App im Android-Emulator. Die Bedienwege gelten weiterhin. **Ihre Messwerte und das Profil „Beispiel-Scooter“ dienen der Erklärung.** Die Aufnahmen aus dem Fahrtenbuch stammen aus früheren Appversionen; ihre Funktionen sind weiterhin erreichbar.
 
 ## 1. Einrichten und die erste Fahrt aufzeichnen
 
-1. Die signierte **ScootPit-BMS-v1.6.12.apk** aus dem Release herunterladen und auf dem Handy öffnen. Bei einem Update über die vorhandene App installieren.
+1. Die signierte **ScootPit-BMS-v1.6.13.apk** aus dem Release herunterladen und auf dem Handy öffnen. Bei einem Update über die vorhandene App installieren.
 2. Die angefragten Berechtigungen für **Geräte in der Nähe/Bluetooth**, **präzisen Standort** und **Benachrichtigungen** erlauben. Bluetooth und Standort am Handy einschalten.
 3. Den Profilnamen im Appkopf antippen. Das Profil bei Bedarf umbenennen oder ein eigenes anlegen.
 4. Über **BMS auswählen** beziehungsweise **Einstellungen → BMS und Fahrt-Erkennung → BMS auswählen → Suche starten** das eigene BMS auswählen. Die App startet ohne fest hinterlegtes Gerät. [BMS-Kompatibilität](bms.md).
@@ -131,7 +131,7 @@ Unter **Cockpit bearbeiten → + Kachel** stehen **Durchschnittsgeschwindigkeit*
 
 Bei **Ab Reset** im normalen Cockpit auf die Kachel tippen und die Rückfrage bestätigen. Es wird nur ihr Durchschnittszähler neu begonnen. Kilometerzähler, Fahrten und andere Durchschnittskacheln bleiben erhalten. Für einen Tourenreset die **Trip-Kachel** antippen oder **Einstellungen → Tourenzähler zurücksetzen** wählen.
 
-Verbrauch ist wahlweise in **Wh/km** oder **% auf 10 km** darstellbar. Geschwindigkeit nutzt die Fahrzeit ohne Standzeiten. Ein noch nicht vollständig erfasstes Streckenfenster oder eine Lücke in den BMS-Energiedaten kann statt eines Durchschnitts „–“ ergeben.
+Verbrauch ist wahlweise in **Wh/km** oder **% auf 10 km** darstellbar. Geschwindigkeit nutzt die Fahrzeit ohne Standzeiten. Fehlt noch Strecke für den gewählten Durchschnitt, erscheint „–“. Ab **1.6.13** wird ein bereits unvollständiger Verbrauch als **≈** mit dem Verhältnis aus erfasster Energie und aufgezeichneter Strecke angezeigt. Fehlende Energie wird nicht ergänzt; der Wert kann den tatsächlichen Verbrauch unterschätzen. Eine ausgeschlossene Fahrtpause ohne Strecken-, Fahrzeit- oder Energiezuwachs erzeugt allein wegen fehlender BMS-Daten keine neue Lücke. Alte Lücken lassen sich nachträglich nicht sicher als reine Pause erkennen. [Details und Testablauf](cockpit.md#durchschnittswerte-bei-fahrtpausen-ab-1613).
 
 ## 7. Helles und dunkles Design
 
@@ -152,6 +152,10 @@ Verbrauch ist wahlweise in **Wh/km** oder **% auf 10 km** darstellbar. Geschwind
 Für manuelle Profilwechsel die Bereitschaft vorher beenden. Die automatische Scooter-Auswahl unter **BMS und Fahrt-Erkennung** kann gespeicherte Geräte selbst zuordnen; während einer Fahrt bleibt das Profil fest.
 
 Unter **Akku und Restreichweite** Kapazität, Nennspannung, Reserve und Verbrauchsstartwert einstellen. **Außentemperatur** schaltet den Wetterabruf. **Temperatur-Beschriftungen** passt BAT/BMS an die tatsächlichen Sensoren an. [BMS-Werte und Grenzen](bms.md) · [Reichweitenschätzung](reichweite.md).
+
+Die installierte Versionsnummer steht direkt neben **ScootPit BMS** im Appkopf. Am Ende der scrollbaren Einstellungen stehen zusätzlich Appversion und **© 2026 Tim Weißbach und Mitwirkende**.
+
+Ab **1.6.13** können ScootPit und die offizielle Watt’n’Pit-App auf demselben Handy passende BMS-Grunddaten lokal gemeinsam nutzen. [Beide Apps einrichten und die Übergabe prüfen](watt-n-pit.md).
 
 ## 9. Fahrtenbuch, Karte, Statistiken und Import
 

@@ -10,7 +10,7 @@ ScootPit BMS wurde mit dem **Joyor T6E Pro und dem JBD SP14S004** entwickelt. Di
 
 **ScootPit – für alle, die ihren Roller überwachen wollen, ohne selbst überwacht zu werden.**
 
-**Version 1.6.12 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
+**Version 1.6.13 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
 
 **[Bedienungsanleitung mit Bildern: Was finde ich wo und wie funktioniert es?](docs/anleitung.md)**
 
@@ -90,6 +90,14 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 <p><img src="docs/assets/screenshots/fahrtenbuch-ordnerimport.jpg" width="260" alt="Fahrtenbuch mit Zeitraumwahl sowie Import des kompletten Ordners oder einzelner Fahrten"></p>
 <em>Im Fahrtenbuch kannst du einen Zeitraum wählen und den gesamten Scooter-Fahrtenordner oder einzelne CSV-/GPX-Fahrten importieren.</em>
 
+
+## Neu in 1.6.13
+
+**Verbrauch ab Reset nach Fahrtpausen:** Ausgeschlossene Pausen erzeugen beim Verlust der BMS-Verbindung keine künstliche Energielücke mehr. Vorhandene Zähler bleiben erhalten. Bereits unvollständige Verbrauchssummen erscheinen mit **≈** als erfasste Energie je aufgezeichneter Strecke; fehlende Energie wird nicht ergänzt. [Durchschnittswerte und Grenzen](docs/cockpit.md#durchschnittswerte-bei-fahrtpausen-ab-1613).
+
+**Lokale Kopplung mit Watt’n’Pit:** Auf demselben Handy kann die offizielle Watt’n’Pit-App aktuelle BMS-Grunddaten über ScootPit beziehen. Die Apps stimmen ihre Bluetooth-Verbindung ab; ScootPit erhält Vorrang für die Fahrtaufzeichnung. GPS-Daten und Fahrtrouten werden dabei nicht weitergegeben. Die Kopplung benötigt passende Versionen beider Apps und dasselbe ausgewählte BMS. [Einrichtung und Praxistest](docs/watt-n-pit.md).
+
+Die installierte Versionsnummer steht jetzt direkt neben dem Appnamen im Appkopf. Am Ende der Einstellungen stehen zusätzlich Appversion und Copyright-Hinweis. Die BMS-Sperrfunktion bleibt bei der bisherigen Prüfung geringer Stromaufnahme; sie erkennt einen eingeschalteten Roller nicht zuverlässig. Der echte Bluetooth-Übergang und Pause/Fortsetzen müssen am jeweiligen Roller geprüft werden.
 
 ## Neu in 1.6.12
 
@@ -234,9 +242,13 @@ Vorhandene Profile, Kilometer, Layouts und Fahrten bleiben bei einem kompatiblen
 
 Die App speichert Fahrtdateien, Profile und persönliche Bilder lokal und überträgt sie nicht an GitHub. Wetterdaten sind optional: Dafür werden gerundete Standortkoordinaten bei automatischen Aktualisierungen höchstens alle 15 Minuten an Open-Meteo gesendet; Antippen einer Temperaturkachel kann zusätzlich eine manuelle Abfrage auslösen. Beim Öffnen einer Karte werden die sichtbaren Hintergrundkacheln von OpenStreetMap geladen; der Anbieter erhält deine IP-Adresse und die angefragten Kartenausschnitte. Die Route selbst wird lokal gezeichnet, die Fahrtdatei wird nicht hochgeladen. Statistiken benötigen kein Internet.
 
+Bei Nutzung der lokalen Watt’n’Pit-Kopplung erhält die berechtigte App auf demselben Handy aktuelle BMS-Grunddaten und die Gerätekennung zur Zuordnung. GPS-Koordinaten, Fahrtrouten und Schlüssel gehören nicht zu diesem Austausch. [Umfang und Voraussetzungen](docs/watt-n-pit.md).
+
 Der Quellcode enthält keine persönlichen Geräteadressen, Fahrtdateien oder Signierschlüssel. **ScootPit** verbindet **Scooter** und **Cockpit**; **BMS** steht für Batteriemanagementsystem.
 
 ## Lizenz
+
+© 2026 Tim Weißbach und Mitwirkende
 
 Quellcode, Dokumentation und Originalgrafiken von ScootPit BMS stehen unter der [Apache-Lizenz 2.0](LICENSE). Marken und Inhalte Dritter bleiben Eigentum ihrer jeweiligen Rechteinhaber.
 
