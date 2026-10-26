@@ -221,7 +221,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         weatherAt = prefs.getLong("weather_at", 0);
         averageConsumption = number(prefs.getString("learned_wh_km", "0"), 0);
         try{temperatureHistory=new org.json.JSONArray(prefs.getString("temperature_history","[]"));}catch(Exception ignored){}
-        running = true;liveService=this;
+        running = true;liveService=this;BmsShareProvider.internal(true);
         ConnectionDiagnostics.TRACE.start(android.os.SystemClock.elapsedRealtime());
         locationManager = getSystemService(LocationManager.class);
         PowerManager power=getSystemService(PowerManager.class);
@@ -472,6 +472,11 @@ public class BmsMonitorService extends Service implements LocationListener {
     };
 
     private void connect(BluetoothDevice device) {
+        if(!running)return;
+        if(!BmsShareProvider.mayConnect()){
+            setState("Übernehme BMS-Verbindung von Watt’n’Pit");
+            handler.postDelayed(()->{if(running&&gatt==null)connect(device);},500);return;
+        }
         setState("Verbinde mit BMS");
         connectAttemptAt = android.os.SystemClock.elapsedRealtime();
         trace("Bluetooth-Verbindungsaufbau gestartet");
@@ -613,10 +618,10 @@ public class BmsMonitorService extends Service implements LocationListener {
             long now = System.currentTimeMillis();
 
             if(controlPending && !controlAcknowledged){handler.postDelayed(this,BMS_POLL_MS);return;}
-            if(autoSelection && recorder==null && knownBms.size()>1 && monitorStartedAt>0 && now-monitorStartedAt>=6000 && activeSince==0){
+            if(!BmsShareProvider.interested(address) && autoSelection && recorder==null && knownBms.size()>1 && monitorStartedAt>0 && now-monitorStartedAt>=6000 && activeSince==0){
                 closeGatt();near=false;scheduleScan(1000);return;
             }
-            if (recorder == null && monitorStartedAt > 0
+            if (!BmsShareProvider.interested(address) && recorder == null && monitorStartedAt > 0
                     && now - monitorStartedAt >= monitorTimeoutMs) {
                 emit(ACTION_TIMEOUT);
                 closeGatt();
@@ -728,7 +733,7 @@ public class BmsMonitorService extends Service implements LocationListener {
                 else controlFinished("BMS hat den Schaltbefehl abgelehnt ("+(frame[2]&255)+")");
             }
             BmsPacket packet = BmsPacket.decode(frame);
-            if(packet!=null)acceptPacket(packet);
+            if(packet!=null){BmsShareProvider.publish(address,frame);acceptPacket(packet);}
             acceptExtras(frame);
             cursor += size;
         }
@@ -1036,6 +1041,7 @@ public class BmsMonitorService extends Service implements LocationListener {
     public void onStatusChanged(String provider, int status, Bundle extras) {}
 
     private void closeGatt() {
+        BmsShareProvider.clear();
         if(recorder==null)stopLocationTracking();
         handler.removeCallbacks(pollRunnable);
         handler.removeCallbacks(readRssiRunnable);handler.removeCallbacks(optionalRead);
@@ -1211,6 +1217,7 @@ public class BmsMonitorService extends Service implements LocationListener {
         handler.removeCallbacksAndMessages(null);
         stopScan();
         closeGatt();
+        BmsShareProvider.internal(false);
         if (recorder != null) finishTrip();
         stopLocationTracking();
         latestStatus = null;
@@ -1220,6 +1227,7 @@ public class BmsMonitorService extends Service implements LocationListener {
 
     @Override public IBinder onBind(Intent intent) { return null; }
 }
+
 
 
 

@@ -17,6 +17,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <queries><package android:name="de.wattpit.app" /></queries>
+
     <application
         android:allowBackup="true"
         android:label="ScootPit BMS"
@@ -36,6 +38,7 @@
             android:name=".BmsMonitorService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice|location" />
+        <provider android:name=".BmsShareProvider" android:authorities="de.wortmonster.jbdtrigger.bms" android:exported="true" android:grantUriPermissions="false" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"
@@ -47,4 +50,5 @@
         </provider>
     </application>
 </manifest>
+
 

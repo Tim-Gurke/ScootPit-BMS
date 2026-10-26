@@ -10,8 +10,8 @@ android {
         applicationId 'de.wortmonster.jbdtrigger'
         minSdk 26
         targetSdk 35
-        versionCode 44
-        versionName '1.6.12'
+        versionCode 45
+        versionName '1.6.13-test.1'
         testInstrumentationRunner 'de.wortmonster.jbdtrigger.CockpitSmokeTest'
     }
     def signingFile = System.getenv('APP_KEYSTORE_FILE')
@@ -32,3 +32,4 @@ dependencies {
     implementation 'androidx.core:core:1.15.0'
     implementation 'androidx.core:core-location-altitude:1.0.0'
 }
+
