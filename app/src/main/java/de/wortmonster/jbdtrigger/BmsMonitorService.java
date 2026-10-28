@@ -50,6 +50,9 @@ public class BmsMonitorService extends Service implements LocationListener {
     public static final String ACTION_PAUSE_TRIP = "de.wortmonster.jbdtrigger.PAUSE_TRIP";
     public static final String ACTION_REFRESH_TEMPERATURE = "de.wortmonster.jbdtrigger.REFRESH_TEMPERATURE";
     public static final String ACTION_SET_DISCHARGE = "de.wortmonster.jbdtrigger.SET_DISCHARGE";
+    public static final String ACTION_CANCEL_CONTROL = "de.wortmonster.jbdtrigger.CANCEL_CONTROL";
+    private BmsPlantLink plant;
+    private final PendingUnlock pendingUnlock=new PendingUnlock();
     private PowerManager.WakeLock wakeLock;
     private long wakeRenewed, lowLoadSince;
     private boolean chargeEnabled, dischargeEnabled, controlPending, controlAcknowledged, desiredDischarge, writeBusy;
@@ -105,6 +108,16 @@ public class BmsMonitorService extends Service implements LocationListener {
     private final Runnable clock = new Runnable() {
         @Override public void run() {
             long now = System.currentTimeMillis();
+            if(plant!=null){
+                plant.state(address,recorder==null,controlPending||pendingUnlock.pending());
+                long expired=pendingUnlock.expire(android.os.SystemClock.elapsedRealtime());
+                if(expired!=0){recordControlResult(expired,false,"Übernahme abgelaufen – Lastausgang wurde nicht eingeschaltet");controlMessage="Einschaltwunsch abgelaufen";plant.cancelTake();if(gatt!=null)closeGatt();}
+                if(pendingUnlock.pending()&&gatt!=null&&writeCharacteristic!=null&&lastPacket>0&&now-lastPacket<4000){
+                    long request=pendingUnlock.take(android.os.SystemClock.elapsedRealtime());if(request!=0)setDischarge(true,request);
+                }else if(pendingUnlock.pending()&&gatt==null&&plant.allowed()&&android.bluetooth.BluetoothAdapter.checkBluetoothAddress(address)){
+                    try{connect(android.bluetooth.BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address));}catch(SecurityException|IllegalStateException ignored){}
+                }
+            }
             if(wakeLock!=null && (!wakeLock.isHeld() || now-wakeRenewed>300000)){wakeLock.acquire(600000);wakeRenewed=now;}
             if (recorder != null && tripPausedAt==0 && lastClock > 0) {
                 long elapsed = Math.min(5000, Math.max(0, now - lastClock));
@@ -220,6 +233,10 @@ public class BmsMonitorService extends Service implements LocationListener {
         averageConsumption = number(prefs.getString("learned_wh_km", "0"), 0);
         try{temperatureHistory=new org.json.JSONArray(prefs.getString("temperature_history","[]"));}catch(Exception ignored){}
         running = true;liveService=this;BmsShareProvider.internal(true);
+        plant=new BmsPlantLink(this,()->{
+            if(!running||!plant.shouldYield()||recorder!=null||controlPending||pendingUnlock.pending()||lastPacket==0||System.currentTimeMillis()-lastPacket>4000||dischargeEnabled){plant.request();return;}
+            trace("BMS gesperrt · Freigabe an Watt’n’Pit-Zentrale");closeGatt();BmsShareProvider.internal(false);plant.closedForReturn();setState("Roller wird an die Zentrale zurückgegeben");
+        });plant.start();
         ConnectionDiagnostics.TRACE.start(android.os.SystemClock.elapsedRealtime());
         locationManager = getSystemService(LocationManager.class);
         PowerManager power=getSystemService(PowerManager.class);
@@ -230,6 +247,10 @@ public class BmsMonitorService extends Service implements LocationListener {
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
+        if(intent!=null&&ACTION_CANCEL_CONTROL.equals(intent.getAction())){
+            long request=pendingUnlock.cancel();if(request!=0){plant.cancelTake();recordControlResult(request,false,"Einschaltwunsch abgebrochen");}
+            if(controlPending)controlFinished("Schaltprüfung abgebrochen – tatsächlichen BMS-Zustand prüfen");sendStatus();return START_STICKY;
+        }
         autoSelection=prefs.getBoolean("auto_scooter",true);
         knownBms=ScooterProfiles.knownBms(prefs);
         if((!autoSelection&&!BluetoothAdapter.checkBluetoothAddress(prefs.getString("device_address",""))) || (autoSelection&&knownBms.isEmpty())){
@@ -471,6 +492,9 @@ public class BmsMonitorService extends Service implements LocationListener {
 
     private void connect(BluetoothDevice device) {
         if(!running)return;
+        if(plant!=null&&!plant.allowed()){
+            setState(plant.message());handler.postDelayed(()->{if(running&&gatt==null)connect(device);},750);return;
+        }
         if(!BmsShareProvider.mayConnect()){
             setState("Übernehme BMS-Verbindung von Watt’n’Pit");
             handler.postDelayed(()->{if(running&&gatt==null)connect(device);},500);return;
@@ -670,7 +694,14 @@ public class BmsMonitorService extends Service implements LocationListener {
     }
     private void requestBasicInfo(){write(BASIC_INFO);}
     private void setDischarge(boolean enabled,long requestId){
-        if(controlPending){recordControlResult(requestId,false,"Ein Schaltvorgang läuft bereits. Bitte die BMS-Bestätigung abwarten.");sendStatus();return;}
+        if(controlPending||pendingUnlock.pending()){recordControlResult(requestId,false,"Ein Schaltvorgang läuft bereits. Bitte die BMS-Bestätigung abwarten.");sendStatus();return;}
+        if(enabled){
+            BmsShareProvider.internal(true);plant.request();
+            if(gatt==null||writeCharacteristic==null||lastPacket==0||System.currentTimeMillis()-lastPacket>=4000){
+                if(!pendingUnlock.begin(requestId,android.os.SystemClock.elapsedRealtime())){recordControlResult(requestId,false,"Ungültiger Einschaltwunsch");return;}
+                controlMessage="Fordere BMS-Verbindung an · Einschaltwunsch gilt höchstens 20 Sekunden";trace(controlMessage);sendStatus();return;
+            }
+        }
         controlRequestId=requestId;
         trace(enabled?"Lastausgang: Freigeben angefordert":"Lastausgang: Sperren angefordert");
         long now=System.currentTimeMillis();
@@ -731,7 +762,7 @@ public class BmsMonitorService extends Service implements LocationListener {
                 else controlFinished("BMS hat den Schaltbefehl abgelehnt ("+(frame[2]&255)+")");
             }
             BmsPacket packet = BmsPacket.decode(frame);
-            if(packet!=null){BmsShareProvider.publish(address,frame);acceptPacket(packet);}
+            if(packet!=null){BmsShareProvider.publish(address,frame);if(plant!=null)plant.sample(frame);acceptPacket(packet);}
             acceptExtras(frame);
             cursor += size;
         }
@@ -1038,6 +1069,7 @@ public class BmsMonitorService extends Service implements LocationListener {
 
     private void closeGatt() {
         BmsShareProvider.clear();
+        if(plant!=null)plant.disconnected();
         if(recorder==null)stopLocationTracking();
         handler.removeCallbacks(pollRunnable);
         handler.removeCallbacks(readRssiRunnable);handler.removeCallbacks(optionalRead);
@@ -1127,7 +1159,10 @@ public class BmsMonitorService extends Service implements LocationListener {
     private void sendStatus() {
         Intent status = baseIntent(ACTION_STATUS)
                 .setPackage(getPackageName())
-                .putExtra("state", stateText);
+                .putExtra("state", stateText)
+                .putExtra("plant_message",plant==null?"":plant.message())
+                .putExtra("plant_waiting",plant!=null&&plant.awaiting())
+                .putExtra("unlock_waiting",pendingUnlock.pending());
         latestStatus = new Intent(status);
         sendBroadcast(status);
         NotificationManager manager = getSystemService(NotificationManager.class);
@@ -1208,6 +1243,8 @@ public class BmsMonitorService extends Service implements LocationListener {
         altitudeWorker.shutdownNow();
         updateAverages(true);
         running = false;liveService=null;
+        long cancelled=pendingUnlock.cancel();if(cancelled!=0)recordControlResult(cancelled,false,"Bereitschaft beendet · Einschaltwunsch verworfen");
+        if(plant!=null)plant.close();
         if(wakeLock!=null && wakeLock.isHeld())wakeLock.release();
         weather.close();
         handler.removeCallbacksAndMessages(null);

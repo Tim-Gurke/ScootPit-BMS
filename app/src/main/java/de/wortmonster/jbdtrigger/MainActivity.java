@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
     private boolean updatingDischarge;
     private long pendingDischargeRequestId;
     private boolean pendingDischargeEnabled;
-    private AlertDialog dischargeConfirmDialog, dischargeResultDialog;
+    private AlertDialog dischargeConfirmDialog, dischargeResultDialog, unlockWaitingDialog;
     private static final int GREEN=0xff21c879, RED=0xffff535d;
     private JSONArray boardTiles;
     private boolean editingBoard;
@@ -495,17 +495,24 @@ public class MainActivity extends Activity {
     }
     private void renderDischarge(Intent intent){
         renderDischargeResult(intent);
+        boolean waiting=intent.getBooleanExtra("unlock_waiting",false)&&pendingDischargeRequestId!=0;
+        if(waiting&&(unlockWaitingDialog==null||!unlockWaitingDialog.isShowing())&&!isFinishing()){
+            unlockWaitingDialog=new AlertDialog.Builder(this).setTitle("Roller-Verbindung wird übernommen")
+                .setMessage("ScootPit fordert das BMS an. Dein Einschaltwunsch verfällt nach spätestens 20 Sekunden.")
+                .setCancelable(false).setNegativeButton("Abbrechen",(d,w)->startService(new Intent(this,BmsMonitorService.class).setAction(BmsMonitorService.ACTION_CANCEL_CONTROL))).show();
+        }else if(!waiting&&unlockWaitingDialog!=null){unlockWaitingDialog.dismiss();unlockWaitingDialog=null;}
         if(dischargeSwitch==null)return;
         long at=intent.getLongExtra("bms_at",0);
         boolean fresh=BmsMonitorService.running && intent.getBooleanExtra("bms_connected",false) && at>0 && System.currentTimeMillis()-at<4000;
-        boolean pending=intent.getBooleanExtra("control_pending",false),on=intent.getBooleanExtra("discharge_enabled",false);
+        boolean pending=intent.getBooleanExtra("control_pending",false)||intent.getBooleanExtra("unlock_waiting",false),on=intent.getBooleanExtra("discharge_enabled",false);
         int tint=!fresh || pending?muted():on?GREEN:RED;
         updatingDischarge=true;dischargeSwitch.setChecked(fresh && on);updatingDischarge=false;
         dischargeSwitch.setTextColor(tint);dischargeSwitch.setThumbTintList(android.content.res.ColorStateList.valueOf(tint));
         dischargeSwitch.setTrackTintList(android.content.res.ColorStateList.valueOf(tint));
-        dischargeSwitch.setEnabled(fresh && !pending);
+        dischargeSwitch.setEnabled(BmsMonitorService.running && !pending);
         String reason=intent.getStringExtra("control_block_reason");
-        String note=pending?"Schaltvorgang läuft · BMS-Bestätigung wird geprüft":!fresh?"Bereitschaft starten / auf frische BMS-Daten warten":reason!=null&&!reason.isEmpty()?reason:on?"Lastausgang ein · zum Sperren tippen":"Lastausgang aus · zum Einschalten tippen";
+        String note=pending?"Schaltvorgang läuft · BMS-Bestätigung wird geprüft":!fresh?"Zum Einschalten tippen · BMS-Verbindung wird automatisch angefordert":reason!=null&&!reason.isEmpty()?reason:on?"Lastausgang ein · zum Sperren tippen":"Lastausgang aus · zum Einschalten tippen";
+        String link=intent.getStringExtra("plant_message");if(link!=null&&!link.isEmpty())note+="\n"+link;
         dischargeNote.setText(note);
     }
     private void renderDischargeResult(Intent intent){
@@ -997,7 +1004,7 @@ public class MainActivity extends Activity {
         }
     }
     @Override public void onBackPressed(){if(editingBoard){new AlertDialog.Builder(this).setMessage("Ungespeicherten Layoutentwurf verwerfen?").setPositiveButton("Verwerfen",(d,w)->{boardTiles=savedBoard;editingBoard=false;orientationDrafts.clear();orientationSaved.clear();rebuild();returnAfterEditor();}).setNegativeButton("Weiter bearbeiten",null).show();}else super.onBackPressed();}
-    @Override protected void onDestroy() {if(dischargeConfirmDialog!=null)dischargeConfirmDialog.dismiss();if(dischargeResultDialog!=null)dischargeResultDialog.dismiss();super.onDestroy();handler.removeCallbacksAndMessages(null);if(picker!=null)picker.close();}
+    @Override protected void onDestroy() {if(dischargeConfirmDialog!=null)dischargeConfirmDialog.dismiss();if(dischargeResultDialog!=null)dischargeResultDialog.dismiss();if(unlockWaitingDialog!=null)unlockWaitingDialog.dismiss();super.onDestroy();handler.removeCallbacksAndMessages(null);if(picker!=null)picker.close();}
 }
 
 
