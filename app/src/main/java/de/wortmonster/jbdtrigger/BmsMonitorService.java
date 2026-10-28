@@ -762,7 +762,7 @@ public class BmsMonitorService extends Service implements LocationListener {
                 else controlFinished("BMS hat den Schaltbefehl abgelehnt ("+(frame[2]&255)+")");
             }
             BmsPacket packet = BmsPacket.decode(frame);
-            if(packet!=null){BmsShareProvider.publish(address,frame);if(plant!=null)plant.sample(frame);acceptPacket(packet);}
+            if(packet!=null){BmsShareProvider.publish(address,frame);if(plant!=null)plant.sample(address,frame);acceptPacket(packet);}
             acceptExtras(frame);
             cursor += size;
         }

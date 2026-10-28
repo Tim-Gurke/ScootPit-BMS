@@ -711,6 +711,9 @@ public class CockpitSmokeTest extends Instrumentation {
                     .putExtra("display_current_a",0.0).putExtra("display_current_resolution_a",0.0)});
             TextView note=(TextView)member(activity,"dischargeNote");
             if(!note.getText().toString().equals("Lastausgang ein · zum Sperren tippen"))throw new AssertionError("Old missing-reference state still blocks the output UI");
+            invoke(activity,"renderStatus",new Class[]{Intent.class},new Object[]{new Intent().putExtra("bms_connected",false).putExtra("plant_message","Zentrale liest das BMS")});
+            android.widget.Switch acquire=(android.widget.Switch)member(activity,"dischargeSwitch");
+            if(!acquire.isEnabled()||acquire.isChecked()||!note.getText().toString().contains("automatisch angefordert"))throw new AssertionError("An explicit unlock must remain available before the riding phone owns the BMS");
         });
     }
     private void connectionDiagnosticsCheck(Activity activity)throws Throwable {
@@ -771,7 +774,7 @@ public class CockpitSmokeTest extends Instrumentation {
                 if(found.points.size()!=2||found.moving!=2000||Math.abs(found.averagePower-96)>.01)throw new AssertionError("Journal statistics");
                 summary.gpxFile.delete();summary.csvFile.delete();summary.metadataFile.delete();
                 String version=activity.getPackageManager().getPackageInfo(activity.getPackageName(),0).versionName;
-                if(!"1.6.13".equals(version))throw new AssertionError("Official version");
+                if(!"1.6.14".equals(version))throw new AssertionError("Official version");
                 int portraitMap=JournalUi.routeMapHeight(2400,3),landscapeMap=JournalUi.routeMapHeight(1080,3);
                 if(portraitMap<=0||landscapeMap<=0||portraitMap>1080||landscapeMap>1080)throw new AssertionError("Route map must have a visible bounded height in both orientations");
             }catch(Exception e){throw new RuntimeException(e);}

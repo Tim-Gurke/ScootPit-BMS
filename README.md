@@ -10,7 +10,7 @@ ScootPit BMS wurde mit dem **Joyor T6E Pro und dem JBD SP14S004** entwickelt. Di
 
 **ScootPit – für alle, die ihren Roller überwachen wollen, ohne selbst überwacht zu werden.**
 
-**Version 1.6.13 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
+**Version 1.6.14 · [APK herunterladen](https://github.com/Tim-Gurke/ScootPit-BMS/releases/latest)**
 
 **[Bedienungsanleitung mit Bildern: Was finde ich wo und wie funktioniert es?](docs/anleitung.md)**
 
@@ -90,6 +90,10 @@ Am Lenker wird ScootPit zum **persönlichen Energie-Cockpit**: Der Verbrauch ein
 <p><img src="docs/assets/screenshots/fahrtenbuch-ordnerimport.jpg" width="260" alt="Fahrtenbuch mit Zeitraumwahl sowie Import des kompletten Ordners oder einzelner Fahrten"></p>
 <em>Im Fahrtenbuch kannst du einen Zeitraum wählen und den gesamten Scooter-Fahrtenordner oder einzelne CSV-/GPX-Fahrten importieren.</em>
 
+
+## Neu in 1.6.14
+
+**Automatische Übernahme von einer Watt’n’Pit-Zentrale:** Der vorhandene Einschaltwunsch fordert das BMS an, während die Solaraufzeichnung der Zentrale weiterläuft. Unterwegs bleibt ScootPit unabhängig; Rückgabe erst bei beendeter Fahrt, stabiler Verbindung und bestätigter Sperre. Wartende Einschaltwünsche können abgebrochen werden und verfallen nach 20 Sekunden. Dafür sind Watt’n’Pit 1.6.6 auf beiden Handys und die bestehende Kopplung des Fahrhandys als Anzeige erforderlich. [Einrichtung, Ablauf und Grenzen](RELEASE-NOTES-1.6.14.md).
 
 ## Neu in 1.6.13
 

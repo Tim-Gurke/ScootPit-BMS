@@ -32,3 +32,13 @@ Overkill und weitere direkt mit dem BMS verbundene Apps für diesen Test beenden
 | ScootPit-Bereitschaft beenden, Watt’n’Pit weiter verwenden | Watt’n’Pit kann die direkte BMS-Verbindung wieder übernehmen. |
 
 Bei einer Rückmeldung Appversionen, Handy/Android, Startreihenfolge und beobachtete Wartezeit nennen. Ein erfolgreicher Build ersetzt diese Prüfung nicht.
+
+## Zentrale und Fahrhandy ab ScootPit 1.6.14 / Watt’n’Pit 1.6.6
+
+Die bisherige gleichzeitige Installation auf demselben Telefon ist nicht mehr die einzige Möglichkeit: Auf der Zentrale genügt Watt’n’Pit. Auf dem Fahrhandy verbinden sich ScootPit und das als Anzeige gekoppelte Watt’n’Pit über eine geprüfte lokale Schnittstelle. Der Anlagenverbund übernimmt die verschlüsselte Abstimmung mit der Zentrale; seine Schlüssel werden nicht an ScootPit herausgegeben.
+
+Der vorhandene Wunsch, den Lastausgang einzuschalten, fordert automatisch die BMS-Verbindung an. Die Zentrale schließt nur ihr Roller-GATT und bestätigt die Freigabe. Die Solaraufzeichnung läuft weiter. Erst mit frischen eigenen BMS-Werten und den bestehenden Schaltprüfungen wird der angeforderte Befehl gesendet. Der wartende Wunsch ist einmalig, abbrechbar, auf 20 Sekunden begrenzt und niemals persistent.
+
+Bei Pausen und gesperrtem Lastausgang unterwegs bleibt das Fahrhandy zuständig. Reguläre Rückgabe: Zentrale stabil erreichbar, Fahrt beendet, frisches BMS meldet gesperrten Lastausgang, kein Schaltwunsch offen. Bereits gesperrt genügt. Das Fahrhandy trennt, die Zentrale verbindet, frische BMS-Werte bestätigen den Erfolg. Ein Schalten des Lastausgangs gehört nicht zum Übergabeprotokoll. Bei App-/Netzausfall laufen Reservierungen begrenzt ab; das verändert keinen MOS-Zustand.
+
+Schnittstelle und Netzwerktransport beschränken sich auf BMS-Grundwerte und Zuständigkeit. Fahrtrouten und GPS-Positionen bleiben in ScootPit. Das Verhalten von Android-Bluetooth und der tatsächliche Übergang zwischen physischen Handys sind am BMS zu testen.

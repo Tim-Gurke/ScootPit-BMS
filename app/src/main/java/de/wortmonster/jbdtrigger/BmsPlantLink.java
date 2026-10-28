@@ -21,8 +21,10 @@ final class BmsPlantLink implements AutoCloseable {
     private final long epoch;
     private volatile String mac="",message="BMS-Zuständigkeit wird geprüft";
     private volatile boolean ready,available,granted,wanted,released,yielding,stopped,tripEnded=true,busy;
-    private volatile long generation,lastHost,homeSince,sequence,sampleElapsed;
-    private volatile byte[] frame;
+    private volatile long generation,lastHost,homeSince;
+    private long nextSequence;
+    private static final class Sample {final String mac;final byte[] frame;final long elapsed,sequence;Sample(String m,byte[] f,long at,long seq){mac=m;frame=f.clone();elapsed=at;sequence=seq;}}
+    private volatile Sample sample;
     BmsPlantLink(Context c,Runnable callback){context=c;yield=callback;prefs=c.getSharedPreferences("settings",Context.MODE_PRIVATE);
         token=UUID.randomUUID().toString();epoch=prefs.getLong("plant_reader_epoch",0)+1;prefs.edit().putLong("plant_reader_epoch",epoch).commit();
         wanted=prefs.getBoolean("plant_reader_wanted",false);
@@ -30,11 +32,11 @@ final class BmsPlantLink implements AutoCloseable {
     private String readerToken(){return token;}
     void start(){worker.scheduleWithFixedDelay(this::exchange,0,2,TimeUnit.SECONDS);}
     void state(String address,boolean ended,boolean controlBusy){
-        if(!address.equals(mac)){mac=address;frame=null;sampleElapsed=0;sequence=0;generation++;ready=false;available=granted=released=yielding=false;homeSince=0;}
+        if(!address.equals(mac)){mac=address;sample=null;nextSequence=0;generation++;ready=false;available=granted=released=yielding=false;homeSince=0;}
         tripEnded=ended;busy=controlBusy;
     }
-    void sample(byte[] bytes){frame=bytes.clone();sampleElapsed=SystemClock.elapsedRealtime();sequence++;if(!available&&!wanted&&!released){wanted=true;prefs.edit().putBoolean("plant_reader_wanted",true).apply();}}
-    void disconnected(){frame=null;sampleElapsed=0;}
+    void sample(String address,byte[] bytes){sample=new Sample(address,bytes,SystemClock.elapsedRealtime(),++nextSequence);if(!available&&!wanted&&!released){wanted=true;prefs.edit().putBoolean("plant_reader_wanted",true).apply();}}
+    void disconnected(){sample=null;}
     void request(){wanted=true;released=yielding=false;granted=false;generation++;prefs.edit().putBoolean("plant_reader_wanted",true).apply();worker.execute(this::exchange);}
     void cancelTake(){wanted=false;granted=false;generation++;prefs.edit().putBoolean("plant_reader_wanted",false).apply();worker.execute(()->callCancel());}
     boolean allowed(){if(!ready)return false;if(released||yielding)return !available&&SystemClock.elapsedRealtime()-lastHost>15000;return !available||wanted&&granted;}
@@ -51,19 +53,19 @@ final class BmsPlantLink implements AutoCloseable {
         }catch(PackageManager.NameNotFoundException e){return false;}catch(java.security.NoSuchAlgorithmException e){throw new IllegalStateException(e);}
         throw new SecurityException("Anlagen-App hat eine andere Signatur");
     }
-    private Bundle call(String action,JSONObject data){Bundle extras=new Bundle();extras.putString("payload",data.toString());return context.getContentResolver().call(URI,action,mac,extras);}
-    private void callCancel(){try{if(trusted()&&!mac.isEmpty())call("cancel",new JSONObject().put("token",readerToken()).put("epoch",epoch));}catch(Exception ignored){}}
+    private Bundle call(String action,String address,JSONObject data){Bundle extras=new Bundle();extras.putString("payload",data.toString());return context.getContentResolver().call(URI,action,address,extras);}
+    private void callCancel(){try{if(trusted()&&!mac.isEmpty())call("cancel",mac,new JSONObject().put("token",readerToken()).put("epoch",epoch));}catch(Exception ignored){}}
     private synchronized void exchange(){
-        if(stopped||mac.isEmpty())return;long version=generation;
+        if(stopped||mac.isEmpty())return;long version=generation;String address=mac;
         try{
             if(!trusted()){ready=true;available=false;granted=true;message="Direkte BMS-Verbindung · keine gekoppelte Zentrale";return;}
-            long now=SystemClock.elapsedRealtime(),age=sampleElapsed==0?Long.MAX_VALUE:now-sampleElapsed;
-            byte[] packet=frame;BmsPacket decoded=packet==null?null:BmsPacket.decode(packet);
+            long now=SystemClock.elapsedRealtime();Sample captured=sample;long age=captured==null?Long.MAX_VALUE:now-captured.elapsed;
+            byte[] packet=captured==null||!captured.mac.equalsIgnoreCase(address)?null:captured.frame;BmsPacket decoded=packet==null?null:BmsPacket.decode(packet);
             boolean offer=wanted&&!released&&decoded!=null&&age>=0&&age<=3000&&!decoded.dischargeEnabled&&tripEnded&&!busy&&homeSince>0&&now-homeSince>=8000;
             String action=released?"released":offer?"offer":wanted?"take":"inspect";
-            JSONObject input=new JSONObject().put("token",readerToken()).put("epoch",epoch).put("sequence",sequence).put("age",age).put("tripEnded",tripEnded);
+            JSONObject input=new JSONObject().put("token",readerToken()).put("epoch",epoch).put("sequence",captured==null?-1:captured.sequence).put("age",age).put("tripEnded",tripEnded);
             if(packet!=null&&age>=0&&age<=8000)input.put("frame",Base64.getEncoder().encodeToString(packet));
-            Bundle response=call(action,input);if(version!=generation||stopped)return;
+            Bundle response=call(action,address,input);if(version!=generation||stopped)return;
             ready=true;
             if(response==null||response.getInt("protocol")!=2||!response.getBoolean("available")){available=false;granted=true;homeSince=0;message="Zentrale nicht erreichbar · S20 verbindet sich direkt";return;}
             JSONObject result=new JSONObject(response.getString("response","{}"));
