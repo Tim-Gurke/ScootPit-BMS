@@ -1,4 +1,10 @@
-# Entwicklung und Veröffentlichung
+# Gemeinsame Entwicklung und Veröffentlichung
+
+WohnPit führt die bisherige Zentrale und das Watt’n’Pit-Cockpit in einer App zusammen. Sie bietet Zentrale, Anzeigehandy und eigenständigen Betrieb ohne Zentrale. Gemeinsame Einstellungen und Versorgungseinträge müssen von den Anzeigehandys aus bedienbar sein. Im Zentralbetrieb sammelt und archiviert die Zentrale Wetter- und Messdaten; die Anzeigehandys übernehmen aufwendige Berechnungen und Verbrauchslernen. Im eigenständigen Betrieb übernimmt ein Handy alle Aufgaben.
+
+Bei jeder Veröffentlichung APK mit der vorhandenen Updatesignatur bereitstellen, passende Prüfungen ausführen, aktuelle Screenshots sichtbar im README verlinken, ausführliche Anleitungen und eine vollständige dokumentierte Versionshistorie pflegen. Die kompatiblen App-Versionen und die Update-Reihenfolge nennen. Nach erfolgreicher Veröffentlichung höchstens die drei neuesten veröffentlichten Releases je Repository behalten; Quellhistorie und Änderungsdokumentation erhalten.
+
+Vorhandene Messdaten, Kopplungen und die eigenen Kachelanordnungen je Gerät und Ausrichtung erhalten. Neue Kacheln sind frei wählbar und verwenden das bestehende Raster. Reichweiten für Gas und Wasser in Tagen und Stunden anzeigen, etwa „1 Tag 17 Stunden“. Fehlende Werte bleiben unbekannt; manuelle Angaben und daraus berechnete Vorräte als Schätzung kennzeichnen. Tatsächliche Hardwaretests nicht aus Softwareprüfungen ableiten. Private Signierschlüssel, Geräteschlüssel und persönliche Beispielmessungen gehören nicht in öffentliche Repositories.
 
 ## Gemeinsamer Standard für alle Pit-Apps
 
@@ -11,8 +17,16 @@ Gilt für Watt’n’Pit, WohnPit, ScootPit BMS und AirPit sowie zukünftige App
 - Jede Veröffentlichung enthält die installierbare APK mit bestehender Updatesignatur, aktuelle sichtbare Screenshots im README, ausführliche Installations-, Einrichtungs-, Bedien- und Update-Anleitungen sowie eine vollständige Versionshistorie. Passende Prüfungen ausführen und deren Grenzen nennen. Keine realen Hardwaretests behaupten, wenn nur Softwareprüfungen erfolgt sind.
 - Nach erfolgreicher Veröffentlichung nur die drei neuesten Releases je Repository veröffentlicht lassen. Ältere Release-Veröffentlichungen entfernen, Quellhistorie, Tags und Änderungsdokumentation erhalten. Private Schlüssel, Zugangsdaten und persönliche Mess-/Standortdaten nicht veröffentlichen.
 
-## Planung: WohnPit und Watt’n’Pit
+## Beschlossene Zusammenführung unter WohnPit
 
-Eine mögliche spätere Zusammenführung prüfen; sie ist noch nicht als Umsetzung beschlossen. Bis dahin bleibt WohnPit die schlanke Datenbasis mit Aufzeichnung, Wetterabruf und Rohdatenarchiv. Watt’n’Pit übernimmt Bedienung, Berechnung, Lernen und Anzeige. Gemeinsame Anlagenparameter müssen von den Anzeigehandys aus steuerbar bleiben.
+Am 05.11.2026 ausdrücklich beauftragt: WohnPit und Watt’n’Pit unter WohnPit weiterführen. Eine gemeinsame App bietet Zentrale (schlanke native Ansicht), Anzeigehandy (Daten einer Zentrale) und eigenständigen Betrieb (Victron direkt; Aufzeichnung, Wetter, Berechnung und Anzeige auf demselben Handy). Keine Zentrale voraussetzen. Die bestehende Watt’n’Pit-Updatekennung und Signatur sowie ScootPit-Schnittstelle bleiben für den sicheren Übergang technisch erhalten. Der öffentliche Name und das führende Repository sind WohnPit.
 
-Vor einer Zusammenführung einen konkreten Vorschlag dokumentieren: gemeinsame Codebasis oder gemeinsame APK mit Rollen „Zentrale“, „Anzeige“ und gegebenenfalls „Kombiniert“; Betrieb auf dem schwächeren G5 mit gesperrtem Display; separate Bedienhandys; Daten- und Einstellungsübernahme; Bluetooth-/BMS-Übergabe und bestehende Verbindungen; Updatesignaturen und Android-Paketkennungen; Upgrade-/Rückweg und Versionskompatibilität. Erst nach ausdrücklicher Entscheidung die Apps zusammenführen. Bestehende Installationen müssen bis zum geprüften Übergang weiter funktionieren.
+Vor der Umstellung eine Übernahmeversion der bisherigen WohnPit-Zentrale mit vollständiger verschlüsselter Datensicherung bereitstellen. Aufzeichnungen, Journal, Wetter und Lernstände haben Vorrang; neu verknüpfen ist als Rückweg akzeptiert. Daten erst nach Prüfung und ausdrücklichem Import ersetzen, bisherige Installation und Rückweg erhalten. Alte Quellhistorien und dokumentierte Releases nicht löschen.
+
+WohnPit als lokales Android-Cockpit für Energie, Gas und Wasser im Wohnwagen, Ferienhaus, Gartenhaus und an passenden Balkonanlagen vermitteln. Tatsächliche Victron-Kompatibilität und lokale WLAN-Grenzen klar nennen. Öffentliche Projektseite mit verständlichen Suchtexten, sichtbaren Screenshots, Downloads, Anleitungen und vollständiger Versionshistorie pflegen. Google-Indexierung und Platzierung nicht garantieren.
+
+## Private Übernahmedaten
+
+Die vollständige Umzugsdatei enthält private Verknüpfungen, Geräteschlüssel und Kennwörter. Sie darf auch verschlüsselt niemals öffentlich auf GitHub, in Releases, Prüfartefakten oder auf der Projektseite erscheinen. Nur lokal auswählen/speichern, mit eigenem Kennwort authentifiziert verschlüsseln; das Kennwort nicht speichern oder protokollieren. Signierschlüssel und echte private Einstellungs-/Messdaten ebenfalls ausschließen. Vor jedem Hochladen die vorgemerkte Dateiliste auf private Daten prüfen; vorhandene automatisierte Prüfungen wie tools/check-public-files.py ausführen und nur neutrale Testdaten veröffentlichen.
+
+Wenn ein altes Übernahme-Release später aus den letzten drei Releases fällt, die notwendige signierte Übernahme-APK als zusätzliches Hilfsprogramm in den aktuellen Releases weiter anbieten; private Umzugsdateien niemals anhängen.
