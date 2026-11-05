@@ -1,5 +1,7 @@
 # ScootPit BMS – Joyor T6E Pro App
 
+[Projektseite der Pit-Apps](https://wohnpit.extraordinarygrove.chatgpt.site/scootpit/) · [WohnPit – Energie, Gas und Wasser](https://github.com/Tim-Gurke/WohnPit)
+
 <img src="docs/assets/app-logo.svg" width="96" alt="ScootPit BMS App-Logo">
 
 **Android-Cockpit und automatisches Fahrtenbuch für den Joyor T6E Pro mit kompatiblem JBD-BMS.**
