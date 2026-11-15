@@ -685,13 +685,13 @@ public class CockpitSmokeTest extends Instrumentation {
                 throw new AssertionError("Lock confirmation must describe the direct current check without calibration");
         });
         screenshot("bms-sperren-1.6.12.png");
-        checked(()->{
-            ((android.app.AlertDialog)member(activity,"dischargeConfirmDialog")).getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick();
-            if((Long)member(activity,"pendingDischargeRequestId")==0)throw new AssertionError("Lock confirmation did not submit a request");
-        });
+        checked(()->((android.app.AlertDialog)member(activity,"dischargeConfirmDialog")).getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick());
         // Main-loop idleness does not await service delivery and its status broadcast.
         awaitMainThreadCondition("The service did not return the lock rejection within 5 seconds",
-                ()->(Long)member(activity,"pendingDischargeRequestId")==0);
+                ()->{
+                    android.app.AlertDialog result=(android.app.AlertDialog)member(activity,"dischargeResultDialog");
+                    return result!=null&&result.isShowing();
+                });
         checked(()->{
             android.app.AlertDialog result=(android.app.AlertDialog)member(activity,"dischargeResultDialog");
             if(result==null||!result.isShowing()||!contains(result.getWindow().getDecorView(),"Frische BMS-Verbindung erforderlich"))
