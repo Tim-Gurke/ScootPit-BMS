@@ -479,6 +479,16 @@ public class CockpitSmokeTest extends Instrumentation {
         runOnMainSync(()->{try{task.run();}catch(Throwable t){error.set(t);}});
         if(error.get()!=null)throw error.get();waitForIdleSync();
     }
+    private void awaitMainThreadCondition(String failure,java.util.function.BooleanSupplier condition)throws Throwable {
+        long deadline=android.os.SystemClock.uptimeMillis()+5000;
+        AtomicReference<Boolean> ready=new AtomicReference<>(false);
+        do {
+            checked(()->ready.set(condition.getAsBoolean()));
+            if(ready.get())return;
+            Thread.sleep(50);
+        }while(android.os.SystemClock.uptimeMillis()<deadline);
+        throw new AssertionError(failure);
+    }
     private void statusBarCheck(Activity activity,SharedPreferences prefs)throws Throwable {
         final int expected=0xff000000|android.graphics.Color.parseColor(prefs.getString("app_background","#0B1015"));
         final boolean darkIcons=testContrast(android.graphics.Color.BLACK,expected)>testContrast(android.graphics.Color.WHITE,expected);
@@ -675,8 +685,13 @@ public class CockpitSmokeTest extends Instrumentation {
                 throw new AssertionError("Lock confirmation must describe the direct current check without calibration");
         });
         screenshot("bms-sperren-1.6.12.png");
-        checked(()->((android.app.AlertDialog)member(activity,"dischargeConfirmDialog")).getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick());
-        waitForIdleSync();
+        checked(()->{
+            ((android.app.AlertDialog)member(activity,"dischargeConfirmDialog")).getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick();
+            if((Long)member(activity,"pendingDischargeRequestId")==0)throw new AssertionError("Lock confirmation did not submit a request");
+        });
+        // Main-loop idleness does not await service delivery and its status broadcast.
+        awaitMainThreadCondition("The service did not return the lock rejection within 5 seconds",
+                ()->(Long)member(activity,"pendingDischargeRequestId")==0);
         checked(()->{
             android.app.AlertDialog result=(android.app.AlertDialog)member(activity,"dischargeResultDialog");
             if(result==null||!result.isShowing()||!contains(result.getWindow().getDecorView(),"Frische BMS-Verbindung erforderlich"))
