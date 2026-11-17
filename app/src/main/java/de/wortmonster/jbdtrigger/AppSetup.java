@@ -99,13 +99,20 @@ final class AppSetup {
         content.setOrientation(LinearLayout.VERTICAL);
         int pad = Math.round(16 * activity.getResources().getDisplayMetrics().density);
         content.setPadding(pad, pad, pad, pad);
-        ScrollView scroll = new ScrollView(activity);
+        ScrollView scroll = new ScrollView(activity) {
+            @Override protected void onMeasure(int width, int height) {
+                int maximum = Math.round(getResources().getDisplayMetrics().heightPixels * .68f);
+                int offered = android.view.View.MeasureSpec.getMode(height) == android.view.View.MeasureSpec.UNSPECIFIED
+                        ? maximum : Math.min(maximum, android.view.View.MeasureSpec.getSize(height));
+                super.onMeasure(width, android.view.View.MeasureSpec.makeMeasureSpec(offered, android.view.View.MeasureSpec.AT_MOST));
+            }
+        };
         scroll.addView(content);
         dialog = new AlertDialog.Builder(activity).setTitle("ScootPit einrichten")
                 .setView(scroll).setPositiveButton("Zum Cockpit", null).create();
         dialog.setOnDismissListener(d -> handler.removeCallbacks(poll));
         dialog.show();
-        dialog.getWindow().setLayout(-1, (int)(activity.getResources().getDisplayMetrics().heightPixels * .86f));
+        dialog.getWindow().setLayout(-1, android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
         refresh();
         resume();
     }
