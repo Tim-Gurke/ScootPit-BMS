@@ -25,6 +25,7 @@ final class GuideScreenshots {
             runner.getTargetContext().stopService(new Intent(runner.getTargetContext(),BmsMonitorService.class));
             SharedPreferences prefs=runner.getTargetContext().getSharedPreferences("settings",0);
             prefs.edit().clear().commit();
+            runner.getTargetContext().getSharedPreferences(AppSetup.PREFS,0).edit().putBoolean("introduced",true).commit();
             Activity activity=runner.startActivitySync(new Intent(runner.getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK));
             runner.waitForIdleSync();
             runner.runOnMainSync(()->{

@@ -221,7 +221,7 @@ Der Appkopf mit Profil, Fahrtenbuch, Zahnrad mit Blitz und grünem Bereitschafts
 
 Ein Handy ab **Android 8** und ein **kompatibles, auslesbares JBD/Jiabaida-Bluetooth-BMS** im Roller. Für den **Joyor T6E Pro mit JBD SP14S004** entwickelt. Andere BMS müssen auf Kompatibilität geprüft werden; Bluetooth allein genügt nicht. Ein Aufzeichnungsmodus ohne kompatibles BMS ist nicht enthalten. [Details zur Joyor-T6E-Pro-Kompatibilität](docs/joyor-t6e-app.md).
 
-Bluetooth, präziser Standort und die nötigen Berechtigungen müssen aktiv sein. Starte die Bereitschaft bei geöffneter App. Für zuverlässigen Hintergrundbetrieb ScootPit von Akkuoptimierung und App-Standby ausnehmen. Prüfe die Kombination aus Handy, BMS und Samsung-Energiesparmodus auf einer kurzen Fahrt. [Hintergrundbetrieb einrichten](docs/hintergrund-routinen.md).
+Beim ersten Start erklärt die **Einrichtungsübersicht** die Bluetooth- und Standortfreigaben und führt zur BMS-Auswahl und Bereitschaft. Offene Punkte lassen sich direkt freigeben; **Einstellungen → Einrichtung und Berechtigungen** öffnet die Übersicht erneut. Benachrichtigungen und die Akku-Ausnahme werden für den Hintergrundbetrieb empfohlen. [Einrichtung mit allen Schritten](docs/einrichtung.md#geführte-freigaben-beim-ersten-start). Prüfe die Kombination aus Handy, BMS und Samsung-Energiesparmodus auf einer kurzen Fahrt. [Hintergrundbetrieb einrichten](docs/hintergrund-routinen.md).
 
 ## Loslegen
 
