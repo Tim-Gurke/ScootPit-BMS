@@ -45,6 +45,8 @@ final class TripRecorder {
     private final File csvFile;
     private BufferedWriter gpx;
     private BufferedWriter csv;
+    private long recordedPoints;
+    private String writeError = "";
 
     TripRecorder(Context context, long startedAt) throws IOException {
         this.startedAt = startedAt;
@@ -71,9 +73,9 @@ final class TripRecorder {
         csv.write("Zeit;Breite;Laenge;Genauigkeit_m;Geschwindigkeit_kmh;Hoehe_m;BMS_Prozent;Spannung_V;Strom_A;Entnahme_W;Energie_Wh;Maximale_Fahrtleistung_W;Aussentemperatur_C;Temp1_C;Temp2_C;GPS_Ellipsoidhoehe_m;Hoehenbezug\n");
     }
 
-    synchronized void add(Location location, int soc, double voltage, double current,
+    synchronized boolean add(Location location, int soc, double voltage, double current,
                           double watts, double energyWh, double maxPowerW, double outside, double[] sensors) {
-        if (gpx == null || csv == null) return;
+        if (gpx == null || csv == null) return false;
         try {
             String timestamp = isoUtc(location.getTime());
             double speed = location.hasSpeed() ? location.getSpeed() * 3.6 : 0;
@@ -90,8 +92,13 @@ final class TripRecorder {
                     speed, temperature(altitude), soc, voltage, current, watts, energyWh, maxPowerW,temperature(outside),temperature(sensors.length>0?sensors[0]:Double.NaN),temperature(sensors.length>1?sensors[1]:Double.NaN),temperature(ellipsoidAltitude),AltitudeReference.MSL));
             gpx.flush();
             csv.flush();
-        } catch (IOException ignored) {}
+            recordedPoints++;
+            writeError = "";
+            return true;
+        } catch (IOException error) { writeError = "Fahrtpunkt konnte nicht gespeichert werden. Speicherplatz und Fahrtenordner prüfen."; return false; }
     }
+    synchronized long recordedPoints() { return recordedPoints; }
+    synchronized String writeError() { return writeError; }
 
     synchronized Summary finish(long endedAt, double distanceMeters, double maxSpeedKmh,
                                 double ascentMeters, double energyWh, double maxPowerW, double outside,double temp1,double temp2,long movingMs,long standingMs) {

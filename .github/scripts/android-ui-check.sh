@@ -2,6 +2,17 @@
 set -euxo pipefail
 api_level="$1"
 gradle --no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx1536m installDebug installDebugAndroidTest
+if [ "$api_level" -ge 31 ]; then
+  for permission in ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION BLUETOOTH_SCAN BLUETOOTH_CONNECT; do
+    adb shell pm revoke de.wortmonster.jbdtrigger "android.permission.$permission"
+    adb shell pm clear-permission-flags de.wortmonster.jbdtrigger "android.permission.$permission" user-set user-fixed
+  done
+  if [ "$api_level" -ge 33 ]; then
+    adb shell pm revoke de.wortmonster.jbdtrigger android.permission.POST_NOTIFICATIONS
+  fi
+  adb shell am instrument -w -e mode setup de.wortmonster.jbdtrigger.test/de.wortmonster.jbdtrigger.CockpitSmokeTest | tee setup-result.txt
+  grep 'Setup without permissions: OK' setup-result.txt
+fi
 adb shell pm grant de.wortmonster.jbdtrigger android.permission.ACCESS_COARSE_LOCATION
 adb shell pm grant de.wortmonster.jbdtrigger android.permission.ACCESS_FINE_LOCATION
 if [ "$api_level" -ge 31 ]; then
@@ -24,6 +35,16 @@ if [ "$api_level" -eq 26 ]; then
   adb shell am instrument -w -e mode altitude de.wortmonster.jbdtrigger.test/de.wortmonster.jbdtrigger.CockpitSmokeTest | tee altitude-result.txt
   grep 'Offline altitude conversion.*OK' altitude-result.txt
   exit 0
+fi
+adb shell svc bluetooth enable
+adb shell settings put secure location_mode 3
+if [ "$api_level" -ge 33 ]; then
+  adb shell pm revoke de.wortmonster.jbdtrigger android.permission.POST_NOTIFICATIONS
+fi
+adb shell am instrument -w -e mode setupGranted de.wortmonster.jbdtrigger.test/de.wortmonster.jbdtrigger.CockpitSmokeTest | tee setup-granted-result.txt
+grep 'Setup with granted Bluetooth and location: OK' setup-granted-result.txt
+if [ "$api_level" -ge 33 ]; then
+  adb shell pm grant de.wortmonster.jbdtrigger android.permission.POST_NOTIFICATIONS
 fi
 adb shell am force-stop com.android.launcher3
 adb shell am instrument -w de.wortmonster.jbdtrigger.test/de.wortmonster.jbdtrigger.CockpitSmokeTest | tee ui-result.txt

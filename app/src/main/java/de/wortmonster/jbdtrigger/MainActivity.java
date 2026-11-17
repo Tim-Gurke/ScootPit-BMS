@@ -40,7 +40,9 @@ import java.text.DateFormat;
 import java.util.*;
 
 public class MainActivity extends Activity {
-    private static final int REQ_PERMS = 42;
+    private AppSetup appSetup;
+    private boolean restoreSetup;
+    private Button setupNotice;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private BmsPicker picker;
     private SharedPreferences prefs;
@@ -118,7 +120,9 @@ public class MainActivity extends Activity {
             }catch(Exception ignored){}
         }
         StorageFolders.install(this);
-        requestNeededPermissions(); rebuild();
+        appSetup = new AppSetup(this, prefs, this::openBmsPicker, this::startMonitoring, this::connectionDiagnostics);
+        restoreSetup = state != null && state.getBoolean("setup_open", false);
+        rebuild();
         if(state!=null&&state.getBoolean("settings_open",false)&&!editingBoard)showSettings();
     }
     private void installDefaultCockpit(){
@@ -206,6 +210,13 @@ public class MainActivity extends Activity {
             stateView=label(BmsMonitorService.running?"Bereitschaft aktiv":"Bereitschaft aus",15,foreground());stateRow.addView(stateView);root.addView(stateRow);
         }
         updateStateDot();
+        setupNotice = null;
+        if (!editingBoard) {
+            setupNotice = button("Einrichtung prüfen · Bluetooth / Standort");
+            setupNotice.setOnClickListener(v -> appSetup.show());
+            root.addView(setupNotice);
+            updateSetupNotice();
+        }
         if(!hasSelectedBms()&&!editingBoard){
             root.addView(label("Bitte zuerst das BMS deines Rollers auswählen.",14,muted()));
             Button select=button("BMS auswählen");select.setOnClickListener(v->openBmsPicker());root.addView(select);
@@ -419,6 +430,7 @@ public class MainActivity extends Activity {
         if(!activeProfile.equals(displayedProfile)&&!editingBoard){displayedProfile=activeProfile;boardTiles=loadBoard();lastStatus=new Intent(intent);rebuild();return;}
         String statusProfile=intent.getStringExtra("scooter_id");if(statusProfile!=null&&!statusProfile.equals(activeProfile))return;
         lastStatus=new Intent(intent);
+        if (appSetup != null) { appSetup.onStatus(intent); updateSetupNotice(); }
         boolean trip=intent.getBooleanExtra("trip_active",false),paused=intent.getBooleanExtra("trip_paused",false);
         stateView.setTextColor(foreground());updateStateDot();
         renderDischarge(intent);
@@ -586,7 +598,7 @@ public class MainActivity extends Activity {
         try{return getPackageManager().getPackageInfo(getPackageName(),0).versionName;}catch(android.content.pm.PackageManager.NameNotFoundException ignored){return "–";}
     }
     private void showSettings(){
-        String[] items={"Cockpit bearbeiten","App-Farben","Gesamtkilometer korrigieren","BMS und Fahrt-Erkennung","Akku und Restreichweite","Benachrichtigungen","Außentemperatur","Letzte Fahrt / Export","Akkuoptimierung","Speicherorte","Scooter-Profile","Temperatur-Beschriftungen","Fahrtenbuch","Tourenzähler zurücksetzen","Routine-Nachrichten bearbeiten","Verbindungsdiagnose"};
+        String[] items={"Cockpit bearbeiten","App-Farben","Gesamtkilometer korrigieren","BMS und Fahrt-Erkennung","Akku und Restreichweite","Benachrichtigungen","Außentemperatur","Letzte Fahrt / Export","Akkuoptimierung","Speicherorte","Scooter-Profile","Temperatur-Beschriftungen","Fahrtenbuch","Tourenzähler zurücksetzen","Routine-Nachrichten bearbeiten","Verbindungsdiagnose","Einrichtung und Berechtigungen"};
         if(settingsDialog!=null&&settingsDialog.isShowing())return;
         settingsDialog=new AlertDialog.Builder(this).setTitle("Einstellungen").setItems(items,null).setNegativeButton("Schließen",null).create();
         settingsDialog.show();
@@ -597,7 +609,7 @@ public class MainActivity extends Activity {
         settingsDialog.getListView().setOnItemClickListener((parent,view,w,id)->{
             switch(w){case 0:editorFromSettings=true;settingsDialog.dismiss();editLayout();break;case 1:editColors();break;case 2:editOdometer();break;
                 case 3:editBms();break;case 4:editBattery();break;case 5:notificationSettings();break;
-                case 6:weatherSettings();break;case 7:tripDialog();break;case 8:requestBatteryExemption();break;case 9:storageSettings();break;case 10:profileMenu();break;case 11:editTemperatures();break;case 12:journalAfterImport=new JournalUi(this,prefs);journalAfterImport.show();break;case 13:resetTour();break;case 14:editRoutineMessages();break;case 15:connectionDiagnostics();break;}
+                case 6:weatherSettings();break;case 7:tripDialog();break;case 8:requestBatteryExemption();break;case 9:storageSettings();break;case 10:profileMenu();break;case 11:editTemperatures();break;case 12:journalAfterImport=new JournalUi(this,prefs);journalAfterImport.show();break;case 13:resetTour();break;case 14:editRoutineMessages();break;case 15:connectionDiagnostics();break;case 16:settingsDialog.dismiss();appSetup.show();break;}
         });
     }
     private void returnAfterEditor(){if(!draftCacheFile.isEmpty()){new File(getCacheDir(),draftCacheFile).delete();draftCacheFile="";}if(editorFromSettings){editorFromSettings=false;showSettings();}}
@@ -867,28 +879,10 @@ public class MainActivity extends Activity {
                 seconds / 3600, (seconds / 60) % 60, seconds % 60);
     }
 
-    private void requestNeededPermissions() {
-        ArrayList<String> needed = new ArrayList<>();
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            needed.add(Manifest.permission.ACCESS_COARSE_LOCATION);
-            needed.add(Manifest.permission.ACCESS_FINE_LOCATION);
-        }
-        if (Build.VERSION.SDK_INT >= 31) {
-            if (checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN)
-                    != PackageManager.PERMISSION_GRANTED) needed.add(Manifest.permission.BLUETOOTH_SCAN);
-            if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
-                    != PackageManager.PERMISSION_GRANTED) needed.add(Manifest.permission.BLUETOOTH_CONNECT);
-        }
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) needed.add(Manifest.permission.POST_NOTIFICATIONS);
-        if (!needed.isEmpty()) requestPermissions(needed.toArray(new String[0]), REQ_PERMS);
-    }
-
     private void openBmsPicker(){
         if(BmsMonitorService.running){Toast.makeText(this,"Zuerst Bereitschaft beenden",Toast.LENGTH_LONG).show();return;}
-        requestNeededPermissions();
-        picker=new BmsPicker(this,this::selectBms);picker.show();
+        if (!appSetup.connectionAllowed()) { appSetup.show(); return; }
+        picker=new BmsPicker(this,this::selectBms,appSetup::pickerClosed);picker.show();
     }
     private void selectBms(String address,String name){
         if(BmsMonitorService.running||!BluetoothAdapter.checkBluetoothAddress(address))return;
@@ -901,8 +895,7 @@ public class MainActivity extends Activity {
     private void startMonitoring() {
         if (BmsMonitorService.running) { Toast.makeText(this,"Bereitschaft ist bereits aktiv",Toast.LENGTH_SHORT).show(); return; }
         if(!hasSelectedBms()&&(!prefs.getBoolean("auto_scooter",true)||ScooterProfiles.knownBms(prefs).isEmpty())){Toast.makeText(this,"Bitte zuerst ein BMS auswählen",Toast.LENGTH_LONG).show();openBmsPicker();return;}
-        requestNeededPermissions();
-        if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED || (Build.VERSION.SDK_INT>=31 && (checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN)!=PackageManager.PERMISSION_GRANTED || checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)!=PackageManager.PERMISSION_GRANTED))){Toast.makeText(this,"Bitte Standort und Bluetooth erlauben und erneut starten",Toast.LENGTH_LONG).show();return;}
+        if (!appSetup.rideReady()) { appSetup.show(); return; }
         Intent service=new Intent(this,BmsMonitorService.class);
         if(Build.VERSION.SDK_INT>=26)startForegroundService(service);else startService(service);
         stateView.setText("Bereitschaft startet …");
@@ -983,14 +976,31 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        if (appSetup != null) { appSetup.resume(); appSetup.refresh(); updateSetupNotice(); }
         updateCockpitScreenAwake(BmsMonitorService.running);
         IntentFilter filter=new IntentFilter(BmsMonitorService.ACTION_STATUS);
         ContextCompat.registerReceiver(this,statusReceiver,filter,ContextCompat.RECEIVER_NOT_EXPORTED);
         Intent status=BmsMonitorService.latestStatus;if(status!=null)renderStatus(status);
         else renderStatus(new Intent());
     }
-    @Override protected void onPause() {updateCockpitScreenAwake(false);super.onPause();try{unregisterReceiver(statusReceiver);}catch(Exception ignored){}}
+    @Override protected void onPostResume() {
+        super.onPostResume();
+        if (restoreSetup) { restoreSetup = false; appSetup.show(); }
+        else appSetup.introduce();
+    }
+    @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(request, permissions, results);
+        if (appSetup != null && appSetup.handles(request)) { appSetup.refresh(); updateSetupNotice(); }
+    }
+    private void updateSetupNotice() {
+        if (setupNotice != null && appSetup != null) {
+            setupNotice.setText(appSetup.rideReady() ? "Einrichtung fortsetzen · Testfahrt" : "Einrichtung prüfen · Bluetooth / Standort");
+            setupNotice.setVisibility(appSetup.needsAttention() ? View.VISIBLE : View.GONE);
+        }
+    }
+    @Override protected void onPause() {if(appSetup!=null)appSetup.pause();updateCockpitScreenAwake(false);super.onPause();try{unregisterReceiver(statusReceiver);}catch(Exception ignored){}}
     @Override protected void onSaveInstanceState(Bundle state){
+        state.putBoolean("setup_open", appSetup != null && appSetup.shouldRestore());
         state.putLong("pending_discharge_request_id",pendingDischargeRequestId);
         state.putBoolean("pending_discharge_enabled",pendingDischargeEnabled);
         super.onSaveInstanceState(state);state.putString("pending_image_tile",pendingImageTile);state.putString("pending_image_layout",pendingImageLayout);state.putBoolean("editor_from_settings",editorFromSettings);state.putBoolean("settings_open",settingsDialog!=null&&settingsDialog.isShowing());state.putBoolean("log_expanded",logExpanded);state.putBoolean("editing_board",editingBoard);
@@ -1004,7 +1014,7 @@ public class MainActivity extends Activity {
         }
     }
     @Override public void onBackPressed(){if(editingBoard){new AlertDialog.Builder(this).setMessage("Ungespeicherten Layoutentwurf verwerfen?").setPositiveButton("Verwerfen",(d,w)->{boardTiles=savedBoard;editingBoard=false;orientationDrafts.clear();orientationSaved.clear();rebuild();returnAfterEditor();}).setNegativeButton("Weiter bearbeiten",null).show();}else super.onBackPressed();}
-    @Override protected void onDestroy() {if(dischargeConfirmDialog!=null)dischargeConfirmDialog.dismiss();if(dischargeResultDialog!=null)dischargeResultDialog.dismiss();if(unlockWaitingDialog!=null)unlockWaitingDialog.dismiss();super.onDestroy();handler.removeCallbacksAndMessages(null);if(picker!=null)picker.close();}
+    @Override protected void onDestroy() {if(appSetup!=null)appSetup.destroy();if(dischargeConfirmDialog!=null)dischargeConfirmDialog.dismiss();if(dischargeResultDialog!=null)dischargeResultDialog.dismiss();if(unlockWaitingDialog!=null)unlockWaitingDialog.dismiss();super.onDestroy();handler.removeCallbacksAndMessages(null);if(picker!=null)picker.close();}
 }
 
 

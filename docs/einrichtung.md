@@ -8,7 +8,32 @@ GitHub Actions prüft die App und baut mit den eingerichteten Signier-Secrets ei
 
 Die App-ID bleibt **de.wortmonster.jbdtrigger**, damit Routines und der vorhandene App-Datenbereich bei kompatiblen Updates erhalten bleiben. Die APK benötigt für ein Update dieselbe Signatur. Unterschiedliche Debug-Schlüssel verschiedener CI-Läufe können eine Neuinstallation erfordern. **Vor einer Deinstallation Fahrten und Einstellungen sichern; Deinstallation löscht interne Daten und Ordnerberechtigungen.** Für die offizielle APK ist der dauerhafte Release-Schlüssel über GitHub Actions Secrets eingerichtet. Beim Wechsel von einer früheren Testsignatur kann einmalig eine Neuinstallation erforderlich sein. Danach können neue Versionen mit demselben Schlüssel als Update installiert werden.
 
-ZIP entpacken und APK öffnen. Präzisen Standort, Bluetooth/Nearby Devices und Benachrichtigungen erlauben. Bereitschaft aus der sichtbaren App starten. Akkuoptimierung gegebenenfalls im Menü anpassen. Reale BMS-Steuerung, Sensorzuordnung, GPS, Routine-Auslösung und Hintergrundbetrieb sind am Roller zu prüfen.
+ZIP entpacken und APK öffnen. Die Einrichtungsübersicht führt durch die Freigaben, BMS-Auswahl und den Bereitschaftsstart. Reale BMS-Steuerung, Sensorzuordnung, GPS, Routine-Auslösung und Hintergrundbetrieb sind am Roller zu prüfen.
+
+## Geführte Freigaben beim ersten Start
+
+Bei einer frischen oder unvollständig eingerichteten Installation erscheint **ScootPit einrichten**. Jede Freigabe wird erklärt und erst nach Antippen der zugehörigen Schaltfläche bei Android angefordert. **Schritt 1 bis 10** führt jeweils zum nächsten offenen Punkt. Bereits erteilte Freigaben werden übersprungen; importierte Profile können keine Android-Berechtigungen erteilen. Vollständig eingerichtete Bestandsinstallationen erhalten keinen zusätzlichen Startdialog.
+
+| Schritt | Einstellung und Zweck |
+| --- | --- |
+| Geräte in der Nähe | Ab Android 12 die Bluetooth-Suche und Verbindung erlauben. Bis Android 11 benötigt die Suche die präzise Standortfreigabe. |
+| Bluetooth | Bluetooth am Handy einschalten. Das allein ersetzt keine App-Berechtigung. |
+| Präziser Standort | Während der App-Nutzung erlauben und **Präzise** wählen, für Geschwindigkeit, Fahrterkennung und Fahrtroute. |
+| Standort am Handy | Den Standortdienst für GPS-Aufzeichnungen einschalten. |
+| Benachrichtigungen | Ab Android 13 empfohlen für Bereitschaft, Fahrtstatus und Routine-Nachrichten; keine Voraussetzung für die Bluetooth-Verbindung. |
+| Akku-Hintergrundbetrieb | Für zuverlässige Erkennung bei gesperrtem Handy empfohlen. Samsung: zusätzlich in **App-Info → Akku → Nicht eingeschränkt** prüfen. |
+| BMS auswählen | Zum Roller gehen, andere verbundene BMS-Apps trennen und das eigene BMS auswählen. |
+| Bereitschaft starten | Wird verfügbar, sobald die erforderlichen Freigaben, Bluetooth, Standortdienst und eine BMS-Zuordnung vorhanden sind. |
+| Aktuelle BMS-Daten | Auf gültige frische Daten warten. Andere BMS-Apps, das bisherige Handy oder die Zentrale gegebenenfalls trennen; bei Problemen direkt die Diagnose öffnen. |
+| Kurze Testfahrt | Handy vor dem Losfahren verstauen. Die Automatik muss eine Fahrt erkennen und bei GPS-Empfang mindestens zwei Fahrtpunkte mit erkannter Strecke lokal schreiben. |
+
+**Vorerst überspringen** lässt Benachrichtigungen und Akku-Ausnahme bewusst offen. Nach der BMS-Auswahl oder einem Abbruch der Auswahl kehrt die App automatisch zur passenden Einrichtungsseite zurück.
+
+**Aufzeichnung geprüft** erscheint erst nach bestätigten Schreibvorgängen für mindestens zwei Fahrtpunkte mit einer erkannten Strecke und frischen BMS-/GPS-Daten des ausgewählten Scooters. Eine bloße Bluetooth-Verbindung, Bereitschaft, ein geöffneter Recorder oder ein einzelner Punkt reichen nicht. Speicherfehler, ausbleibende GPS-Daten und ein ausgeschalteter BMS-Lastausgang werden erklärt. Die App schaltet den Lastausgang dabei nicht automatisch. Der Nachweis wird auch bei geschlossenem Cockpit vom Aufzeichnungsdienst gespeichert und bleibt nach dem Abstellen erhalten; er wird dann als abgeschlossene Testaufzeichnung bezeichnet. Dies bestätigt die lokale Aufzeichnung; externe Ordnerkopien und gerätespezifischer Hintergrundbetrieb bleiben gesondert zu prüfen.
+
+**Zum Cockpit** lässt die Einrichtung auf Wunsch offen. **Einrichtung fortsetzen · Testfahrt** erinnert an einen noch nicht abgeschlossenen Test. Die Übersicht bleibt unter **Einstellungen → Einrichtung und Berechtigungen** erreichbar. Bei fehlenden Voraussetzungen zeigt das Cockpit **Einrichtung prüfen**. Die BMS-Suche öffnet bei fehlender Bluetooth-Freigabe die Einrichtung; ein Bereitschaftsstart mit fehlenden Voraussetzungen ebenfalls. Nach Rückkehr aus den Android-Einstellungen werden die Zustände neu geprüft. Hat Android weitere Berechtigungsabfragen gesperrt, bietet die App einen direkten Weg zur App-Info samt passendem Einstellungspfad. Bestehende Kopplungen, Fahrten und Layouts bleiben erhalten.
+
+Grundlagen: [Android-Bluetooth-Berechtigungen](https://developer.android.com/develop/connectivity/bluetooth/bt-permissions), [Berechtigungen erklären und anfordern](https://developer.android.com/training/permissions/requesting), [Akku-Hintergrundbetrieb](https://developer.android.com/training/monitoring-device-state/doze-standby).
 
 ## Ersteinrichtung und Standardlayout
 

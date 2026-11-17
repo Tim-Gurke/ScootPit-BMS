@@ -19,7 +19,8 @@ final class BmsPicker {
     final ListView list;private final TextView status;private final ArrayAdapter<String> adapter;private final CheckBox all;private final Button scan;private AlertDialog dialog;
     private BluetoothLeScanner scanner;private BluetoothGatt gatt;private BluetoothGattCharacteristic write;
     private Candidate checking;private boolean busy,closed,scanning,subscribed,writeBusy;private int attempts,receivedBytes;private String phase="Verbindungsaufbau";private int generation;private final ByteArrayOutputStream buffer=new ByteArrayOutputStream();
-    BmsPicker(Activity a,Chosen c){activity=a;chosen=c;
+    BmsPicker(Activity a,Chosen c){this(a,c,()->{});}
+    BmsPicker(Activity a,Chosen c,Runnable afterClose){activity=a;chosen=c;
         LinearLayout root=new LinearLayout(a);root.setOrientation(LinearLayout.VERTICAL);int pad=dp(12);root.setPadding(pad,pad,pad,pad);
         status=new TextView(a);status.setTextColor(android.graphics.Color.WHITE);root.addView(status);
         all=new CheckBox(a);all.setText("Alle BLE-Geräte anzeigen");all.setTextColor(android.graphics.Color.WHITE);all.setOnCheckedChangeListener((v,on)->refresh());root.addView(all);
@@ -27,7 +28,7 @@ final class BmsPicker {
         Button manual=new Button(a);manual.setText("Adresse eingeben");manual.setOnClickListener(v->manual());buttons.addView(manual,new LinearLayout.LayoutParams(0,-2,1));root.addView(buttons);
         list=new ListView(a);list.setContentDescription("Gefundene Bluetooth-Geräte");adapter=new ArrayAdapter<>(a,android.R.layout.simple_list_item_1,new ArrayList<>());list.setAdapter(adapter);root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
         list.setOnItemClickListener((parent,view,index,id)->{if(index<shown.size())probe(shown.get(index));});
-        dialog=new AlertDialog.Builder(a).setTitle("BMS auswählen").setView(root).setNegativeButton("Schließen",null).create();dialog.setOnDismissListener(d->close());
+        dialog=new AlertDialog.Builder(a).setTitle("BMS auswählen").setView(root).setNegativeButton("Schließen",null).create();dialog.setOnDismissListener(d->{close();afterClose.run();});
     }
     void show(){dialog.show();dialog.getWindow().setLayout(-1,(int)(activity.getResources().getDisplayMetrics().heightPixels*.85));startScan();}
     void add(String address,String name,int rssi,boolean service){Candidate old=devices.get(address);if(old==null)devices.put(address,new Candidate(address,name,rssi,service));else{if(!name.equals("Unbenanntes BLE-Gerät"))old.name=name;old.rssi=rssi;old.service|=service;}refresh();}

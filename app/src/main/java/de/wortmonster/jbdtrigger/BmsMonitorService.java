@@ -1052,7 +1052,8 @@ public class BmsMonitorService extends Service implements LocationListener {
         if(prefs.getBoolean("weather_enabled",true)&&Double.isFinite(outsideTemperature)&&weatherAt>0&&System.currentTimeMillis()-weatherAt<=1800000){temperatureSum+=outsideTemperature;temperatureSamples++;}
         if(lastPacket>0&&System.currentTimeMillis()-lastPacket<=8000)for(int i=0;i<Math.min(2,temperatures.length);i++)if(Double.isFinite(temperatures[i])){sensorSums[i]+=temperatures[i];sensorSamples[i]++;}
         Location recorded=new Location(location);recorded.setSpeed((float)(currentSpeedKmh/3.6));
-        recorder.add(recorded, packetFresh?soc:-1, packetFresh?voltage:Double.NaN, packetFresh?current:Double.NaN, packetFresh?dischargeWatts:Double.NaN, energyWh, maxPowerW, prefs.getBoolean("weather_enabled",true)&&System.currentTimeMillis()-weatherAt<=1800000?outsideTemperature:Double.NaN,lastPacket>0&&System.currentTimeMillis()-lastPacket<=8000?temperatures:new double[0]);
+        boolean stored = recorder.add(recorded, packetFresh?soc:-1, packetFresh?voltage:Double.NaN, packetFresh?current:Double.NaN, packetFresh?dischargeWatts:Double.NaN, energyWh, maxPowerW, prefs.getBoolean("weather_enabled",true)&&System.currentTimeMillis()-weatherAt<=1800000?outsideTemperature:Double.NaN,lastPacket>0&&System.currentTimeMillis()-lastPacket<=8000?temperatures:new double[0]);
+        if (stored) AppSetup.noteRecording(this, prefs.getString(ScooterProfiles.ACTIVE,""), address, now, lastPacket, gpsAt, recorder.recordedPoints(), distanceMeters);
         sendStatus();
     }
 
@@ -1145,6 +1146,8 @@ public class BmsMonitorService extends Service implements LocationListener {
                 .putExtra("consumption_window_m",consumptionWindowMeters())
                 .putExtra("trip_time_ms", movingMs + standingMs + (tripPausedAt>0?Math.max(0,System.currentTimeMillis()-tripPausedAt):0))
                 .putExtra("range_km", rangeKm())
+                .putExtra("recorded_points", recorder == null ? 0L : recorder.recordedPoints())
+                .putExtra("recording_error", recorder == null ? "" : recorder.writeError())
                 .putExtra("trip_active", recorder != null)
                 .putExtra("trip_paused", recorder != null && tripPausedAt>0)
                 .putExtra("trip_paused_manual",recorder!=null&&tripPausedAt>0&&manualTripPause)

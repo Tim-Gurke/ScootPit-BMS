@@ -16,9 +16,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /** Device smoke check: fresh launch, actual rendered measurements, persistence and editors. */
 public class CockpitSmokeTest extends Instrumentation {
-    private boolean guideOnly, altitudeOnly;
-    @Override public void onCreate(Bundle arguments) { guideOnly=arguments!=null&&"guide".equals(arguments.getString("mode"));altitudeOnly=arguments!=null&&"altitude".equals(arguments.getString("mode"));super.onCreate(arguments);start(); }
+    private boolean guideOnly, altitudeOnly, setupOnly, setupGranted;
+    @Override public void onCreate(Bundle arguments) { guideOnly=arguments!=null&&"guide".equals(arguments.getString("mode"));altitudeOnly=arguments!=null&&"altitude".equals(arguments.getString("mode"));setupOnly=arguments!=null&&"setup".equals(arguments.getString("mode"));setupGranted=arguments!=null&&"setupGranted".equals(arguments.getString("mode"));super.onCreate(arguments);start(); }
     @Override public void onStart() {
+        if (setupOnly || setupGranted) { new SetupCheck(this).run(setupGranted); return; }
         if(guideOnly){new GuideScreenshots(this).capture();return;}
         Bundle result = new Bundle();
         try {
@@ -30,6 +31,7 @@ public class CockpitSmokeTest extends Instrumentation {
                 finish(Activity.RESULT_OK,result);return;
             }
             prefs.edit().clear().putString("total_km","123.45").commit();
+            getTargetContext().getSharedPreferences(AppSetup.PREFS,0).edit().putBoolean("introduced",true).commit();
             prefs.edit().putString("app_background","#F7FAFD").putBoolean("background_gradient_enabled",true)
                     .putString("background_gradient_start","#FFFFFF").putString("background_gradient_end","#DCECF5").commit();
             if(CockpitTheme.readableTileText(prefs,0xffffffff,0x00000000)!=android.graphics.Color.BLACK)
