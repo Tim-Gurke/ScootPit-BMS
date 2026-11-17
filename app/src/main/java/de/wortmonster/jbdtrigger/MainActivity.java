@@ -120,7 +120,7 @@ public class MainActivity extends Activity {
             }catch(Exception ignored){}
         }
         StorageFolders.install(this);
-        appSetup = new AppSetup(this, prefs, this::openBmsPicker, this::startMonitoring);
+        appSetup = new AppSetup(this, prefs, this::openBmsPicker, this::startMonitoring, this::connectionDiagnostics);
         restoreSetup = state != null && state.getBoolean("setup_open", false);
         rebuild();
         if(state!=null&&state.getBoolean("settings_open",false)&&!editingBoard)showSettings();
@@ -430,6 +430,7 @@ public class MainActivity extends Activity {
         if(!activeProfile.equals(displayedProfile)&&!editingBoard){displayedProfile=activeProfile;boardTiles=loadBoard();lastStatus=new Intent(intent);rebuild();return;}
         String statusProfile=intent.getStringExtra("scooter_id");if(statusProfile!=null&&!statusProfile.equals(activeProfile))return;
         lastStatus=new Intent(intent);
+        if (appSetup != null) { appSetup.onStatus(intent); updateSetupNotice(); }
         boolean trip=intent.getBooleanExtra("trip_active",false),paused=intent.getBooleanExtra("trip_paused",false);
         stateView.setTextColor(foreground());updateStateDot();
         renderDischarge(intent);
@@ -881,7 +882,7 @@ public class MainActivity extends Activity {
     private void openBmsPicker(){
         if(BmsMonitorService.running){Toast.makeText(this,"Zuerst Bereitschaft beenden",Toast.LENGTH_LONG).show();return;}
         if (!appSetup.connectionAllowed()) { appSetup.show(); return; }
-        picker=new BmsPicker(this,this::selectBms);picker.show();
+        picker=new BmsPicker(this,this::selectBms,appSetup::pickerClosed);picker.show();
     }
     private void selectBms(String address,String name){
         if(BmsMonitorService.running||!BluetoothAdapter.checkBluetoothAddress(address))return;
@@ -975,7 +976,7 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
-        if (appSetup != null) { appSetup.refresh(); updateSetupNotice(); }
+        if (appSetup != null) { appSetup.resume(); appSetup.refresh(); updateSetupNotice(); }
         updateCockpitScreenAwake(BmsMonitorService.running);
         IntentFilter filter=new IntentFilter(BmsMonitorService.ACTION_STATUS);
         ContextCompat.registerReceiver(this,statusReceiver,filter,ContextCompat.RECEIVER_NOT_EXPORTED);
@@ -992,11 +993,14 @@ public class MainActivity extends Activity {
         if (appSetup != null && appSetup.handles(request)) { appSetup.refresh(); updateSetupNotice(); }
     }
     private void updateSetupNotice() {
-        if (setupNotice != null && appSetup != null) setupNotice.setVisibility(appSetup.rideReady() ? View.GONE : View.VISIBLE);
+        if (setupNotice != null && appSetup != null) {
+            setupNotice.setText(appSetup.rideReady() ? "Einrichtung fortsetzen · Testfahrt" : "Einrichtung prüfen · Bluetooth / Standort");
+            setupNotice.setVisibility(appSetup.needsAttention() ? View.VISIBLE : View.GONE);
+        }
     }
-    @Override protected void onPause() {updateCockpitScreenAwake(false);super.onPause();try{unregisterReceiver(statusReceiver);}catch(Exception ignored){}}
+    @Override protected void onPause() {if(appSetup!=null)appSetup.pause();updateCockpitScreenAwake(false);super.onPause();try{unregisterReceiver(statusReceiver);}catch(Exception ignored){}}
     @Override protected void onSaveInstanceState(Bundle state){
-        state.putBoolean("setup_open", appSetup != null && appSetup.isShowing());
+        state.putBoolean("setup_open", appSetup != null && appSetup.shouldRestore());
         state.putLong("pending_discharge_request_id",pendingDischargeRequestId);
         state.putBoolean("pending_discharge_enabled",pendingDischargeEnabled);
         super.onSaveInstanceState(state);state.putString("pending_image_tile",pendingImageTile);state.putString("pending_image_layout",pendingImageLayout);state.putBoolean("editor_from_settings",editorFromSettings);state.putBoolean("settings_open",settingsDialog!=null&&settingsDialog.isShowing());state.putBoolean("log_expanded",logExpanded);state.putBoolean("editing_board",editingBoard);
@@ -1010,7 +1014,7 @@ public class MainActivity extends Activity {
         }
     }
     @Override public void onBackPressed(){if(editingBoard){new AlertDialog.Builder(this).setMessage("Ungespeicherten Layoutentwurf verwerfen?").setPositiveButton("Verwerfen",(d,w)->{boardTiles=savedBoard;editingBoard=false;orientationDrafts.clear();orientationSaved.clear();rebuild();returnAfterEditor();}).setNegativeButton("Weiter bearbeiten",null).show();}else super.onBackPressed();}
-    @Override protected void onDestroy() {if(appSetup!=null)appSetup.close();if(dischargeConfirmDialog!=null)dischargeConfirmDialog.dismiss();if(dischargeResultDialog!=null)dischargeResultDialog.dismiss();if(unlockWaitingDialog!=null)unlockWaitingDialog.dismiss();super.onDestroy();handler.removeCallbacksAndMessages(null);if(picker!=null)picker.close();}
+    @Override protected void onDestroy() {if(appSetup!=null)appSetup.destroy();if(dischargeConfirmDialog!=null)dischargeConfirmDialog.dismiss();if(dischargeResultDialog!=null)dischargeResultDialog.dismiss();if(unlockWaitingDialog!=null)unlockWaitingDialog.dismiss();super.onDestroy();handler.removeCallbacksAndMessages(null);if(picker!=null)picker.close();}
 }
 
 
